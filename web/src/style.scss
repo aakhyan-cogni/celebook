@@ -1,0 +1,29 @@
+@import "bootstrap/scss/bootstrap";
+
+// * {
+// 	outline: 1px solid red;
+// }
+
+.backdrop-blur {
+	backdrop-filter: blur(10px);
+	background-color: rgba(var(--bs-body-bg-rgb), 0.8) !important;
+}
+
+.text-gradient {
+	background: linear-gradient(45deg, var(--bs-primary), var(--bs-info));
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+}
+
+.filter-brightness {
+	filter: brightness(0.9);
+	transition: filter 0.3s ease;
+	&:hover {
+		filter: brightness(1.1);
+	}
+}
+
+.transition-all {
+	transition: all 0.3s ease-in-out;
+}

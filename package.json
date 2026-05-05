@@ -1,0 +1,18 @@
+{
+	"name": "ems",
+	"version": "1.0.0",
+	"description": "Event Management System",
+	"license": "MIT",
+	"author": "",
+	"type": "module",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "concurrently \"npm run web\" \"npm run server\"",
+		"web": "npm run dev --prefix web",
+		"server": "npm run dev --prefix server"
+	},
+	"devDependencies": {
+		"concurrently": "^9.2.1"
+	}
+}
