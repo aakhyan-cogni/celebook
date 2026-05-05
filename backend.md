@@ -50,7 +50,13 @@ ACCESS_TOKEN_SECRET=abc
 REFRESH_TOKEN_SECRET=def
 ACCESS_TOKEN_EXPIRY=900            # seconds (15 min)
 REFRESH_TOKEN_EXPIRY=604800        # seconds (7 days)
+ADMIN_EMAIL=admin@ems.com
+ADMIN_PASSWORD=1234
+USER_EMAIL=user@ems.com
+USER_PASSWORD=1234
 ```
+
+> The `ADMIN_*` and `USER_*` env vars are read by `npm run db:seed` ([`server/src/seed.js`](server/src/seed.js)) to create a seeded admin user, a seeded regular user, and a sample event on a fresh database.
 
 > **Gotcha:** `lib/jwt.js` reads env vars at module load time. If `ACCESS_TOKEN_SECRET` is missing the server will crash when `jwt.sign` is called — there is no startup guard yet. (Hardening this is task S2-019.)
 

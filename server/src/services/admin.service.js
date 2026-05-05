@@ -61,7 +61,7 @@ export async function getStats() {
 	const [totalUsers, totalEvents, pendingApprovals] = await Promise.all([
 		UserModel.countDocuments(),
 		EventModel.countDocuments(),
-		EventModel.countDocuments({ status: "PENDING_REVIEW" }),
+		EventModel.countDocuments({ status: "PENDING" }),
 	]);
 
 	return { totalUsers, totalEvents, pendingApprovals, totalRegistrations: 0 };

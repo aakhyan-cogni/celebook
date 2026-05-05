@@ -7,7 +7,11 @@ type FetchOptions = RequestInit & { body?: any };
 
 let refreshPromise: Promise<{ accessToken: string }> | null = null;
 
-export async function apiFetch(endpoint: API_PATH, options: FetchOptions = {}) {
+export async function apiFetch(
+	endpoint: API_PATH,
+	options: FetchOptions = {},
+	queryParams: Record<string, string> = {},
+) {
 	const { accessToken, setAccessToken, logout, setConsentRequired, setPendingRequest } = useAuthStore.getState();
 	const headers: HeadersInit = new Headers(options?.headers || {});
 	headers.set("Content-Type", "application/json");
@@ -23,7 +27,11 @@ export async function apiFetch(endpoint: API_PATH, options: FetchOptions = {}) {
 		body: options.body,
 	};
 
-	let response = await fetch(`${BASE_URL}${endpoint}`, config);
+	const hasParams = Object.keys(queryParams).length > 0;
+	let finalUrl = BASE_URL + endpoint;
+	if (hasParams) finalUrl += `?${new URLSearchParams(queryParams).toString()}`;
+
+	let response = await fetch(finalUrl, config);
 
 	if (response.status === 403) {
 		const errorData = await response.json().catch(() => ({}));
@@ -74,4 +82,6 @@ type API_PATH =
 	| `/auth/logout`
 	| `/user/profile`
 	| `/events`
-	| `/consent/accept`;
+	| `/consent/accept`
+	| `/admin/events`
+	| `/admin/users`;

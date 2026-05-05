@@ -16,10 +16,10 @@ The reference LLD (`Event Management System.pdf`) defines five bare-minimum modu
 - ✅ S2-001 · Consent System — Backend
 - ✅ S2-002 · Consent System — Frontend
 
-### Checkpoint 1 — PDF Bare Minimum  ⏳ 0 / 15 done
+### Checkpoint 1 — PDF Bare Minimum  ⏳ 2 / 15 done
 Priority order top-to-bottom. Must ship to satisfy the PDF LLD.
-- 🟡 S2-003 · Admin Role & Endpoints — Backend  *(required by the event-publish state machine)*
-- ⏳ S2-004 · Admin Dashboard — Frontend
+- ✅ S2-003 · Admin Role & Endpoints — Backend  *(required by the event-publish state machine)*
+- ✅ S2-004 · Admin Dashboard — Frontend
 - ⏳ S2-005 · Event Model & Core CRUD — Backend
 - ⏳ S2-006 · Event Search & Public Listing — Backend
 - ⏳ S2-007 · Event Creation & Management — Frontend Integration
@@ -205,7 +205,7 @@ Tasks are labelled `S2-XXX`. Each is designed to be completable by one developer
 **Type:** Backend  
 **Depends on:** Nothing (uses existing auth middleware)  
 **Checkpoint:** 1 (Bare Minimum) — required by event publish state machine  
-**Status:** ✅ Done  
+**Status:** ✅ Done
 
 **What to build:**
 - The `UserModel` Mongoose schema already has `role` and `tier` fields with `enum` validation. Allowed values are declared in `server/src/models/user.model.js`:
@@ -242,7 +242,7 @@ tier: { type: String, enum: TIERS, default: "FREE" },
 **Type:** Frontend  
 **Depends on:** S2-003  
 **Checkpoint:** 1 (Bare Minimum)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  
 
 **What to build:**
 - New route `/admin` — redirect to `/login` if not authenticated; redirect to `/dashboard` if authenticated but role is not `ADMIN`.

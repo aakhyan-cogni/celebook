@@ -7,7 +7,13 @@ export function login(email: string, password: string) {
 	});
 }
 
-export async function register(name: string, email: string, password: string, termsAccepted: boolean, loginAfter = false) {
+export async function register(
+	name: string,
+	email: string,
+	password: string,
+	termsAccepted: boolean,
+	loginAfter = false,
+) {
 	if (loginAfter) {
 		return apiFetch("/auth/register", {
 			method: "POST",

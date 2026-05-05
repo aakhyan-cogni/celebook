@@ -1,8 +1,12 @@
 import mongoose from "mongoose";
 
+export const EVENT_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
+export const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "INR"];
+
 const eventSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true },
+		currency: { type: String, enum: CURRENCIES, required: true },
 		category: { type: String, required: true },
 		description: { type: String, default: "" },
 		tags: { type: [String], default: [] },
@@ -13,6 +17,8 @@ const eventSchema = new mongoose.Schema(
 		capacity: { type: Number, required: true },
 		organizerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 		organizerEmail: { type: String, required: true },
+		status: { type: String, enum: EVENT_STATUSES, default: "PENDING" },
+		rejectionReason: { type: String, default: null },
 	},
 	{ timestamps: true },
 );
