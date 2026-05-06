@@ -1,85 +1,275 @@
-export const getAllEvents = async () => {
-	const categories = ["Conference", "Workshop", "Social", "Entertainment", "Health & Wellness", "Education", "Other"];
+import mongoose from "mongoose";
+import { EventModel, RegistrationModel, UserModel } from "../models/index.js";
 
-	const locations = [
-		"New York, NY",
-		"London, UK",
-		"Remote",
-		"Tokyo, Japan",
-		"Berlin, Germany",
-		"Austin, TX",
-		"Paris, France",
-	];
-	const currencies = ["USD", "EUR", "GBP", "JPY", "INR"];
+const TIER_LIMITS = {
+	FREE: 2,
+	PRO: 10,
+	ULTIMATE: Number.MAX_SAFE_INTEGER,
+};
 
-	const baseEvents = [
-		{ title: "Next.js Conf 2026", category: "Conference", tags: "Nextjs, React, Vercel" },
-		{ title: "Deep Sea Photography", category: "Workshop", tags: "Art, Camera, Ocean" },
-		{ title: "Summer Rooftop Mixer", category: "Social", tags: "Networking, Drinks" },
-		{ title: "Indie Rock Night", category: "Entertainment", tags: "Live Music, Rock" },
-		{ title: "Mindfulness Meditation", category: "Health & Wellness", tags: "Mental Health, Zen" },
-		{ title: "Blockchain Fundamentals", category: "Education", tags: "Crypto, Web3" },
-		{ title: "Retro Gaming Expo", category: "Other", tags: "Gaming, Nostalgia" },
-		{ title: "AI Strategy for CEOs", category: "Conference", tags: "AI, Business" },
-		{ title: "Pottery for Beginners", category: "Workshop", tags: "Hobby, Craft" },
-		{ title: "Speed Dating Night", category: "Social", tags: "Social, Fun" },
-		{ title: "Stand-up Comedy Special", category: "Entertainment", tags: "Comedy, Nightlife" },
-		{ title: "Marathon Training Club", category: "Health & Wellness", tags: "Running, Fitness" },
-		{ title: "Intro to Python", category: "Education", tags: "Coding, Data Science" },
-		{ title: "Urban Gardening Meetup", category: "Other", tags: "Green, Community" },
-		{ title: "Cybersecurity Summit", category: "Conference", tags: "Security, Tech" },
-		{ title: "Bread Baking Masterclass", category: "Workshop", tags: "Food, Cooking" },
-		{ title: "High School Reunion 2016", category: "Social", tags: "Social, Alumni" },
-		{ title: "Electronic Music Fest", category: "Entertainment", tags: "EDM, Dance" },
-		{ title: "Pilates in the Park", category: "Health & Wellness", tags: "Yoga, Fitness" },
-		{ title: "Machine Learning 101", category: "Education", tags: "AI, Math" },
-		{ title: "Local Farmers Market", category: "Other", tags: "Food, Local" },
-		{ title: "UX/UI Design Awards", category: "Conference", tags: "Design, Creative" },
-		{ title: "Watercolor Painting", category: "Workshop", tags: "Art, Painting" },
-		{ title: "Charity Gala Dinner", category: "Social", tags: "Charity, Formal" },
-		{ title: "Outdoor Cinema Night", category: "Entertainment", tags: "Movie, Summer" },
-		{ title: "Crossfit Challenge", category: "Health & Wellness", tags: "Gym, Sports" },
-		{ title: "History of Rome Series", category: "Education", tags: "History, Lecture" },
-		{ title: "Comic Book Convention", category: "Other", tags: "Comics, Pop Culture" },
-		{ title: "SaaS Growth Hackathon", category: "Workshop", tags: "Startup, SaaS" },
-		{ title: "Wine Tasting Tour", category: "Social", tags: "Wine, Social" },
-	];
+const EVENT_UPDATABLE_FIELDS = [
+	"title",
+	"description",
+	"category",
+	"tags",
+	"date",
+	"endDate",
+	"location",
+	"price",
+	"capacity",
+	"imgUrls",
+	"visibility",
+	"isTeamEvent",
+	"minTeamSize",
+	"maxTeamSize",
+	"teamCapacityMode",
+	"formSchemaId",
+];
 
-	return baseEvents.map((event, index) => {
-		const id = index + 1;
-		const price = Math.floor(Math.random() * 200);
-		const attendees = Math.floor(Math.random() * 500) + 10;
+export const createEvent = async (organizerId, organizerEmail, data) => {
+	const eventData = {
+		...data,
+		organizerId,
+		organizerEmail,
+		status: "DRAFT",
+		rejectionReason: null,
+		isCancelled: false,
+		cancelReason: null,
+	};
 
-		const dateOffset = Math.floor(Math.random() * 22) - 7;
-		const eventDateTime = new Date();
-		eventDateTime.setDate(eventDateTime.getDate() + dateOffset);
-		eventDateTime.setHours(Math.floor(Math.random() * 12) + 9, 0, 0, 0);
+	return EventModel.create(eventData);
+};
 
-		return {
-			id,
-			title: event.title,
-			price: price === 0 ? 0 : price,
-			currency: currencies[Math.floor(Math.random() * currencies.length)],
-			location: locations[Math.floor(Math.random() * locations.length)],
-			category: categories[Math.floor(Math.random() * categories.length)],
-			image: `https://picsum.photos/seed/${id + 123}/800/600`,
-			description: `This is a short preview description for ${event.title}.`,
-			longDescription: `Full details for ${event.title}. This event will cover extensive topics including ${event.tags}. Join us for an unforgettable experience with over ${attendees} expected guests!`,
-			venue: price > 100 ? "Grand Plaza Hotel" : "Community Center",
-			tags: event.tags,
-			attendees,
-			eventDateTime,
-			avgRating: parseFloat((Math.random() * (5 - 3) + 3).toFixed(1)),
-			totalRatings: Math.floor(Math.random() * 100),
-			reviews: [
-				{
-					id: `rev-${id}`,
-					review: "Had a great time, would definitely recommend to others!",
-					author: { id: `u-${id}`, name: "User " + id, email: `user${id}@example.com` },
-					createdAt: new Date(),
-					updatedAt: new Date(),
-				},
-			],
-		};
+export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, page = 1, limit = 20 }) => {
+	const filter = {
+		status: "APPROVED",
+		visibility: { $in: ["PUBLIC", "UNLISTED"] },
+		isCancelled: false,
+	};
+
+	if (q) {
+		filter.$text = { $search: q };
+	}
+
+	if (category) {
+		filter.category = category;
+	}
+
+	if (location) {
+		filter.location = { $regex: location, $options: "i" };
+	}
+
+	if (dateFrom || dateTo) {
+		filter.date = {};
+		if (dateFrom) {
+			filter.date.$gte = new Date(dateFrom);
+		}
+		if (dateTo) {
+			filter.date.$lte = new Date(dateTo);
+		}
+	}
+
+	const currentPage = Math.max(1, Number(page) || 1);
+	const pageSize = Math.max(1, Number(limit) || 20);
+	const skip = (currentPage - 1) * pageSize;
+
+	const [events, total] = await Promise.all([
+		EventModel.find(filter).skip(skip).limit(pageSize).lean(),
+		EventModel.countDocuments(filter),
+	]);
+
+	const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+	// TODO: Attach avgRating and totalRatings from Feedback collection once Feedback model is available.
+
+	return {
+		events,
+		pagination: {
+			total,
+			page: currentPage,
+			limit: pageSize,
+			totalPages,
+		},
+	};
+};
+
+export const getEventById = async (eventId, requestingUser = null) => {
+	const event = await EventModel.findById(eventId).lean();
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	const isAdmin = requestingUser?.role === "ADMIN";
+	const isOrganizer = requestingUser?.userId === event.organizerId?.toString();
+
+	if (event.visibility === "PRIVATE" && !isAdmin && !isOrganizer) {
+		if (!requestingUser) {
+			return { error: "UNAUTHORIZED" };
+		}
+
+		const confirmedCount = await RegistrationModel.countDocuments({
+			eventId: new mongoose.Types.ObjectId(eventId),
+			userId: new mongoose.Types.ObjectId(requestingUser.userId),
+			status: "CONFIRMED",
+		});
+
+		if (confirmedCount === 0) {
+			return { error: "FORBIDDEN" };
+		}
+	}
+
+	if (event.status !== "APPROVED" && !isAdmin && !isOrganizer) {
+		return { error: "FORBIDDEN" };
+	}
+
+	return { event };
+};
+
+export const countApprovedEvents = async (organizerId) => {
+	return EventModel.countDocuments({ organizerId: new mongoose.Types.ObjectId(organizerId), status: "APPROVED" });
+};
+
+export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
+	const event = await EventModel.findById(eventId);
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
+		return { error: "FORBIDDEN" };
+	}
+
+	if (!["DRAFT", "REJECTED"].includes(event.status)) {
+		return { error: "NOT_PUBLISHABLE" };
+	}
+
+	const user = await UserModel.findById(organizerId).lean();
+	if (!user) {
+		return { error: "FORBIDDEN" };
+	}
+
+	const approvedCount = await countApprovedEvents(organizerId);
+	const tierLimit = TIER_LIMITS[user.tier] ?? 0;
+	if (approvedCount >= tierLimit) {
+		return { error: "TIER_LIMIT_EXCEEDED" };
+	}
+
+	const nextStatus = approvedCount === 0 ? "PENDING" : "APPROVED";
+	event.status = nextStatus;
+	event.rejectionReason = null;
+	await event.save();
+
+	return { event: event.toObject() };
+};
+
+export const updateEvent = async (eventId, organizerId, data, isAdmin = false) => {
+	const event = await EventModel.findById(eventId);
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
+		return { error: "FORBIDDEN" };
+	}
+
+	if (!isAdmin && !["DRAFT", "REJECTED"].includes(event.status)) {
+		return { error: "NOT_EDITABLE" };
+	}
+
+	const update = {};
+	EVENT_UPDATABLE_FIELDS.forEach((field) => {
+		if (data[field] !== undefined) {
+			update[field] = data[field];
+		}
 	});
+
+	const updatedEvent = await EventModel.findByIdAndUpdate(eventId, update, { new: true }).lean();
+	return { event: updatedEvent };
+};
+
+export const deleteEvent = async (eventId, organizerId, isAdmin = false) => {
+	const event = await EventModel.findById(eventId);
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
+		return { error: "FORBIDDEN" };
+	}
+
+	const confirmedCount = await RegistrationModel.countDocuments({
+		eventId: new mongoose.Types.ObjectId(eventId),
+		status: "CONFIRMED",
+	});
+
+	if (confirmedCount > 0) {
+		return { error: "HAS_REGISTRATIONS" };
+	}
+
+	await EventModel.findByIdAndDelete(eventId);
+	return { event };
+};
+
+export const cancelEvent = async (eventId, organizerId, reason, isAdmin = false) => {
+	const event = await EventModel.findById(eventId);
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
+		return { error: "FORBIDDEN" };
+	}
+
+	event.isCancelled = true;
+	event.cancelReason = reason || null;
+	await event.save();
+
+	return { event: event.toObject() };
+};
+
+export const duplicateEvent = async (eventId, organizerId, isAdmin = false) => {
+	const event = await EventModel.findById(eventId).lean();
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
+		return { error: "FORBIDDEN" };
+	}
+
+	const newDate = event.date ? new Date(event.date) : new Date();
+	newDate.setDate(newDate.getDate() + 7);
+
+	const duplicate = await EventModel.create({
+		...event,
+		_id: undefined,
+		title: `${event.title} (Copy)`,
+		status: "DRAFT",
+		rejectionReason: null,
+		imgUrls: [],
+		isCancelled: false,
+		cancelReason: null,
+		date: newDate,
+		createdAt: undefined,
+		updatedAt: undefined,
+	});
+
+	return { event: duplicate.toObject() };
+};
+
+export const getMyEvents = async (organizerId) => {
+	return EventModel.aggregate([
+		{ $match: { organizerId: new mongoose.Types.ObjectId(organizerId) } },
+		{ $sort: { createdAt: -1 } },
+		{
+			$lookup: {
+				from: RegistrationModel.collection.name,
+				localField: "_id",
+				foreignField: "eventId",
+				as: "registrations",
+			},
+		},
+		{ $addFields: { registrationCount: { $size: "$registrations" } } },
+		{ $project: { registrations: 0 } },
+	]).exec();
 };
