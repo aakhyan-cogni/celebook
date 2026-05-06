@@ -60,21 +60,20 @@ These are architectural decisions that every developer must be aware of before p
 ### Event Status State Machine
 
 ```
-DRAFT ──(organizer publishes)──▶ PENDING_REVIEW  [only for user's FIRST event]
-                                       │
-                              admin reviews
-                             ┌─────────┴─────────┐
-                             ▼                   ▼
-                          APPROVED           REJECTED ──▶ organizer edits ──▶ PENDING_REVIEW
-                             │
-               (all future events by same user)
-                             ▼
-                  DRAFT ──(publish)──▶ APPROVED  [no review needed after first approval]
+PUBLIC / UNLISTED events:
+  DRAFT ──(organizer publishes)──▶ PENDING ──admin reviews──▶ APPROVED
+                                                           └─▶ REJECTED ──▶ organizer edits ──▶ PENDING
+
+PRIVATE events:
+  DRAFT ──(organizer publishes)──▶ APPROVED   [no admin review — only the organizer + invited
+                                              attendees can see PRIVATE events anyway]
 ```
 
+Every PUBLIC and UNLISTED event requires admin approval on every publish — there is no "first event only" carve-out. PRIVATE events skip review entirely because they aren't discoverable and only reach an audience the organizer has explicitly invited.
+
 - `DRAFT` — only visible to organizer.
-- `PENDING_REVIEW` — visible to organizer + admin, not listed publicly.
-- `APPROVED` — publicly listed (if visibility = PUBLIC), discoverable.
+- `PENDING` — visible to organizer + admin, not listed publicly. Only reachable from PUBLIC/UNLISTED publishes.
+- `APPROVED` — publicly listed (if visibility = PUBLIC), discoverable. PRIVATE events land here directly on publish.
 - `REJECTED` — visible to organizer only, with rejection reason.
 
 ### Tier Permissions Matrix
@@ -119,7 +118,7 @@ All "enums" are plain JavaScript string constant arrays declared once in the rel
 ```js
 export const ROLES               = ["USER", "ADMIN"];
 export const TIERS               = ["FREE", "PRO", "ULTIMATE"];
-export const EVENT_STATUSES      = ["DRAFT", "PENDING_REVIEW", "APPROVED", "REJECTED"];
+export const EVENT_STATUSES      = ["DRAFT", "PENDING", "APPROVED", "REJECTED"];
 export const EVENT_VISIBILITIES  = ["PUBLIC", "PRIVATE", "UNLISTED"];
 export const TEAM_CAPACITY_MODES = ["PER_TEAM", "PER_MEMBER"];
 export const REGISTRATION_STATUSES = ["CONFIRMED", "CANCELLED"];
@@ -248,7 +247,7 @@ tier: { type: String, enum: TIERS, default: "FREE" },
 - New route `/admin` — redirect to `/login` if not authenticated; redirect to `/dashboard` if authenticated but role is not `ADMIN`.
 - Admin layout with sidebar: **Overview**, **Pending Events**, **All Events**, **Users**.
 - **Overview tab:** Stats cards using `GET /admin/stats` (total users, events, pending approvals).
-- **Pending Events tab:** List of events with `PENDING_REVIEW` status. Each row shows event title, organizer name, category, created date. Two action buttons: `Approve` and `Reject`. Reject opens a small modal asking for a rejection reason (free text, required). Optimistic UI update on action.
+- **Pending Events tab:** List of events with `PENDING` status. Each row shows event title, organizer name, category, created date. Two action buttons: `Approve` and `Reject`. Reject opens a small modal asking for a rejection reason (free text, required). Optimistic UI update on action.
 - **All Events tab:** Filterable table (by status, category). Shows all events.
 - **Users tab:** Paginated user list. Columns: name, email, role badge, tier badge, consent status, join date. Ability to toggle role between USER and ADMIN (with a confirmation dialog).
 - No analytics or charts needed — simple tables are sufficient.
@@ -276,7 +275,7 @@ tier: { type: String, enum: TIERS, default: "FREE" },
 Declare the following constant arrays in `server/src/models/event.model.js` (add alongside those from S2-003):
 
 ```js
-export const EVENT_STATUSES      = ["DRAFT", "PENDING_REVIEW", "APPROVED", "REJECTED"];
+export const EVENT_STATUSES      = ["DRAFT", "PENDING", "APPROVED", "REJECTED"];
 export const EVENT_VISIBILITIES  = ["PUBLIC", "PRIVATE", "UNLISTED"];
 export const TEAM_CAPACITY_MODES = ["PER_TEAM", "PER_MEMBER"];
 ```
@@ -318,16 +317,16 @@ eventSchema.index({ date: 1 });
 
 Endpoints:
 - `POST /api/events` (auth + consentCheck + tierCheck) — Create event via `EventModel.create(...)`. Initial status always `"DRAFT"`. Returns created event (use the `fromDoc` mapper so `id` is a string).
-- `PATCH /api/events/:id` (auth) — Update event via `EventModel.findByIdAndUpdate(id, update, { new: true })`. Only organizer or admin can update. Only `"DRAFT"` or `"REJECTED"` events can be edited by the organizer. Admin can edit any.
+- `PATCH /api/events/:id` (auth) — Update event via `EventModel.findByIdAndUpdate(id, update, { new: true })`. Only organizer or admin can update. Only `"DRAFT"` or `"REJECTED"` events can be edited by the organizer. Admin can edit any. **Visibility-widening guard:** if the event is currently `APPROVED` with `visibility === "PRIVATE"`, reject any change of `visibility` to `"PUBLIC"` or `"UNLISTED"` with `400 VISIBILITY_CHANGE_REQUIRES_REPUBLISH`. PRIVATE events skip admin review on publish, so flipping them public after the fact would bypass review — organizer must unpublish back to DRAFT and republish.
 - `DELETE /api/events/:id` (auth) — Hard-delete via `EventModel.findByIdAndDelete(id)`. Only allowed if no registrations exist: pre-check with `RegistrationModel.countDocuments({ eventId: id })` (return `409` if > 0). Only organizer or admin.
-- `POST /api/events/:id/publish` (auth + consentCheck + tierCheck) — Transition from `"DRAFT"` to `"PENDING_REVIEW"` (if first published event) or `"APPROVED"` (subsequent events). **Tier check:** `EventModel.countDocuments({ organizerId, status: "APPROVED" })` must be below tier limit.
+- `POST /api/events/:id/publish` (auth + consentCheck + tierCheck) — Transition from `"DRAFT"` (or `"REJECTED"`). For `visibility` of `"PUBLIC"` or `"UNLISTED"`, status goes to `"PENDING"` and waits for admin approval on every publish. For `visibility === "PRIVATE"`, status goes directly to `"APPROVED"` (private events aren't listed and only reach invited attendees, so admin review adds no value). **Tier check:** `EventModel.countDocuments({ organizerId, status: { $in: ["PENDING", "APPROVED"] } })` must be below tier limit. DRAFTs are not counted (they're private to the organizer; tier gates only active/published events).
 - `GET /api/events/mine` (auth) — Current user's events (all statuses). Use `EventModel.aggregate(...)` with a `$lookup` on `Registration` to attach registration count per event.
 - `GET /api/events/:id` — Single event. If `"PRIVATE"`, validate requester is organizer, admin, or registered attendee. If status is not `"APPROVED"`, only organizer/admin can view.
 
 **Acceptance criteria:**
 - Events created via API are stored in MongoDB.
-- Publishing first event sets status to `PENDING_REVIEW`.
-- Publishing second event (after first is approved) sets status to `APPROVED`.
+- Publishing a PUBLIC or UNLISTED event always sets status to `PENDING` (admin approval required every time).
+- Publishing a PRIVATE event sets status directly to `APPROVED` (no admin review).
 - FREE tier user cannot publish a third active event (receives `403 TIER_LIMIT_EXCEEDED`).
 - Organizer cannot delete an event that has registrations.
 
@@ -362,7 +361,7 @@ Endpoints:
 
 **What to build:**
 - Wire `EventCreationForm.tsx` to `POST /api/events` then `POST /api/events/:id/publish`.
-- After submission, if status comes back as `PENDING_REVIEW`, show an info banner: "Your event has been submitted for admin review. You'll be notified once it's approved."
+- After submission, if status comes back as `PENDING`, show an info banner: "Your event has been submitted for admin review. You'll be notified once it's approved."
 - If status is `APPROVED` (returning user), show a success screen with a link to the event.
 - Add a **Step 4** to the creation form: **Visibility & Team Settings**:
   - Visibility selector: Public / Unlisted / Private. Show a locked icon with tooltip "Upgrade to PRO" for Private on FREE tier.
@@ -960,7 +959,7 @@ Pick up tasks in this order to minimize blocking dependencies. Waves map directl
 
 These decisions were made to keep planning unblocked. Confirm or override as needed:
 
-1. **First event only needs review?** — Assumed yes. After first event is approved, subsequent events bypass review. If the team wants stricter control (e.g., review every event from FREE tier users), the status machine in S2-005 needs updating.
+1. **Every PUBLIC/UNLISTED event needs admin review on every publish.** PRIVATE events skip review and go straight to `APPROVED` since they're only visible to the organizer and explicitly invited attendees.
 2. **Team counts as one registration slot** — Assumed the team occupies 1 slot by default. The `teamCapacityMode` field supports switching to "per_member" if needed.
 3. **No payment integration in Sprint 2** — Tier is currently a field on the User document. Upgrading requires direct DB edit or an admin action until Stripe is integrated (Sprint 3).
 4. **Unlisted events are accessible by direct link without login** — If you want unlisted events to require login, the `GET /api/events/:id` guard in S2-006 needs a small change.

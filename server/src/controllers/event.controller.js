@@ -42,7 +42,10 @@ export const updateEvent = async (req, res) => {
 		const { id } = req.params;
 		const result = await EventService.updateEvent(id, req.user.userId, req.body, req.user.role === "ADMIN");
 		if (result.error) {
-			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : result.error === "NOT_EDITABLE" ? 400 : 400;
+			const status =
+				result.error === "NOT_FOUND" ? 404
+					: result.error === "FORBIDDEN" ? 403
+						: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(200).json(fromDoc(result.event));

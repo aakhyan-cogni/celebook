@@ -125,8 +125,11 @@ export const getEventById = async (eventId, requestingUser = null) => {
 	return { event };
 };
 
-export const countApprovedEvents = async (organizerId) => {
-	return EventModel.countDocuments({ organizerId: new mongoose.Types.ObjectId(organizerId), status: "APPROVED" });
+export const countActiveEvents = async (organizerId) => {
+	return EventModel.countDocuments({
+		organizerId: new mongoose.Types.ObjectId(organizerId),
+		status: { $in: ["PENDING", "APPROVED"] },
+	});
 };
 
 export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
@@ -148,13 +151,15 @@ export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
 		return { error: "FORBIDDEN" };
 	}
 
-	const approvedCount = await countApprovedEvents(organizerId);
+	const activeCount = await countActiveEvents(organizerId);
 	const tierLimit = TIER_LIMITS[user.tier] ?? 0;
-	if (approvedCount >= tierLimit) {
+	if (activeCount >= tierLimit) {
 		return { error: "TIER_LIMIT_EXCEEDED" };
 	}
 
-	const nextStatus = approvedCount === 0 ? "PENDING" : "APPROVED";
+	// PUBLIC/UNLISTED always need admin review on every publish.
+	// PRIVATE events skip review — they're not listed and only reach invited attendees.
+	const nextStatus = event.visibility === "PRIVATE" ? "APPROVED" : "PENDING";
 	event.status = nextStatus;
 	event.rejectionReason = null;
 	await event.save();
@@ -174,6 +179,18 @@ export const updateEvent = async (eventId, organizerId, data, isAdmin = false) =
 
 	if (!isAdmin && !["DRAFT", "REJECTED"].includes(event.status)) {
 		return { error: "NOT_EDITABLE" };
+	}
+
+	// Block widening visibility on an APPROVED event: a PRIVATE event was approved without
+	// admin review, so flipping it to PUBLIC/UNLISTED would let it go live unreviewed.
+	// Organizer must unpublish (back to DRAFT) and republish to trigger review.
+	if (
+		event.status === "APPROVED" &&
+		event.visibility === "PRIVATE" &&
+		data.visibility !== undefined &&
+		data.visibility !== "PRIVATE"
+	) {
+		return { error: "VISIBILITY_CHANGE_REQUIRES_REPUBLISH" };
 	}
 
 	const update = {};
@@ -197,12 +214,13 @@ export const deleteEvent = async (eventId, organizerId, isAdmin = false) => {
 		return { error: "FORBIDDEN" };
 	}
 
-	const confirmedCount = await RegistrationModel.countDocuments({
+	// Block delete if ANY registration exists (PENDING/CONFIRMED/CANCELLED) — even cancelled
+	// registrations are an audit trail we don't want to lose by hard-deleting the parent event.
+	const registrationCount = await RegistrationModel.countDocuments({
 		eventId: new mongoose.Types.ObjectId(eventId),
-		status: "CONFIRMED",
 	});
 
-	if (confirmedCount > 0) {
+	if (registrationCount > 0) {
 		return { error: "HAS_REGISTRATIONS" };
 	}
 
