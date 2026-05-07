@@ -70,7 +70,7 @@ async function seed() {
 			tier: "FREE",
 			consentAccepted: true,
 			consentAcceptedAt: new Date(),
-			consentVersion: null,
+			consentVersion: "v1.0",
 			refreshToken: null,
 		});
 
@@ -100,6 +100,7 @@ async function seed() {
 			organizerId: user?._id,
 			organizerEmail: userEmail,
 			status: "PENDING",
+			visibility:"PUBLIC"
 		});
 
 		console.log("Event created");
