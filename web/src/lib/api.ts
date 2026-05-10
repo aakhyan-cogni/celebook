@@ -2,6 +2,7 @@ import { logout as logoutReq } from "../api/auth.api";
 import { useAuthStore } from "../store/useAuthStore";
 
 const BASE_URL = "http://localhost:5000/api";
+export { BASE_URL }; // exported so pages can build dynamic paths like /events/:id
 
 type FetchOptions = RequestInit & { body?: any };
 

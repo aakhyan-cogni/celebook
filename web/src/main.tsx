@@ -5,6 +5,7 @@ import "./style.scss";
 import { BrowserRouter, Route, Routes } from "react-router";
 import Login from "./pages/login";
 import GlobalEventPage from "./pages/Global_Event";
+import EventDetailPage from "./pages/Event"; 
 import Navbar from "./components/Navbar";
 import "bootstrap";
 import Footer from "./components/Footer";
@@ -49,13 +50,17 @@ function Root() {
 				<Routes>
 					<Route path="/" element={<App />} />
 					<Route path="/login" element={<Login />} />
+
 					<Route path="/events" element={<GlobalEventPage />} />
+					
+					<Route path="/events/:id" element={<EventDetailPage />} />
+
 					<Route path="/dashboard" element={<Dashboard />} />
 					<Route path="/create" element={<EventCreationForm />} />
 					<Route path="/pricing" element={<Pricing />} />
 					<Route path="/support" element={<SupportPage />} />
 					<Route path="/notifications" element={<NotificationPage />} />
-					<Route path="/admin" element={<Admin/>} />
+					<Route path="/admin" element={<Admin />} />
 					<Route path="/terms" element={<Terms />} />
 				</Routes>
 				<Footer />

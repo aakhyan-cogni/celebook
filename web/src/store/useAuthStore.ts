@@ -8,6 +8,7 @@ export interface User {
 	name: string;
 	avatar: string;
 	role?: string;
+	tier?: "FREE" | "PRO" | "ULTIMATE"; // added — needed for FREE tier gate in EventCreationForm
 	phoneNumber?: string;
 	dob?: string;
 	gender?: "Male" | "Female" | "Others";
