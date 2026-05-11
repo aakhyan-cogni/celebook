@@ -41,12 +41,7 @@ export default function GlobalEventPage() {
 	// 400ms debounce — so API isn't called on every keystroke
 	const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	const fetchEvents = async (
-		search: string,
-		category: string,
-		location: string,
-		currentPage: number,
-	) => {
+	const fetchEvents = async (search: string, category: string, location: string, currentPage: number) => {
 		try {
 			setLoading(true);
 			setError("");
@@ -55,7 +50,7 @@ export default function GlobalEventPage() {
 				page: currentPage.toString(),
 				limit: "12",
 			};
-			if (search)             queryParams.q        = search;
+			if (search) queryParams.q = search;
 			if (category !== "All") queryParams.category = category;
 			if (location !== "All") queryParams.location = location;
 
@@ -144,7 +139,10 @@ export default function GlobalEventPage() {
 							/>
 							{/* Spinner appears inside search bar while loading */}
 							{loading && (
-								<div className="spinner-border spinner-border-sm text-primary ms-2 flex-shrink-0" role="status">
+								<div
+									className="spinner-border spinner-border-sm text-primary ms-2 flex-shrink-0"
+									role="status"
+								>
 									<span className="visually-hidden">Loading...</span>
 								</div>
 							)}
@@ -214,12 +212,9 @@ export default function GlobalEventPage() {
 				{!loading && events.length > 0 && (
 					<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="row g-4">
 						{events.map((event) => (
-							<motion.div key={event.id} layout variants={fadeInUp} className="col-12 col-md-6 col-lg-4">
-								{/* Changed: navigate to /events/:id instead of ?q=id */}
-								<EventCard
-									event={event}
-									onClick={() => navigate(`/events/${event.id}`)}
-								/>
+							<motion.div key={event._id} layout variants={fadeInUp} className="col-12 col-md-6 col-lg-4">
+								{/* Navigate to /events/:_id with MongoDB ObjectId */}
+								<EventCard event={event} onClick={() => navigate(`/events/${event._id}`)} />
 							</motion.div>
 						))}
 					</motion.div>
