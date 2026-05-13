@@ -10,5 +10,7 @@ const registrationSchema = new mongoose.Schema(
 	{ timestamps: true },
 );
 
+registrationSchema.index({ eventId: 1, userId: 1 }, { unique: true });
+
 export const RegistrationModel = mongoose.model("Registration", registrationSchema);
 export const REGISTRATION_COLLECTION = "Registration";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { useNavigate, useSearchParams } from "react-router";
@@ -11,6 +11,8 @@ const fadeInUp = {
 };
 
 const TOTAL_STEPS = 4;
+const TIER_IMAGE_LIMITS: Record<string, number> = { FREE: 1, PRO: 5, ULTIMATE: 10 };
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const EventCreationForm = () => {
 	const [step,          setStep]          = useState(1);
@@ -18,11 +20,20 @@ const EventCreationForm = () => {
 	const [submitting,    setSubmitting]    = useState(false);
 	const [existingEvent, setExistingEvent] = useState<any>(null);
 
+	// ── Image upload state ──────────────────────────────────────────────────
+	const [imageFiles,    setImageFiles]    = useState<File[]>([]);
+	const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+	const [imageError,    setImageError]    = useState("");
+	const [uploading,     setUploading]     = useState(false);
+	const [existingUrls,  setExistingUrls]  = useState<string[]>([]); // already-saved URLs when editing
+	const fileInputRef = useRef<HTMLInputElement>(null);
+
 	const navigate       = useNavigate();
 	const [searchParams] = useSearchParams();
 	const accessToken    = useAuthStore((s) => s.accessToken);
 	const userTier       = useAuthStore((s) => s.user?.tier) ?? "FREE";
 	const isFreeTier     = userTier === "FREE";
+	const imageLimit     = TIER_IMAGE_LIMITS[userTier] ?? 1;
 
 	// Edit mode: /create?edit=<eventId>
 	const editId = searchParams.get("edit");
@@ -74,6 +85,8 @@ const EventCreationForm = () => {
 					teamCapacityMode: ev.teamCapacityMode ?? "PER_MEMBER",
 				});
 				setIsFree(ev.price === 0);
+				// Load existing images as already-saved URLs
+				if (ev.imgUrls?.length) setExistingUrls(ev.imgUrls);
 			} catch {
 				toast.error("Could not load event for editing.");
 			}
@@ -81,7 +94,89 @@ const EventCreationForm = () => {
 		load();
 	}, [editId]);
 
-	// Step navigation
+	// ── Image handling ──────────────────────────────────────────────────────
+	const totalImageCount = existingUrls.length + imageFiles.length;
+
+	const handleImageSelect = (files: FileList | null) => {
+		if (!files) return;
+		setImageError("");
+
+		const newFiles = Array.from(files);
+
+		// Validate types
+		const invalid = newFiles.filter((f) => !ACCEPTED_TYPES.includes(f.type));
+		if (invalid.length) {
+			setImageError("Only JPEG, PNG, and WebP images are allowed.");
+			return;
+		}
+
+		// Validate size (5 MB each)
+		const tooBig = newFiles.filter((f) => f.size > 5 * 1024 * 1024);
+		if (tooBig.length) {
+			setImageError("Each image must be under 5 MB.");
+			return;
+		}
+
+		// Check tier limit
+		if (existingUrls.length + imageFiles.length + newFiles.length > imageLimit) {
+			setImageError(`Your ${userTier} plan allows at most ${imageLimit} image(s).`);
+			return;
+		}
+
+		setImageFiles((prev) => [...prev, ...newFiles]);
+		const previews = newFiles.map((f) => URL.createObjectURL(f));
+		setImagePreviews((prev) => [...prev, ...previews]);
+	};
+
+	const removeNewImage = (index: number) => {
+		URL.revokeObjectURL(imagePreviews[index]);
+		setImageFiles((prev) => prev.filter((_, i) => i !== index));
+		setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+		setImageError("");
+	};
+
+	const removeExistingImage = async (url: string, eventId: string) => {
+		try {
+			const res = await fetch(`${BASE_URL}/events/${eventId}/images`, {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+				credentials: "include",
+				body: JSON.stringify({ url }),
+			});
+			if (!res.ok) { toast.error("Could not remove image."); return; }
+			setExistingUrls((prev) => prev.filter((u) => u !== url));
+		} catch {
+			toast.error("Could not remove image.");
+		}
+	};
+
+	// Upload new images to the backend (called after event is created/updated)
+	const uploadImages = async (eventId: string) => {
+		if (imageFiles.length === 0) return;
+		setUploading(true);
+		try {
+			const fd = new FormData();
+			imageFiles.forEach((f) => fd.append("images", f));
+			const res = await fetch(`${BASE_URL}/events/${eventId}/images`, {
+				method: "POST",
+				headers: { Authorization: `Bearer ${accessToken}` }, // no Content-Type — browser sets multipart boundary
+				credentials: "include",
+				body: fd,
+			});
+			if (!res.ok) {
+				const err = await res.json();
+				toast.error(err.message || "Image upload failed.");
+			} else {
+				toast.success("Images uploaded.");
+			}
+		} catch {
+			toast.error("Image upload failed.");
+		} finally {
+			setUploading(false);
+		}
+	};
+
+	// ── Step navigation ─────────────────────────────────────────────────────
 	const nextStep = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -93,12 +188,11 @@ const EventCreationForm = () => {
 		setStep((p) => Math.max(p - 1, 1));
 	};
 
-	// Validation per step
 	const isStepValid = () => {
 		if (step === 1) return formData.title.trim() !== "" && formData.description.trim() !== "";
 		if (step === 2) return formData.date !== "" && formData.location.trim() !== "";
 		if (step === 3) return (isFree || Number(formData.price) > 0) && Number(formData.capacity) > 0;
-		return true; // step 4 — all optional
+		return true;
 	};
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -131,25 +225,34 @@ const EventCreationForm = () => {
 		Authorization:  `Bearer ${accessToken}`,
 	});
 
-	// ── Save as Draft ─────────────────────────────────────────────────────────
+	// ── Save as Draft ───────────────────────────────────────────────────────
 	const handleSaveDraft = async (e: React.MouseEvent) => {
 		e.preventDefault();
 		setSubmitting(true);
 		try {
 			const payload = buildPayload();
+			let savedId: string;
+
 			if (editId && existingEvent) {
 				const res = await fetch(`${BASE_URL}/events/${editId}`, {
 					method: "PATCH", headers: authHeaders(), credentials: "include",
 					body: JSON.stringify(payload),
 				});
 				if (!res.ok) throw new Error((await res.json()).message);
+				savedId = editId;
 			} else {
 				const res = await fetch(`${BASE_URL}/events`, {
 					method: "POST", headers: authHeaders(), credentials: "include",
 					body: JSON.stringify(payload),
 				});
 				if (!res.ok) throw new Error((await res.json()).message);
+				const created = await res.json();
+				savedId = created.id;
 			}
+
+			// Upload images after we have the event ID
+			await uploadImages(savedId);
+
 			toast.success("Draft saved.");
 			navigate("/dashboard");
 		} catch (err: any) {
@@ -159,7 +262,7 @@ const EventCreationForm = () => {
 		}
 	};
 
-	// ── Publish ───────────────────────────────────────────────────────────────
+	// ── Publish ─────────────────────────────────────────────────────────────
 	const handlePublish = async (e: React.MouseEvent | React.FormEvent) => {
 		e.preventDefault();
 		setSubmitting(true);
@@ -167,7 +270,6 @@ const EventCreationForm = () => {
 			const payload = buildPayload();
 			let eventId: string;
 
-			// Step 1: create or update
 			if (editId && existingEvent) {
 				const res = await fetch(`${BASE_URL}/events/${editId}`, {
 					method: "PATCH", headers: authHeaders(), credentials: "include",
@@ -185,7 +287,9 @@ const EventCreationForm = () => {
 				eventId = created.id;
 			}
 
-			// Step 2: publish
+			// Upload images before publishing
+			await uploadImages(eventId);
+
 			const pubRes = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
 				method: "POST", headers: authHeaders(), credentials: "include",
 			});
@@ -202,14 +306,12 @@ const EventCreationForm = () => {
 			const published = await pubRes.json();
 
 			if (published.status === "PENDING") {
-				// First-time publisher → admin review required
 				toast.success(
 					"Your event has been submitted for admin review. You'll be notified once it's approved.",
 					{ duration: 7000 },
 				);
 				navigate("/dashboard");
 			} else if (published.status === "APPROVED") {
-				// Returning publisher or private event → live immediately
 				toast.success("Your event is live! 🎉", { duration: 4000 });
 				navigate(`/events/${eventId}`);
 			} else {
@@ -222,6 +324,107 @@ const EventCreationForm = () => {
 			setSubmitting(false);
 		}
 	};
+
+	// ── Image upload zone (rendered inside Step 1) ──────────────────────────
+	const ImageUploadZone = () => (
+		<div className="mb-3">
+			<label className="form-label fw-semibold">
+				Event Images{" "}
+				<span className="text-body-secondary fw-normal small">
+					({totalImageCount}/{imageLimit} — {userTier} plan)
+				</span>
+			</label>
+
+			{/* Drop zone */}
+			{totalImageCount < imageLimit && (
+				<div
+					className="border border-2 border-dashed rounded-3 p-3 text-center"
+					style={{ borderColor: "var(--bs-primary)", cursor: "pointer", borderStyle: "dashed" }}
+					onClick={() => fileInputRef.current?.click()}
+					onDragOver={(e) => e.preventDefault()}
+					onDrop={(e) => {
+						e.preventDefault();
+						handleImageSelect(e.dataTransfer.files);
+					}}
+				>
+					<div className="text-primary mb-1" style={{ fontSize: "1.8rem" }}>📷</div>
+					<p className="mb-0 small text-body-secondary">
+						Drag & drop or <span className="text-primary fw-bold">browse</span>
+					</p>
+					<p className="mb-0 small text-body-secondary">JPEG, PNG, WebP — max 5 MB each</p>
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						multiple
+						className="d-none"
+						onChange={(e) => handleImageSelect(e.target.files)}
+					/>
+				</div>
+			)}
+
+			{imageError && (
+				<div className="text-danger small mt-1">{imageError}</div>
+			)}
+
+			{/* Previews — new files */}
+			{imagePreviews.length > 0 && (
+				<div className="d-flex flex-wrap gap-2 mt-2">
+					{imagePreviews.map((src, i) => (
+						<div key={i} className="position-relative" style={{ width: 80, height: 80 }}>
+							<img
+								src={src}
+								alt={`preview-${i}`}
+								className="rounded-3 object-fit-cover w-100 h-100"
+								style={{ objectFit: "cover" }}
+							/>
+							<button
+								type="button"
+								onClick={() => removeNewImage(i)}
+								className="btn btn-danger btn-sm position-absolute top-0 end-0 p-0 lh-1"
+								style={{ width: 20, height: 20, fontSize: 12 }}
+							>
+								×
+							</button>
+						</div>
+					))}
+				</div>
+			)}
+
+			{/* Already-saved images (edit mode) */}
+			{existingUrls.length > 0 && (
+				<div className="d-flex flex-wrap gap-2 mt-2">
+					{existingUrls.map((url, i) => (
+						<div key={i} className="position-relative" style={{ width: 80, height: 80 }}>
+							<img
+								src={`http://localhost:5000${url}`}
+								alt={`saved-${i}`}
+								className="rounded-3 w-100 h-100"
+								style={{ objectFit: "cover" }}
+							/>
+							{editId && (
+								<button
+									type="button"
+									onClick={() => removeExistingImage(url, editId)}
+									className="btn btn-danger btn-sm position-absolute top-0 end-0 p-0 lh-1"
+									style={{ width: 20, height: 20, fontSize: 12 }}
+								>
+									×
+								</button>
+							)}
+						</div>
+					))}
+				</div>
+			)}
+
+			{uploading && (
+				<div className="small text-primary mt-1">
+					<span className="spinner-border spinner-border-sm me-1" role="status" />
+					Uploading images...
+				</div>
+			)}
+		</div>
+	);
 
 	return (
 		<div className="container py-4 px-0 mx-auto">
@@ -271,7 +474,7 @@ const EventCreationForm = () => {
 						<form onSubmit={handlePublish}>
 							<AnimatePresence>
 
-								{/* ── Step 1: Event Basics (unchanged from original) ── */}
+								{/* ── Step 1: Event Basics ── */}
 								<motion.div
 									key="step1"
 									className={step !== 1 ? "d-none" : ""}
@@ -304,19 +507,14 @@ const EventCreationForm = () => {
 												<option value="Workshop">Workshop</option>
 												<option value="Social">Social</option>
 												<option value="Entertainment">Entertainment</option>
-												<option value="Health & Wellness">Health & Wellness</option>
+												<option value="Health & Wellness">Health &amp; Wellness</option>
 												<option value="Education">Education</option>
 												<option value="Other">Other</option>
 											</select>
 										</div>
+										{/* ── Real image upload — replaces the old "coming soon" input ── */}
 										<div className="col-md-6 mb-3">
-											<label className="form-label fw-semibold">Media Upload</label>
-											<input
-												type="file"
-												name="media"
-												className="form-control form-control-lg rounded-3 shadow-sm"
-											/>
-											<div className="form-text">Image upload coming soon.</div>
+											<ImageUploadZone />
 										</div>
 									</div>
 									<div className="mb-3">
@@ -332,7 +530,7 @@ const EventCreationForm = () => {
 									</div>
 								</motion.div>
 
-								{/* ── Step 2: Logistics (unchanged from original) ── */}
+								{/* ── Step 2: Logistics ── */}
 								<motion.div
 									key="step2"
 									className={step !== 2 ? "d-none" : ""}
@@ -340,7 +538,7 @@ const EventCreationForm = () => {
 									animate={{ x: 0, opacity: 1 }}
 									exit={{ x: -20, opacity: 0 }}
 								>
-									<h4 className="fw-bold mb-4">Step 2: Logistics & Features</h4>
+									<h4 className="fw-bold mb-4">Step 2: Logistics &amp; Features</h4>
 									<div className="row mb-3">
 										<div className="col-md-6">
 											<label className="form-label fw-semibold">Date</label>
@@ -377,7 +575,7 @@ const EventCreationForm = () => {
 									</div>
 								</motion.div>
 
-								{/* ── Step 3: Ticketing (unchanged from original) ── */}
+								{/* ── Step 3: Ticketing ── */}
 								<motion.div
 									key="step3"
 									className={step !== 3 ? "d-none" : ""}
@@ -385,7 +583,7 @@ const EventCreationForm = () => {
 									animate={{ x: 0, opacity: 1 }}
 									exit={{ x: -20, opacity: 0 }}
 								>
-									<h4 className="fw-bold mb-4">Step 3: Ticketing & Squad Pay</h4>
+									<h4 className="fw-bold mb-4">Step 3: Ticketing &amp; Squad Pay</h4>
 									<div className="mb-4">
 										<label className="form-label fw-semibold d-block">Is this a free event?</label>
 										<div className="btn-group w-100 shadow-sm" role="group">
@@ -439,7 +637,7 @@ const EventCreationForm = () => {
 										<div className="form-check form-switch">
 											<input className="form-check-input" type="checkbox" id="squadPay" defaultChecked />
 											<label className="form-check-label fw-bold" htmlFor="squadPay">
-												Enable Squad Booking & Split Pay{" "}
+												Enable Squad Booking &amp; Split Pay{" "}
 												<span className="badge bg-primary ms-2">USP</span>
 											</label>
 											<p className="small text-muted mb-0">Allow friends to split bills automatically.</p>
@@ -447,7 +645,7 @@ const EventCreationForm = () => {
 									</div>
 								</motion.div>
 
-								{/* ── Step 4: Visibility & Team Settings (NEW) ── */}
+								{/* ── Step 4: Visibility & Team Settings ── */}
 								<motion.div
 									key="step4"
 									className={step !== 4 ? "d-none" : ""}
@@ -455,9 +653,8 @@ const EventCreationForm = () => {
 									animate={{ x: 0, opacity: 1 }}
 									exit={{ x: -20, opacity: 0 }}
 								>
-									<h4 className="fw-bold mb-4">Step 4: Visibility & Team Settings</h4>
+									<h4 className="fw-bold mb-4">Step 4: Visibility &amp; Team Settings</h4>
 
-									{/* Visibility selector */}
 									<div className="mb-4">
 										<label className="form-label fw-semibold">Visibility</label>
 										<select
@@ -465,7 +662,6 @@ const EventCreationForm = () => {
 											className="form-select form-control-lg rounded-3 shadow-sm"
 											value={formData.visibility}
 											onChange={(e) => {
-												// FREE tier cannot select Private
 												if (e.target.value === "PRIVATE" && isFreeTier) return;
 												handleChange(e);
 											}}
@@ -491,7 +687,6 @@ const EventCreationForm = () => {
 
 									<hr className="opacity-10 my-4" />
 
-									{/* Team Event toggle — PRO feature */}
 									<div className="p-4 bg-body-tertiary rounded-4 border border-primary border-opacity-10">
 										<div className="form-check form-switch mb-1">
 											<input
@@ -573,12 +768,11 @@ const EventCreationForm = () => {
 								</button>
 
 								<div className="d-flex gap-2">
-									{/* Save as Draft — visible on every step */}
 									<button
 										type="button"
 										className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
 										onClick={handleSaveDraft}
-										disabled={submitting || !isStepValid()}
+										disabled={submitting || uploading || !isStepValid()}
 									>
 										{submitting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
 										💾 Save Draft
@@ -599,12 +793,12 @@ const EventCreationForm = () => {
 											whileTap={isStepValid() ? { scale: 0.95 } : {}}
 											type="submit"
 											className="btn btn-success px-5 rounded-pill shadow fw-bold"
-											disabled={!isStepValid() || submitting}
+											disabled={!isStepValid() || submitting || uploading}
 										>
-											{submitting ? (
+											{submitting || uploading ? (
 												<>
 													<span className="spinner-border spinner-border-sm me-2" role="status" />
-													Publishing...
+													{uploading ? "Uploading..." : "Publishing..."}
 												</>
 											) : (
 												"🚀 Publish Event"

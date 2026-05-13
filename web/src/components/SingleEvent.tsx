@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { BASE_URL } from "../lib/api";
+import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
 import toast from "react-hot-toast";
 
 interface SingleEventProps {
@@ -232,8 +232,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				<motion.img
 					layoutId={`${event._id || event.id}`}
 					src={
-						event.imgUrls?.[0] ??
-						"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1000"
+						event.imgUrls?.[0]
+							? getImageUrl(event.imgUrls[0])
+							: EVENT_FALLBACK_IMG
 					}
 					className="img-fluid rounded-4 shadow-sm w-100 object-fit-cover"
 					style={{

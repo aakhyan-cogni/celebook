@@ -2,7 +2,18 @@ import { logout as logoutReq } from "../api/auth.api";
 import { useAuthStore } from "../store/useAuthStore";
 
 const BASE_URL = "http://localhost:5000/api";
-export { BASE_URL }; // exported so pages can build dynamic paths like /events/:id
+export { BASE_URL };
+
+const SERVER_ORIGIN = "http://localhost:5000";
+
+export function getImageUrl(path: string | null | undefined): string {
+	if (!path) return "";
+	if (path.startsWith("http://") || path.startsWith("https://")) return path;
+	return `${SERVER_ORIGIN}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+export const EVENT_FALLBACK_IMG =
+	"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1000";
 
 type FetchOptions = RequestInit & { body?: any };
 
