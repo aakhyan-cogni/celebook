@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
 
 interface EventCardProps {
-	event: any; 
+	event: any;
 	onClick: (event: any) => void;
 }
 
@@ -75,6 +76,11 @@ export function EventCard({ event, onClick }: EventCardProps) {
 		);
 	};
 
+	// Fix: use getImageUrl so relative paths (/uploads/...) become full URLs
+	const imgSrc = event.imgUrls?.[0]
+		? getImageUrl(event.imgUrls[0])
+		: EVENT_FALLBACK_IMG;
+
 	return (
 		<motion.div
 			variants={fadeInUp}
@@ -90,10 +96,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
 		>
 			<div className="position-relative">
 				<img
-					src={
-						event.imgUrls?.[0] ??
-						"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=1000"
-					}
+					src={imgSrc}
 					className="card-img-top"
 					alt={event.title}
 					style={{ height: "200px", objectFit: "cover" }}

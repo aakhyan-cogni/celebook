@@ -32,3 +32,22 @@ export async function updateUser(req, res) {
 		res.status(500).json({ message: "Error updating user profile" });
 	}
 }
+
+export async function uploadAvatar(req, res) {
+	try {
+		if (!req.user) return res.status(401).json({ message: "User not authenticated" });
+
+		if (!req.file) {
+			return res.status(400).json({ message: "No file uploaded" });
+		}
+
+		const filename = req.file.filename;
+
+		await UserService.updateUser(req.user.userId, { avatar: filename });
+
+		res.json({ avatarUrl: `/uploads/avatars/${filename}`, filename });
+	} catch (error) {
+		console.error("[uploadAvatar] Error:", error);
+		res.status(500).json({ message: "Avatar upload failed" });
+	}
+}
