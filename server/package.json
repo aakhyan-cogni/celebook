@@ -10,7 +10,9 @@
 		"db:up": "mongod --port 27018 --dbpath \"./mongo-data\" --replSet rs0",
 		"dev": "nodemon src/index.js",
 		"db:seed": "node src/seed.js",
-		"start": "npm run db:seed && node src/index.js"
+		"start": "npm run db:seed && node src/index.js",
+		"test": "mocha",
+		"test:watch": "mocha --watch"
 	},
 	"dependencies": {
 		"bcryptjs": "^3.0.3",
@@ -23,6 +25,10 @@
 		"multer": "^2.1.1"
 	},
 	"devDependencies": {
-		"nodemon": "^3.1.14"
+		"chai": "^5.3.3",
+		"mocha": "^10.8.2",
+		"nodemon": "^3.1.14",
+		"sinon": "^19.0.5",
+		"supertest": "^7.2.2"
 	}
 }
