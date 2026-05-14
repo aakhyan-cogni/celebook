@@ -4,5 +4,5 @@ import { authenticate } from "../middleware/auth.middleware.js";
 
 export const registrationRouter = Router();
 
-// GET /api/registrations/mine — Get user's registrations
-registrationRouter.get("/mine", authenticate, RegistrationController.getMyRegistrations);
+// GET /api/registrations/my-registrations — Get user's registrations
+registrationRouter.get("/my-registrations", authenticate, RegistrationController.getMyRegistrations);
