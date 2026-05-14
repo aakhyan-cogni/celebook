@@ -9,6 +9,7 @@ export async function getPaginatedUsers(page, limit, role) {
 		.select("-password -refreshToken")
 		.skip((page - 1) * limit)
 		.limit(limit)
+		.sort({updatedAt:-1})
 		.lean();
 
 	const total = await UserModel.countDocuments(filter);
@@ -32,6 +33,7 @@ export async function getPaginatedEvents(page, limit, status) {
 	const docs = await EventModel.find(filter)
 		.skip((page - 1) * limit)
 		.limit(limit)
+		.sort({updatedAt:-1})
 		.lean();
 
 	const total = await EventModel.countDocuments(filter);
