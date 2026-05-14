@@ -96,4 +96,6 @@ type API_PATH =
 	| `/events`
 	| `/consent/accept`
 	| `/admin/events`
-	| `/admin/users`;
+	| `/admin/users`
+	| `/events/mine`
+	| `/registrations/my-registrations`;

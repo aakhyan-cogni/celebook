@@ -10,6 +10,8 @@ const { UserModel } = await import("./models/user.model.js");
 const { EventModel } = await import("./models/event.model.js");
 const { default: bcrypt } = await import("bcryptjs");
 
+const {getCurrentTermsVersion} = await import("./services/consent.service.js")
+
 await connectDB();
 
 async function seed() {
@@ -38,7 +40,7 @@ async function seed() {
 			tier: "ULTIMATE",
 			consentAccepted: true,
 			consentAcceptedAt: new Date(),
-			consentVersion: null,
+			consentVersion: (await getCurrentTermsVersion()).toString(),
 			refreshToken: null,
 		});
 
@@ -70,7 +72,7 @@ async function seed() {
 			tier: "FREE",
 			consentAccepted: true,
 			consentAcceptedAt: new Date(),
-			consentVersion: null,
+			consentVersion: (await getCurrentTermsVersion()).toString(),
 			refreshToken: null,
 		});
 

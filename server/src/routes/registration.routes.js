@@ -6,3 +6,4 @@ export const registrationRouter = Router();
 
 // GET /api/registrations/mine — Get user's registrations
 registrationRouter.get("/mine", authenticate, RegistrationController.getMyRegistrations);
+
