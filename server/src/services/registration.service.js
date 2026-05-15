@@ -49,13 +49,32 @@ export async function registerForEvent(eventId, userId, formData = {}) {
 	}
 
 	try {
-		// Create registration
-		const registration = await RegistrationModel.create({
+		// Reactivate an existing CANCELLED row if present (the unique (eventId, userId)
+		// index would otherwise reject a fresh create), else insert a new one.
+		const existing = await RegistrationModel.findOne({
 			eventId: new mongoose.Types.ObjectId(eventId),
 			userId: new mongoose.Types.ObjectId(userId),
-			status: "CONFIRMED",
-			formData,
 		});
+
+		let registration;
+		if (existing) {
+			if (existing.status === "CONFIRMED") {
+				const duplicateError = new Error("ALREADY_REGISTERED");
+				duplicateError.code = "ALREADY_REGISTERED";
+				throw duplicateError;
+			}
+			existing.status = "CONFIRMED";
+			existing.formData = formData;
+			existing.registeredAt = new Date();
+			registration = await existing.save();
+		} else {
+			registration = await RegistrationModel.create({
+				eventId: new mongoose.Types.ObjectId(eventId),
+				userId: new mongoose.Types.ObjectId(userId),
+				status: "CONFIRMED",
+				formData,
+			});
+		}
 
 		// Upsert EventStat — track attendee
 		await EventStatModel.findOneAndUpdate(
@@ -79,7 +98,8 @@ export async function registerForEvent(eventId, userId, formData = {}) {
 
 		return { registration: populatedRegistration, event };
 	} catch (error) {
-		// Catch error 11000 (duplicate key)
+		if (error.code === "ALREADY_REGISTERED") throw error;
+		// Defensive: race could still produce a duplicate-key error
 		if (error.code === 11000) {
 			const duplicateError = new Error("ALREADY_REGISTERED");
 			duplicateError.code = "ALREADY_REGISTERED";
@@ -124,6 +144,12 @@ export async function cancelRegistration(eventId, userId) {
 	// Set status to CANCELLED
 	registration.status = "CANCELLED";
 	await registration.save();
+
+	// Cancelled attendees don't count toward stats — pull them from the EventStat
+	await EventStatModel.updateOne(
+		{ eventId: new mongoose.Types.ObjectId(eventId) },
+		{ $pull: { attendees: new mongoose.Types.ObjectId(userId) } },
+	);
 
 	return registration.populate([{ path: "eventId" }, { path: "userId" }]);
 }

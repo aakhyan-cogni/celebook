@@ -257,10 +257,10 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			);
 		}
 
-		if (success) {
+		if (isRegistered) {
 			return (
 				<button className="btn btn-success px-4 fw-bold rounded-pill" disabled>
-					 Registered
+					✓ Already Registered
 				</button>
 			);
 		}
