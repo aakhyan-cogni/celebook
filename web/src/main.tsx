@@ -18,6 +18,7 @@ import SupportPage from "./pages/SupportPage.tsx";
 import NotificationPage from "./pages/NotificationPage.tsx";
 import { Hydrate } from "./components/Hydrate.tsx";
 import ConsentModal from "./components/ConsentModal.tsx";
+import NotificationSocketProvider from "./components/NotificationSocketProvider.tsx";
 import Terms from "./pages/Terms.tsx";
 import Admin from "./pages/Admin.tsx";
 import UserProfilePage from "./pages/UserProfilePage.tsx";
@@ -46,6 +47,7 @@ function Root() {
 					fieldStrength={10}
 				/>
 				<Hydrate />
+				<NotificationSocketProvider />
 				<ConsentModal />
 				<Navbar />
 				<Routes>

@@ -1,7 +1,15 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { authRouter, consentRouter, eventRouter, userRouter, adminRouter, registrationRouter } from "./routes/index.js";
+import {
+	authRouter,
+	consentRouter,
+	eventRouter,
+	userRouter,
+	adminRouter,
+	registrationRouter,
+	notificationRouter,
+} from "./routes/index.js";
 
 const app = express();
 
@@ -20,6 +28,7 @@ app.use(express.static("public"));
 // Routes
 app.use("/api/events", eventRouter);
 app.use("/api/registrations", registrationRouter);
+app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/consent", consentRouter);

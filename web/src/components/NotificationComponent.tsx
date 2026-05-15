@@ -1,12 +1,11 @@
 import { MailOpen, Trash2 } from "lucide-react";
 
 interface NotificationDetails {
-	id: number;
+	id: string | number;
 	type: string;
 	text: string;
 	time: number;
 	isRead: boolean;
-	priority: "high" | "medium" | "low";
 }
 
 interface Props {

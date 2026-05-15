@@ -7,12 +7,14 @@ import EMS_LOGO_LIGHT from "../assets/EMS_LOGO_LIGHT.png";
 import EMS_LOGO_DARK from "../assets/EMS_LOGO_DARK.png";
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
+import { useNotificationStore } from "../store/useNotificationStore";
 import { logout } from "../api/auth.api";
 
 export default function Navbar() {
 	const user = useAuthStore((s) => s.user);
 	const localLogout = useAuthStore((s) => s.logout);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+	const unreadCount = useNotificationStore((s) => s.unreadCount);
 	const navigate = useNavigate();
 	const [isDark, setIsDark] = useState(() => {
 		return localStorage.getItem("theme") === "dark";
@@ -74,8 +76,23 @@ export default function Navbar() {
 				<ThemeSwitch isDark={isDark} setIsDark={setIsDark} />
 				{isAuthenticated ? (
 					<div className="d-flex align-items-center gap-2">
-						<Link to="/notifications">
+						<Link to="/notifications" className="position-relative text-body" aria-label="Notifications">
 							<Bell size={24} />
+							{unreadCount > 0 && (
+								<span
+									className="position-absolute translate-middle badge rounded-pill bg-danger"
+									style={{
+										top: 2,
+										left: "100%",
+										fontSize: "0.65rem",
+										padding: "0.2em 0.45em",
+										lineHeight: 1,
+									}}
+								>
+									{unreadCount > 99 ? "99+" : unreadCount}
+									<span className="visually-hidden">unread notifications</span>
+								</span>
+							)}
 						</Link>
 						<div style={{ width: "2rem", cursor: "pointer" }}>
 							<OverlayTrigger
