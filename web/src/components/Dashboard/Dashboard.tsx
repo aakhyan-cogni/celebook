@@ -45,7 +45,6 @@ export default function Dashboard() {
 
 	useEffect(() => { fetchMyEvents(); }, []);
 
-	// ── Publish a DRAFT event ──
 	const handlePublish = async (eventId: string) => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
@@ -71,7 +70,6 @@ export default function Dashboard() {
 		}
 	};
 
-	// ── delete ───
 	const handleDelete = async () => {
 		if (!deleteTarget) return;
 		setDeleting(true);
@@ -98,7 +96,6 @@ export default function Dashboard() {
 		}
 	};
 
-	// ── cancel ──
 	const handleCancel = async () => {
 		if (!cancelTarget) return;
 		setCancelling(true);
@@ -121,7 +118,6 @@ export default function Dashboard() {
 		}
 	};
 
-	// ── Duplicate ───
 	const handleDuplicate = async (eventId: string) => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${eventId}/duplicate`, {
@@ -135,7 +131,10 @@ export default function Dashboard() {
 		}
 	};
 
-	// ── Status badge ──
+	const goToEdit = (event: any) => {
+		navigate(`/create?edit=${event.id}`, { state: { eventData: event } });
+	};
+
 	const statusBadge = (event: any) => {
 		if (event.isCancelled) {
 			return <span className="badge bg-secondary rounded-pill px-2 py-1">Cancelled</span>;
@@ -163,7 +162,6 @@ export default function Dashboard() {
 		);
 	};
 
-	// ── Action buttons per status ────
 	const actionButtons = (event: any) => {
 		if (event.isCancelled) return null;
 
@@ -174,34 +172,44 @@ export default function Dashboard() {
 					<>
 						<button
 							className="btn btn-sm btn-outline-primary rounded-pill"
-							onClick={(e) => { e.stopPropagation(); navigate(`/create?edit=${event.id}`); }}
+							onClick={(e) => { e.stopPropagation(); goToEdit(event); }}
 						>
-							✏️ Edit
+							 Edit
 						</button>
 						<button
 							className="btn btn-sm btn-success rounded-pill"
 							onClick={(e) => { e.stopPropagation(); handlePublish(event.id); }}
 						>
-							🚀 Publish
+							 Publish
 						</button>
 						<button
 							className="btn btn-sm btn-outline-secondary rounded-pill"
 							onClick={(e) => { e.stopPropagation(); handleDuplicate(event.id); }}
 						>
-							📋 Duplicate
+							 Duplicate
 						</button>
 						<button
 							className="btn btn-sm btn-outline-danger rounded-pill"
 							onClick={(e) => { e.stopPropagation(); setDeleteTarget(event); }}
 						>
-							🗑️ Delete
+							 Delete
 						</button>
 					</>
 				)}
 
-				{/* PENDING → View only */}
+				{/* PENDING → View only, Cancel */}
 				{event.status === "PENDING" && (
-					<span className="small text-muted fst-italic">Awaiting admin review — editing locked</span>
+					<>
+						<span className="small text-muted fst-italic align-self-center">
+							Awaiting admin review — editing locked
+						</span>
+						<button
+							className="btn btn-sm btn-outline-danger rounded-pill"
+							onClick={(e) => { e.stopPropagation(); setCancelTarget(event); setCancelReason(""); }}
+						>
+							Cancel Event
+						</button>
+					</>
 				)}
 
 				{/* APPROVED → Duplicate, Cancel */}
@@ -211,7 +219,7 @@ export default function Dashboard() {
 							className="btn btn-sm btn-outline-secondary rounded-pill"
 							onClick={(e) => { e.stopPropagation(); handleDuplicate(event.id); }}
 						>
-							📋 Duplicate
+							 Duplicate
 						</button>
 						<button
 							className="btn btn-sm btn-outline-danger rounded-pill"
@@ -227,15 +235,15 @@ export default function Dashboard() {
 					<>
 						<button
 							className="btn btn-sm btn-primary rounded-pill"
-							onClick={(e) => { e.stopPropagation(); navigate(`/create?edit=${event.id}`); }}
+							onClick={(e) => { e.stopPropagation(); goToEdit(event); }}
 						>
-							✏️ Edit & Resubmit
+							 Edit & Resubmit
 						</button>
 						<button
 							className="btn btn-sm btn-outline-danger rounded-pill"
 							onClick={(e) => { e.stopPropagation(); setDeleteTarget(event); }}
 						>
-							🗑️ Delete
+							 Delete
 						</button>
 					</>
 				)}
@@ -245,7 +253,6 @@ export default function Dashboard() {
 
 	return (
 		<div className="container">
-			{/* Events You're Organizing */}
 			<section className="mb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4">
 					<h3 className="fw-bold mb-0">Events You're Organizing</h3>
@@ -270,11 +277,9 @@ export default function Dashboard() {
 						{myEvents.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
 								<div className="position-relative">
-									{/* Status badge overlay */}
 									<div className="position-absolute top-0 start-0 m-2" style={{ zIndex: 10 }}>
 										{statusBadge(event)}
 									</div>
-									{/* Registration count badge */}
 									{event.registrationCount > 0 && (
 										<div className="position-absolute top-0 end-0 m-2" style={{ zIndex: 10 }}>
 											<span className="badge bg-info text-dark rounded-pill px-2 py-1">
@@ -282,20 +287,17 @@ export default function Dashboard() {
 											</span>
 										</div>
 									)}
-									{/* Clicking the card navigates to event detail page */}
 									<EventCard
 										event={event}
-										onClick={() => navigate(`/events/${event.id}`)}
+										onClick={() => navigate(`/events/${event.id}`, { state: { eventData: event } })}
 									/>
-									{/* Rejection reason text below card */}
 									{event.status === "REJECTED" && event.rejectionReason && (
 										<div className="mt-1 px-2">
 											<small className="text-danger">
-												❌ Rejected: {event.rejectionReason}
+												 Rejected: {event.rejectionReason}
 											</small>
 										</div>
 									)}
-									{/* Action buttons below card */}
 									<div className="px-2 pb-2">
 										{actionButtons(event)}
 									</div>
@@ -316,13 +318,11 @@ export default function Dashboard() {
 				)}
 			</section>
 
-			{/* ── Delete confirmation modal ─── */}
+			{/* Delete confirmation modal */}
 			<AnimatePresence>
 				{deleteTarget && (
 					<motion.div
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
 						className="modal d-block"
 						style={{ background: "rgba(0,0,0,0.5)" }}
 						onClick={() => setDeleteTarget(null)}
@@ -338,22 +338,13 @@ export default function Dashboard() {
 										Are you sure you want to permanently delete{" "}
 										<strong>{deleteTarget?.title}</strong>? This cannot be undone.
 									</p>
-									<p className="small text-warning">
-										⚠️ Deletion is blocked if any registrations exist.
-									</p>
+									
 								</div>
 								<div className="modal-footer border-0 pt-0">
-									<button
-										className="btn btn-outline-secondary rounded-pill px-4"
-										onClick={() => setDeleteTarget(null)}
-									>
+									<button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => setDeleteTarget(null)}>
 										Cancel
 									</button>
-									<button
-										className="btn btn-danger rounded-pill px-4"
-										onClick={handleDelete}
-										disabled={deleting}
-									>
+									<button className="btn btn-danger rounded-pill px-4" onClick={handleDelete} disabled={deleting}>
 										{deleting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
 										Delete
 									</button>
@@ -364,13 +355,11 @@ export default function Dashboard() {
 				)}
 			</AnimatePresence>
 
-			{/* ── Cancel confirmation modal with reason text field ──────────────── */}
+			{/* Cancel confirmation modal */}
 			<AnimatePresence>
 				{cancelTarget && (
 					<motion.div
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
+						initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
 						className="modal d-block"
 						style={{ background: "rgba(0,0,0,0.5)" }}
 						onClick={() => setCancelTarget(null)}
@@ -383,17 +372,13 @@ export default function Dashboard() {
 								</div>
 								<div className="modal-body">
 									<p className="text-body-secondary">
-										Are you sure you want to cancel{" "}
-										<strong>{cancelTarget?.title}</strong>?
+										Are you sure you want to cancel <strong>{cancelTarget?.title}</strong>?
 										Registered attendees will be notified.
 									</p>
 									<div className="mb-2">
-										<label className="form-label fw-semibold small">
-											Reason (optional)
-										</label>
+										<label className="form-label fw-semibold small">Reason (optional)</label>
 										<textarea
-											className="form-control rounded-3"
-											rows={3}
+											className="form-control rounded-3" rows={3}
 											placeholder="e.g. Venue unavailable, rescheduled..."
 											value={cancelReason}
 											onChange={(e) => setCancelReason(e.target.value)}
@@ -401,17 +386,10 @@ export default function Dashboard() {
 									</div>
 								</div>
 								<div className="modal-footer border-0 pt-0">
-									<button
-										className="btn btn-outline-secondary rounded-pill px-4"
-										onClick={() => setCancelTarget(null)}
-									>
+									<button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => setCancelTarget(null)}>
 										Keep Event
 									</button>
-									<button
-										className="btn btn-danger rounded-pill px-4"
-										onClick={handleCancel}
-										disabled={cancelling}
-									>
+									<button className="btn btn-danger rounded-pill px-4" onClick={handleCancel} disabled={cancelling}>
 										{cancelling ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
 										Cancel Event
 									</button>

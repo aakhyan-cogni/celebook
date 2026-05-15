@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import SingleEvent from "../components/SingleEvent";
@@ -8,6 +8,7 @@ import { useAuthStore } from "../store/useAuthStore";
 export default function EventDetailPage() {
 	const { id }      = useParams<{ id: string }>();
 	const navigate    = useNavigate();
+	const location    = useLocation();
 	const accessToken = useAuthStore((s) => s.accessToken);
 
 	const [event,     setEvent]     = useState<any>(null);
@@ -17,6 +18,13 @@ export default function EventDetailPage() {
 	useEffect(() => {
 		if (!id) {
 			setErrorType("NOT_FOUND");
+			setLoading(false);
+			return;
+		}
+
+		const stateEvent = (location.state as any)?.eventData;
+		if (stateEvent && stateEvent.id === id) {
+			setEvent(stateEvent);
 			setLoading(false);
 			return;
 		}
@@ -50,9 +58,9 @@ export default function EventDetailPage() {
 		};
 
 		fetchEvent();
+
 	}, [id, accessToken]);
 
-	// ── Loading spinner ─
 	if (loading) {
 		return (
 			<div className="container py-5 text-center">
@@ -68,7 +76,6 @@ export default function EventDetailPage() {
 		);
 	}
 
-	// ── Error screens ─
 	const errorConfig: Record<string, { icon: string; title: string; message: string }> = {
 		NOT_FOUND: {
 			icon: "🔍",
@@ -138,8 +145,7 @@ export default function EventDetailPage() {
 			</motion.div>
 		);
 	}
-
-	// ── Success ─
+	
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 0 }}
