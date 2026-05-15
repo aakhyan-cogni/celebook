@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
-
 interface EventCardProps {
 	event: any;
 	onClick: (event: any) => void;
+	eventStatus?:boolean | false;
 }
 
 const fadeInUp = {
@@ -12,10 +12,12 @@ const fadeInUp = {
 	visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-export function EventCard({ event, onClick }: EventCardProps) {
+export function EventCard({ event, onClick, eventStatus }: EventCardProps ) {
 	const [timeLeft, setTimeLeft] = useState("");
 	const eventTime = new Date(event.date).getTime();
 	const isPast = eventTime < Date.now();
+
+	console.log(eventStatus)
 
 	useEffect(() => {
 		if (isPast) return;
@@ -60,9 +62,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
 
 		if (diff < 86400000) {
 			return (
-				<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">
-					Starts in {timeLeft || "24h"}
-				</span>
+				<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Starts in {timeLeft || "24h"}</span>
 			);
 		}
 
@@ -77,9 +77,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
 	};
 
 	// Fix: use getImageUrl so relative paths (/uploads/...) become full URLs
-	const imgSrc = event.imgUrls?.[0]
-		? getImageUrl(event.imgUrls[0])
-		: EVENT_FALLBACK_IMG;
+	const imgSrc = event.imgUrls?.[0] ? getImageUrl(event.imgUrls[0]) : EVENT_FALLBACK_IMG;
 
 	return (
 		<motion.div
@@ -101,9 +99,7 @@ export function EventCard({ event, onClick }: EventCardProps) {
 					alt={event.title}
 					style={{ height: "200px", objectFit: "cover" }}
 				/>
-				<div className="position-absolute bottom-0 start-0 m-3">
-					{getStatusBadge()}
-				</div>
+				<div className="position-absolute bottom-0 start-0 m-3">{getStatusBadge()}</div>
 				<div className="position-absolute top-0 end-0 m-3">
 					<span className="badge bg-dark bg-opacity-75 text-white border border-white border-opacity-10 shadow-sm">
 						{event.category}
@@ -119,18 +115,21 @@ export function EventCard({ event, onClick }: EventCardProps) {
 					>
 						{event.title}
 					</h5>
-					<span className="text-success fw-bold">
-						{event.price === 0 ? "FREE" : `₹${event.price}`}
-					</span>
+					<span className="text-success fw-bold">{event.price === 0 ? "FREE" : `₹${event.price}`}</span>
 				</div>
 
 				<div className="d-flex align-items-center gap-2 mb-2">
 					<p className="text-body-secondary small mb-0">📍 {event.location}</p>
 				</div>
+				<p className="card-text text-body-secondary mb-3 line-clamp-2 small">{event.description}</p>
 
-				<p className="card-text text-body-secondary mb-3 line-clamp-2 small">
-					{event.description}
-				</p>
+				{(eventStatus)&& 
+				<div className="d-flex  align-items-start mb-2">
+					<p className={`card-text  mb-3 line-clamp-2 small  px-2 py-1 rounded-3  fw-bold fs-9 ${(event.status=="PENDING")?"bg-warning text-dark":((event.status=="APPROVED")?"bg-success text-light":((event.status=="REJECTED")?"bg-danger text-light":"bg-secondary text-dark"))}`}>
+						{event.status}
+					</p>
+				</div>}
+				
 			</div>
 		</motion.div>
 	);

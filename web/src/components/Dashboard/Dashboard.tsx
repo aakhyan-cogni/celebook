@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { type Event, type User } from "../../store";
+import { type Booking, type Event, type User } from "../../store";
 import { EventCard } from "../EventCard";
 import { motion } from "motion/react";
 import { apiFetch } from "../../lib/api";
+import { h1 } from "motion/react-client";
 
 interface DashboardProp {
 	viewEventsFn: () => void;
@@ -14,7 +15,7 @@ const Dashboard: React.FC<DashboardProp> = ({ viewEventsFn, viewBookingsFn }) =>
 	const navigate = useNavigate();
 
 	const [eventsDashboard, setEvents] = useState<Event[]>([]);
-	const [BookingDashboard, setBookings] = useState<User[]>([]);
+	const [BookingDashboard, setBookings] = useState<Booking[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	const profileImg = `http://localhost:5000/uploads/avatars/`;
@@ -34,7 +35,7 @@ const Dashboard: React.FC<DashboardProp> = ({ viewEventsFn, viewBookingsFn }) =>
 				]);
 
 				setEvents(eventsRes.events ?? eventsRes);
-				setBookings(BookingsRes.Bookings ?? BookingsRes);
+				setBookings(BookingsRes.data || []);
 			} catch (err) {
 				console.error("Failed to fetch Dashboard data:", err);
 			} finally {
@@ -57,10 +58,10 @@ const Dashboard: React.FC<DashboardProp> = ({ viewEventsFn, viewBookingsFn }) =>
 
 	return (
 		<div className="container">
-			{/* Event Stats */}
+			{/* My Events */}
 			<section className="mb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4">
-					<h3 className="fw-bold mb-0">Event Stats</h3>
+					<h3 className="fw-bold mb-0">My Events</h3>
 					<div className="d-flex justify-content-around align-items-center mb-4 gap-2">
 						<motion.button whileTap={{ scale: 0.95 }} className="btn btn-primary rounded-pill px-4" onClick={() => navigate("/create")}>
 							Create event
@@ -79,7 +80,9 @@ const Dashboard: React.FC<DashboardProp> = ({ viewEventsFn, viewBookingsFn }) =>
 					<div className="row g-4">
 						{eventsDashboard.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
-								<EventCard event={event} onClick={handleEventClick} />
+								<EventCard event={event} onClick={handleEventClick} 
+								eventStatus={true}
+								/>
 							</div>
 						))}
 					</div>
@@ -111,29 +114,19 @@ const Dashboard: React.FC<DashboardProp> = ({ viewEventsFn, viewBookingsFn }) =>
 
 				{BookingDashboard.length > 0 ? (
 					<div className="row g-4">
-						{BookingDashboard.map((Booking) => (
-							<div key={Booking.id} className="col-md-6 col-lg-4">
-								<div className="card shadow-sm rounded-4 p-3">
-									<div className="d-flex align-items-center gap-3">
-										<img
-											src={profileImg + Booking.avatar}
-											alt={Booking.name}
-											className="rounded-circle"
-											width={48}
-											height={48}
-											style={{ objectFit: "cover" }}
-										/>
-										<div>
-											<p className="fw-bold mb-0">{Booking.name}</p>
-											<p className="text-muted small mb-0">{Booking.email}</p>
-											<span className="badge bg-secondary mt-1">{Booking.role}</span>
-										</div>
-									</div>
-								</div>
-							</div>
+						{BookingDashboard.map((booking) => (
+						<div key={booking.eventId.id} className="col-md-6 col-lg-4">
+							
+							<EventCard
+							event={booking.eventId}
+							onClick={handleEventClick}
+							/>
+							
+						</div>
 						))}
 					</div>
-				) : (
+					) : (
+
 					<div className="text-center p-5 rounded-4 border border-dashed">
 						<p className="text-muted mb-0">No Bookings till now.</p>
 						<motion.button whileTap={{ scale: 0.95 }} className="btn btn-primary rounded-pill px-4 my-2" onClick={() => navigate("/events")}>

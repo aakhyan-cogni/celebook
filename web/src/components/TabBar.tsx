@@ -3,6 +3,8 @@ import Dashboard from "./Dashboard/Dashboard";
 import { useAuthStore } from "../store/useAuthStore";
 import PersonalContent from "./Dashboard/Personal_Info_Dashboard/PersonalConent";
 import PaymentContent from "./Dashboard/Payment_Info_Dashboard/PaymentContent";
+import Events from "../components/Dashboard/Events";
+import Bookings from "./Dashboard/Bookings";
 
 export default function ProfileLayout() {
 	const [active, setActive] = useState("dashboard");
@@ -11,6 +13,18 @@ export default function ProfileLayout() {
 	const user = useAuthStore((s) => s.user)!;
 	const now = new Date().getHours();
 	const greeting = now > 5 && now < 12 ? "morning" : now < 17 ? "afternoon" : "evening";
+
+	if (!user || !user.name) {
+		return null;
+	}
+
+	const viewEvents = () => {
+		setActive("events");
+	};
+
+	const viewUsers = () => {
+		setActive("users");
+	};
 
 	return (
 		<div className="container-fluid" style={{ overflow: "hidden", height: "100%", width: "100%" }}>
@@ -58,7 +72,88 @@ export default function ProfileLayout() {
 							>
 								as
 							</div>
+							
+							<div
+								className={`d-none d-lg-block rounded-lg ${hover === "settings" ? "bg-primary" : ""} overflow-hidden ms-3`}
+								style={{
+									width: "60%",
+									height: "2px",
+									backgroundColor: "transparent",
+									color: "transparent",
+								}}
+							>
+								as
+							</div>
 							<div className="nav-item d-flex">
+								{/* <NavButton id="events" label="events Details" icon={"💰"}/> */}
+								<button
+									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
+									onClick={() => setActive("events")}
+									onMouseOver={() => setHover("events")}
+									onMouseOut={() => setHover("")}
+								>
+									<span className="me-2">{"📢"}</span>
+									{"Events"}
+								</button>
+								<div
+									className={`rouded-3 rounded-top rounded-bottom ${active === "events" ? "bg-primary" : ""} my-2`}
+									style={{
+										marginLeft: "auto",
+										width: "5px",
+										backgroundColor: "transparent",
+										color: "transparent",
+									}}
+								>
+									as
+								</div>
+							</div>
+							<div
+								className={`d-none d-lg-block ${hover === "events" ? "bg-primary" : ""} overflow-hidden ms-3`}
+								style={{
+									width: "65%",
+									height: "2px",
+									backgroundColor: "transparent",
+									color: "transparent",
+								}}
+							>
+								as
+							</div>
+							<div className="nav-item d-flex">
+								{/* <NavButton id="users" label="users Details" icon={"👤"}/> */}
+								<button
+									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
+									onClick={() => setActive("users")}
+									onMouseOver={() => setHover("users")}
+									onMouseOut={() => setHover("")}
+								>
+									<span className="me-2">{"👥"}</span>
+									{"Bookings"}
+								</button>
+								<div
+									className={`rouded-3 rounded-top rounded-bottom ${active === "users" ? "bg-primary" : ""} my-2`}
+									style={{
+										marginLeft: "auto",
+										width: "5px",
+										backgroundColor: "transparent",
+										color: "transparent",
+									}}
+								>
+									as
+								</div>
+							</div>
+							<div
+								className={`d-none d-lg-block ${hover === "users" ? "bg-primary" : ""} overflow-hidden ms-3`}
+								style={{
+									width: "65%",
+									height: "2px",
+									backgroundColor: "transparent",
+									color: "transparent",
+								}}
+							>
+								as
+							</div>
+							
+														<div className="nav-item d-flex">
 								{/* <NavButton id="personal" label="Personal Details" icon={"👤"}/> */}
 								<button
 									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
@@ -92,6 +187,7 @@ export default function ProfileLayout() {
 							>
 								as
 							</div>
+
 							<div className="nav-item d-flex">
 								{/* <NavButton id="payment" label="Payment Details" icon={"💰"}/> */}
 								<button
@@ -126,17 +222,6 @@ export default function ProfileLayout() {
 							>
 								as
 							</div>
-							<div
-								className={`d-none d-lg-block rounded-lg ${hover === "settings" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "60%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
 						</nav>
 					</div>
 				</aside>
@@ -144,9 +229,11 @@ export default function ProfileLayout() {
 				<main className="col-12 col-md-9 col-lg-10 p-3">
 					<div className="card shadow-sm h-100">
 						<div className="card-body">
-							{active === "dashboard" && <Dashboard />}
+							{active === "dashboard" && <Dashboard viewEventsFn={viewEvents} viewBookingsFn={viewUsers} />}
 							{active === "personal" && <PersonalContent />}
 							{active === "payment" && <PaymentContent />}
+							{active === "users" && <Bookings />}
+							{active === "events" && <Events />}
 						</div>
 					</div>
 				</main>

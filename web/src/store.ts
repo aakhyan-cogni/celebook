@@ -11,6 +11,8 @@ interface State {
 	addEvent: (eventData: Omit<Event, "id" | "organizerEmail" | "createdAt">) => void;
 }
 
+export type EventStatus ="PENDING" | "REJECTED" | "APPROVED" | "DRAFT";
+
 export interface User {
 	id?: string;
 	name: string;
@@ -41,6 +43,13 @@ export interface Event {
 	price: number;
 	capacity: number;
 	createdAt: string;
+}
+
+export interface Booking{
+	eventId: Event,
+	userId: string,
+	status: EventStatus,
+	registeredAt: string,
 }
 
 type Gender = "Male" | "Female" | "Others";

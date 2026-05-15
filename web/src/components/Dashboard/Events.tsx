@@ -2,22 +2,22 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { type Event } from "../../store";
 import { EventCard } from "../EventCard";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { apiFetch } from "../../lib/api";
 
 const Events = () => {
 	const navigate = useNavigate();
 
-	const [eventsOverview, setEvents] = useState<Event[]>([]);
+	const [eventsOverview, setEvents] = useState<any[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [page, setPage] = useState(1);
-	const [eventStatus, setEventStatus] = useState("ALL");
 	let eventsRes = null;
 	const [search, setSearch] = useState("");
 
-	const handleEventClick = (event: Event) => {
+	const handleEventClick = (event: any) => {
 		navigate(`/events?q=${event.id}`);
 	};
+	
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -26,23 +26,19 @@ const Events = () => {
 			try {
 				setLoading(true);
 
-				if (eventStatus === "ALL")
-					eventsRes = await apiFetch(
-						"/admin/events",
-						{ method: "GET" },
-						{ page: page.toString(), limit: "20" },
-					);
-				else
-					eventsRes = await apiFetch(
-						"/admin/events",
-						{ method: "GET" },
-						{ page: page.toString(), limit: "20", status: eventStatus },
-					);
+				eventsRes = await apiFetch(
+					"/events/mine",
+					{ method: "GET" },
+					{ page: page.toString(), limit: "20" },
+				);
+
 				setEvents(eventsRes.events ?? eventsRes);
+				
 
 				if (eventsRes.events.length <= 0) {
 					setPage((prev) => prev - 1);
 				}
+
 			} catch (err) {
 				console.error("Failed to fetch overview data:", err);
 			} finally {
@@ -51,7 +47,7 @@ const Events = () => {
 		};
 
 		fetchData();
-	}, [page, eventStatus]);
+	}, [page]);
 
 	if (loading) {
 		return (
@@ -83,10 +79,10 @@ const Events = () => {
 
 	return (
 		<div className="container">
-			{/* Event Stats */}
+			{/* My Event */}
 			<section className="mb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4">
-					<h3 className="fw-bold mb-0">Event Stats</h3>
+					<h3 className="fw-bold mb-0">My Events</h3>
 
 					<div className="d-flex justify-content-around gap-3 align-items-center mb-4">
 						<input
@@ -98,18 +94,7 @@ const Events = () => {
 								setSearch(event.target.value);
 							}}
 						/>
-						<select
-							className="form-control w-auto"
-							value={eventStatus}
-							onChange={(event) => {
-								setEventStatus(event.target.value);
-							}}
-						>
-							<option value="ALL">All</option>
-							<option value="PENDING">Pending</option>
-							<option value="APPROVED">Approved</option>
-							<option value="REJECTED">Rejected</option>
-						</select>
+						
 						<motion.button
 							whileTap={{ scale: 0.95 }}
 							onClick={() => {
@@ -142,7 +127,7 @@ const Events = () => {
 					<div className="row g-4">
 						{displayEvents.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
-								<EventCard event={event} onClick={handleEventClick} />
+								<EventCard event={event} onClick={handleEventClick} eventStatus={true}/>
 							</div>
 						))}
 					</div>
