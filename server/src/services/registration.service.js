@@ -1,10 +1,6 @@
 import { RegistrationModel, EventModel, EventStatModel } from "../models/index.js";
 import mongoose from "mongoose";
-
-const createNotification = async ({ userId, type, payload }) => {
-	// TODO: Replace with actual notification service when available
-	console.log("[Notification]", { userId, type, payload });
-};
+import { createNotification } from "./notification.service.js";
 
 export async function registerForEvent(eventId, userId, formData = {}) {
 	// Check event exists
@@ -83,11 +79,12 @@ export async function registerForEvent(eventId, userId, formData = {}) {
 			{ upsert: true },
 		);
 
-		// Call createNotification
+		// Create + push notification to the user (DB + socket)
 		await createNotification({
 			userId,
 			type: "REGISTRATION_CONFIRMED",
-			payload: {
+			data: {
+				eventTitle: event.title,
 				eventId: eventId.toString(),
 				registrationId: registration._id.toString(),
 			},

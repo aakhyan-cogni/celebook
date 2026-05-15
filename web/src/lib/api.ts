@@ -98,4 +98,9 @@ type API_PATH =
 	| `/admin/events`
 	| `/admin/users`
 	| `/events/mine`
-	| `/registrations/my-registrations`;
+	| `/registrations/my-registrations`
+	| `/notifications`
+	| `/notifications/unread-count`
+	| `/notifications/read-all`
+	| `/notifications/${string}/read`
+	| `/notifications/${string}`;

@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { NotificationModel, UserModel } from "../models/index.js";
+import { fromDoc } from "../models/util.js";
+import { emitToUser } from "../lib/socket.js";
 
 const buildTitleAndMessage = (type, data = {}) => {
 	switch (type) {
@@ -47,6 +49,17 @@ export async function createNotification({ userId, type, data = {} }) {
 		message,
 		data,
 	});
+
+	const unreadCount = await NotificationModel.countDocuments({
+		userId: new mongoose.Types.ObjectId(userId),
+		read: false,
+	});
+
+	emitToUser(userId, "notification:new", {
+		notification: fromDoc(notification.toObject()),
+		unreadCount,
+	});
+
 	return notification;
 }
 

@@ -1,145 +1,43 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import NotificationComponent from "../components/NotificationComponent";
 import toast from "react-hot-toast";
-
-interface Notification {
-	id: number;
-	type: string;
-	text: string;
-	time: number;
-	isRead: boolean;
-	priority: "high" | "medium" | "low";
-}
+import { useNotificationStore } from "../store/useNotificationStore";
 
 type DisplayFilter = "all" | "unread" | "read";
 
 const NotificationPage: React.FC = () => {
-	const emsNotifications: Notification[] = [
-		{
-			id: 1,
-			type: "Booking",
-			text: 'New ticket purchase for "Tech Conference 2026" by Deepavignesh.',
-			time: Date.now(),
-			isRead: false,
-			priority: "high",
-		},
-		{
-			id: 2,
-			type: "Venue",
-			text: "Grand Ballroom has been confirmed for the Charity Gala.",
-			time: Date.now() - 3600000,
-			isRead: false,
-			priority: "medium",
-		},
-		{
-			id: 3,
-			type: "Task",
-			text: 'Team Lead assigned you to "Setup Registration Desk" for tomorrow.',
-			time: Date.now() - 10800000,
-			isRead: true,
-			priority: "low",
-		},
-		{
-			id: 4,
-			type: "System",
-			text: "Weekly security report for stock securities is ready for download.",
-			time: Date.now() - 86400000,
-			isRead: true,
-			priority: "low",
-		},
-		{
-			id: 5,
-			type: "Booking",
-			text: 'Early bird registration for "React Developers Meetup" is now 90% full.',
-			time: Date.now() - 300000,
-			isRead: false,
-			priority: "high",
-		},
-		{
-			id: 6,
-			type: "Venue",
-			text: "Equipment check: Projector and Sound System verified for Room 302.",
-			time: Date.now() - 900000,
-			isRead: false,
-			priority: "medium",
-		},
-		{
-			id: 7,
-			type: "Payment",
-			text: 'Invoice #8842 for "Corporate Retreat" has been marked as paid.',
-			time: Date.now() - 2700000,
-			isRead: false,
-			priority: "medium",
-		},
-		{
-			id: 8,
-			type: "Task",
-			text: 'Reminder: Finalize the catering menu for the "Product Launch" by EOD.',
-			time: Date.now() - 7200000,
-			isRead: false,
-			priority: "high",
-		},
-		{
-			id: 9,
-			type: "System",
-			text: "Database backup completed successfully for the Quote of the Day module.",
-			time: Date.now() - 14400000,
-			isRead: true,
-			priority: "low",
-		},
-		{
-			id: 10,
-			type: "Booking",
-			text: 'Cancellation: 2 tickets returned for "Annual Gala Night". Waitlist notified.',
-			time: Date.now() - 21600000,
-			isRead: true,
-			priority: "medium",
-		},
-		{
-			id: 11,
-			type: "Venue",
-			text: 'Conflict detected: "Board Meeting" and "Workshop A" both requested Hall B.',
-			time: Date.now() - 86400000,
-			isRead: true,
-			priority: "high",
-		},
-		{
-			id: 12,
-			type: "Task",
-			text: 'Volunteer onboarding: 5 new members joined the "Green Earth Expo" team.',
-			time: Date.now() - 90000000,
-			isRead: true,
-			priority: "low",
-		},
-		{
-			id: 13,
-			type: "System",
-			text: "API Rate limit reached: Stock securities data sync paused for 15 minutes.",
-			time: Date.now() - 172800000,
-			isRead: true,
-			priority: "medium",
-		},
-		{
-			id: 14,
-			type: "Payment",
-			text: "Refund processed for ticket ID #9901 (Deepavignesh).",
-			time: Date.now() - 175000000,
-			isRead: true,
-			priority: "low",
-		},
-	];
+	const notifications = useNotificationStore((s) => s.notifications);
+	const loading = useNotificationStore((s) => s.loading);
+	const error = useNotificationStore((s) => s.error);
+	const hasLoaded = useNotificationStore((s) => s.hasLoaded);
+	const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
+	const markAsRead = useNotificationStore((s) => s.markAsRead);
+	const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
+	const removeNotification = useNotificationStore((s) => s.removeNotification);
 
-	const [allNotifications, setAllNotifications] = useState<Notification[]>(emsNotifications);
 	const [display, setDisplay] = useState<DisplayFilter>("unread");
+	const [search, setSearch] = useState("");
 	const isFirstRender = useRef<boolean>(true);
 
-	const filteredArray = allNotifications
-		.filter((n) => {
-			if (display === "unread") return !n.isRead;
-			if (display === "read") return n.isRead;
-			return true;
-		})
-		.sort((a, b) => b.time - a.time);
+	useEffect(() => {
+		if (!hasLoaded) fetchNotifications();
+	}, [hasLoaded, fetchNotifications]);
+
+	const filteredArray = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		return notifications
+			.filter((n) => {
+				if (display === "unread" && n.read) return false;
+				if (display === "read" && !n.read) return false;
+				if (!q) return true;
+				return (
+					n.title.toLowerCase().includes(q) ||
+					n.message.toLowerCase().includes(q) ||
+					n.type.toLowerCase().includes(q)
+				);
+			})
+			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+	}, [notifications, display, search]);
 
 	useEffect(() => {
 		if (isFirstRender.current) {
@@ -149,14 +47,19 @@ const NotificationPage: React.FC = () => {
 		toast(`Viewing ${display} notifications`);
 	}, [display]);
 
-	const handleMarkAsRead = (id: number): void => {
-		setAllNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+	const handleMarkAsRead = async (id: string) => {
+		await markAsRead(id);
 		toast.success("Marked as read");
 	};
 
-	const deleteNotification = (id: number): void => {
-		setAllNotifications((prev) => prev.filter((n) => n.id !== id));
-		toast("Notification Deleted 🗑️");
+	const handleDelete = async (id: string) => {
+		await removeNotification(id);
+		toast("Notification deleted");
+	};
+
+	const handleMarkAll = async () => {
+		await markAllAsRead();
+		toast.success("All notifications marked as read");
 	};
 
 	return (
@@ -185,6 +88,9 @@ const NotificationPage: React.FC = () => {
 								>
 									Read
 								</button>
+								<button className="btn btn-sm btn-outline-secondary mt-3" onClick={handleMarkAll}>
+									Mark all as read
+								</button>
 							</div>
 						</div>
 					</aside>
@@ -199,12 +105,20 @@ const NotificationPage: React.FC = () => {
 							</div>
 
 							<div className="input-group mb-2">
-								<input type="text" className="form-control" placeholder="Search..." />
-								<button className="btn btn-primary px-4">Search</button>
+								<input
+									type="text"
+									className="form-control"
+									placeholder="Search..."
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+								<button className="btn btn-primary px-4" onClick={() => fetchNotifications()}>
+									Refresh
+								</button>
 							</div>
 
 							{/* alternate for sidebar - small screens*/}
-							<div className="d-flex d-md-none gap-2 mt-3">
+							<div className="d-flex d-md-none gap-2 mt-3 flex-wrap">
 								<button
 									className={`btn btn-sm ${display === "all" ? "btn-primary" : "btn-outline-primary"}`}
 									onClick={() => setDisplay("all")}
@@ -223,17 +137,34 @@ const NotificationPage: React.FC = () => {
 								>
 									Read
 								</button>
+								<button className="btn btn-sm btn-outline-secondary" onClick={handleMarkAll}>
+									Mark all as read
+								</button>
 							</div>
 						</header>
 
 						<div className="p-4">
-							{filteredArray.length > 0 ? (
+							{loading && !hasLoaded ? (
+								<div className="text-center py-5 mt-5">
+									<div className="spinner-border text-primary" role="status">
+										<span className="visually-hidden">Loading...</span>
+									</div>
+								</div>
+							) : error ? (
+								<div className="alert alert-danger">{error}</div>
+							) : filteredArray.length > 0 ? (
 								filteredArray.map((note) => (
 									<NotificationComponent
 										key={note.id}
-										details={note}
+										details={{
+											id: note.id,
+											type: note.type,
+											text: `${note.title} — ${note.message}`,
+											time: new Date(note.createdAt).getTime(),
+											isRead: note.read,
+										}}
 										onMarkRead={() => handleMarkAsRead(note.id)}
-										deleteNotification={() => deleteNotification(note.id)}
+										deleteNotification={() => handleDelete(note.id)}
 									/>
 								))
 							) : (

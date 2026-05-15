@@ -17,21 +17,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
-	const [showFormData, setShowFormData] = useState(false);
-	const [formData, setFormData] = useState({
-		dietaryRestrictions: "",
-		emergencyContact: "",
-		phone: "",
-		notes: "",
-	});
-
-	const [eventStatus, setEventStatus] = useState<string>(event.status);
-	const [rejectionReason, setRejectionReason] = useState<string>(event.rejectionReason ?? "");
-	const [showRejectModal, setShowRejectModal] = useState(false);
-	const [rejectReasonInput, setRejectReasonInput] = useState("");
-	const [adminActing, setAdminActing] = useState(false);
-	const [isRegistered, setIsRegistered] = useState<boolean>(!!event.userRegistration);
-	const [eventStat, setEventStat] = useState<any>(null);
+	const [showConfirm, setShowConfirm] = useState(false);
 
 	const isPastEvent = new Date(event.date).getTime() < Date.now();
 	const isOrganizer = isAuthenticated && user?.id === event.organizerId;
@@ -71,7 +57,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				method: "POST",
 				headers: authHeaders(),
 				credentials: "include",
-				body: JSON.stringify({ formData }),
+				body: JSON.stringify({}),
 			});
 
 			const data = await res.json();
@@ -104,8 +90,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			setSuccess(true);
 			setIsRegistered(true);
 			toast.success("Registration successful!");
-			setFormData({ dietaryRestrictions: "", emergencyContact: "", phone: "", notes: "" });
-			setShowFormData(false);
+			setShowConfirm(false);
 
 			setTimeout(() => { onClose?.(); }, 2000);
 		} catch (err) {
@@ -268,7 +253,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		return (
 			<button
 				className="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"
-				onClick={() => setShowFormData(true)}
+				onClick={() => setShowConfirm(true)}
 				disabled={loading}
 			>
 				{loading
@@ -366,67 +351,50 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 						{event.description}
 					</p>
 
-					{}
-					{!isOrganizer && !isAdmin && !success && showFormData && (
-						<div className="card border-0 bg-body-tertiary rounded-4 p-4 mb-4">
-							<h5 className="fw-bold mb-3">Complete Registration</h5>
-							<div className="mb-3">
-								<label className="form-label fw-bold">Dietary Restrictions (Optional)</label>
-								<input
-									type="text"
-									className="form-control"
-									placeholder="e.g., Vegetarian, Vegan, No gluten"
-									value={formData.dietaryRestrictions}
-									onChange={(e) => setFormData({ ...formData, dietaryRestrictions: e.target.value })}
-								/>
-							</div>
-							<div className="mb-3">
-								<label className="form-label fw-bold">Emergency Contact (Optional)</label>
-								<input
-									type="text"
-									className="form-control"
-									placeholder="Contact name"
-									value={formData.emergencyContact}
-									onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
-								/>
-							</div>
-							<div className="mb-3">
-								<label className="form-label fw-bold">Phone Number (Optional)</label>
-								<input
-									type="tel"
-									className="form-control"
-									placeholder="+1 (555) 000-0000"
-									value={formData.phone}
-									onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-								/>
-							</div>
-							<div className="mb-3">
-								<label className="form-label fw-bold">Notes (Optional)</label>
-								<textarea
-									className="form-control"
-									rows={3}
-									placeholder="Any additional information..."
-									value={formData.notes}
-									onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-								/>
-							</div>
-							<div className="d-flex gap-2">
-								<button
-									onClick={handleRegister}
-									className="btn btn-success fw-bold rounded-pill px-4"
-									disabled={loading}
-								>
-									{loading ? "Registering..." : "Confirm Registration"}
-								</button>
-								<button
-									onClick={() => setShowFormData(false)}
-									className="btn btn-outline-secondary fw-bold rounded-pill px-4"
-									disabled={loading}
-								>
-									Cancel
-								</button>
-							</div>
-						</div>
+					{/* Ticket confirmation popup — when not organizer/admin */}
+					{!isOrganizer && !isAdmin && !success && showConfirm && (
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+							style={{ background: "rgba(0,0,0,0.5)", zIndex: 1050 }}
+							onClick={() => !loading && setShowConfirm(false)}
+						>
+							<motion.div
+								initial={{ scale: 0.9, opacity: 0 }}
+								animate={{ scale: 1, opacity: 1 }}
+								className="card border-0 rounded-4 p-4 shadow-lg"
+								style={{ maxWidth: "420px", width: "90%" }}
+								onClick={(e) => e.stopPropagation()}
+							>
+								<div className="text-center mb-3">
+									<div style={{ fontSize: "3rem" }}>🎟️</div>
+									<h5 className="fw-bold mt-2 mb-1">Confirm your ticket</h5>
+									<p className="text-body-secondary small mb-0">
+										You're booking a ticket for <strong>{event.title}</strong>
+									</p>
+									<p className="fw-bold mt-2 mb-0">
+										{event.price === 0 ? "FREE" : `₹${event.price}`}
+									</p>
+								</div>
+								<div className="d-flex gap-2 justify-content-center">
+									<button
+										onClick={handleRegister}
+										className="btn btn-success fw-bold rounded-pill px-4"
+										disabled={loading}
+									>
+										{loading ? "Confirming..." : "Confirm"}
+									</button>
+									<button
+										onClick={() => setShowConfirm(false)}
+										className="btn btn-outline-secondary fw-bold rounded-pill px-4"
+										disabled={loading}
+									>
+										Cancel
+									</button>
+								</div>
+							</motion.div>
+						</motion.div>
 					)}
 
 					<div className="d-flex gap-2 pt-2 flex-wrap">
