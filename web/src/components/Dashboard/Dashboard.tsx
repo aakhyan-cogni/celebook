@@ -7,8 +7,9 @@ import { BASE_URL } from "../../lib/api";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
-	const navigate    = useNavigate();
-	const accessToken = useAuthStore((s) => s.accessToken);
+	const navigate        = useNavigate();
+	const accessToken     = useAuthStore((s) => s.accessToken);
+	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
 	const [myEvents,     setMyEvents]     = useState<any[]>([]);
 	const [loading,      setLoading]      = useState(true);
@@ -43,7 +44,17 @@ export default function Dashboard() {
 		}
 	};
 
-	useEffect(() => { fetchMyEvents(); }, []);
+	useEffect(() => {
+		// Wait for hydration: on page refresh accessToken is briefly null while
+		// /auth/refresh runs. Firing fetch with "Bearer null" returns 401 and the
+		// user's events vanish.
+		if (isAuthenticated && !accessToken) {
+			setLoading(true);
+			return;
+		}
+		if (!accessToken) return;
+		fetchMyEvents();
+	}, [accessToken, isAuthenticated]);
 
 	const handlePublish = async (eventId: string) => {
 		try {
@@ -133,33 +144,6 @@ export default function Dashboard() {
 
 	const goToEdit = (event: any) => {
 		navigate(`/create?edit=${event.id}`, { state: { eventData: event } });
-	};
-
-	const statusBadge = (event: any) => {
-		if (event.isCancelled) {
-			return <span className="badge bg-secondary rounded-pill px-2 py-1">Cancelled</span>;
-		}
-		const map: Record<string, string> = {
-			DRAFT:    "bg-secondary",
-			PENDING:  "bg-warning text-dark",
-			APPROVED: "bg-success",
-			REJECTED: "bg-danger",
-		};
-		const labels: Record<string, string> = {
-			DRAFT: "Draft", PENDING: "Under Review", APPROVED: "Approved", REJECTED: "Rejected",
-		};
-		return (
-			<span
-				className={`badge ${map[event.status] ?? "bg-secondary"} rounded-pill px-2 py-1`}
-				title={
-					event.status === "REJECTED" && event.rejectionReason
-						? `Reason: ${event.rejectionReason}`
-						: undefined
-				}
-			>
-				{labels[event.status] ?? event.status}
-			</span>
-		);
 	};
 
 	const actionButtons = (event: any) => {
@@ -277,12 +261,9 @@ export default function Dashboard() {
 						{myEvents.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
 								<div className="position-relative">
-									<div className="position-absolute top-0 start-0 m-2" style={{ zIndex: 10 }}>
-										{statusBadge(event)}
-									</div>
 									{event.registrationCount > 0 && (
-										<div className="position-absolute top-0 end-0 m-2" style={{ zIndex: 10 }}>
-											<span className="badge bg-info text-dark rounded-pill px-2 py-1">
+										<div className="position-absolute top-0 start-0 m-3" style={{ zIndex: 10 }}>
+											<span className="badge bg-info text-dark fs-6 rounded-2 px-3 py-1">
 												👥 {event.registrationCount}
 											</span>
 										</div>

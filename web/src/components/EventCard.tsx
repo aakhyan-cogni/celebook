@@ -109,6 +109,21 @@ export function EventCard({ event, onClick }: EventCardProps) {
 						{event.category}
 					</span>
 				</div>
+				{event.status && event.status !== "APPROVED" && (
+					<div className="position-absolute top-0 start-0 m-3">
+						{event.status === "PENDING" && (
+							<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">
+								Pending Review
+							</span>
+						)}
+						{event.status === "REJECTED" && (
+							<span className="badge bg-danger px-3 py-2 shadow-sm">Rejected</span>
+						)}
+						{event.status === "DRAFT" && (
+							<span className="badge bg-secondary px-3 py-2 shadow-sm">Draft</span>
+						)}
+					</div>
+				)}
 			</div>
 
 			<div className="card-body p-4">

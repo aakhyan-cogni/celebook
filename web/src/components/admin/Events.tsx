@@ -16,7 +16,7 @@ const Events = () => {
 	const [search, setSearch] = useState("");
 
 	const handleEventClick = (event: Event) => {
-		navigate(`/events?q=${event.id}`);
+		navigate(`/events/${event.id}`);
 	};
 
 	useEffect(() => {

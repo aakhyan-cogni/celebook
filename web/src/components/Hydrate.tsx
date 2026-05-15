@@ -6,25 +6,34 @@ export function Hydrate() {
 	const { isAuthenticated, accessToken, setAccessToken, updateUser, logout } = useAuthStore();
 
 	useEffect(() => {
-		// Restore access token on page reload (refresh token lives in httpOnly cookie)
-		if (isAuthenticated && !accessToken) {
-			apiFetch("/auth/refresh", { method: "POST", credentials: "include" })
-				.then((data) => setAccessToken(data.accessToken))
-				.catch(() => logout());
-		}
+		// Serialize: refresh first, then load the profile. Firing both in parallel
+		// triggers a 401 on /user/profile (no access token yet), which kicks off a
+		// second /auth/refresh inside apiFetch — and the resulting race against the
+		// rotating refresh token logs the user out on the loser.
+		const bootstrap = async () => {
+			if (!isAuthenticated) return;
 
-		// Load tier + role so the FREE tier gate in EventCreationForm works correctly
-		if (isAuthenticated) {
-			apiFetch("/user/profile", { method: "GET" })
-				.then((data) => {
-					if (data?.user) {
-						updateUser({ tier: data.user.tier, role: data.user.role });
-					}
-				})
-				.catch(() => {
-					// Non-critical — tier defaults to FREE if this fails
-				});
-		}
+			if (!accessToken) {
+				try {
+					const data = await apiFetch("/auth/refresh", { method: "POST", credentials: "include" });
+					setAccessToken(data.accessToken);
+				} catch {
+					logout();
+					return;
+				}
+			}
+
+			try {
+				const data = await apiFetch("/user/profile", { method: "GET" });
+				if (data?.user) {
+					updateUser({ tier: data.user.tier, role: data.user.role });
+				}
+			} catch {
+				// Non-critical — tier defaults to FREE if this fails
+			}
+		};
+
+		bootstrap();
 	}, []);
 
 	return null;

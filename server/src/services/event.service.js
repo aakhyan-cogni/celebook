@@ -122,6 +122,16 @@ export const getEventById = async (eventId, requestingUser = null) => {
 		return { error: "FORBIDDEN" };
 	}
 
+	// Attach userRegistration so the frontend knows if the viewer is registered
+	if (requestingUser?.userId) {
+		const reg = await RegistrationModel.findOne({
+			eventId: new mongoose.Types.ObjectId(eventId),
+			userId: new mongoose.Types.ObjectId(requestingUser.userId),
+			status: "CONFIRMED",
+		}).lean();
+		event.userRegistration = reg ?? null;
+	}
+
 	return { event };
 };
 

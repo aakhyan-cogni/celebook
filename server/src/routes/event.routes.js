@@ -11,6 +11,7 @@ import {
 	duplicateEvent,
 	uploadEventImages,
 	deleteEventImage,
+	getEventStats,
 } from "../controllers/event.controller.js";
 import { registerForEvent, cancelRegistration, getEventRegistrations } from "../controllers/registration.controller.js";
 import { authenticate, optionalAuthenticate } from "../middleware/auth.middleware.js";
@@ -32,6 +33,7 @@ eventRouter.delete("/:id/images",  authenticate, deleteEventImage);
 
 eventRouter.get("/mine",              authenticate, getMyEvents);
 eventRouter.get("/:id/registrations", authenticate, getEventRegistrations);
+eventRouter.get("/:id/stats",         authenticate, getEventStats);
 
 eventRouter.get("/:id",               optionalAuthenticate, getEventById);
 eventRouter.get("/",                  getEvents);

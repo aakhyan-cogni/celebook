@@ -1,4 +1,4 @@
-import { RegistrationModel, EventModel } from "../models/index.js";
+import { RegistrationModel, EventModel, EventStatModel } from "../models/index.js";
 import mongoose from "mongoose";
 
 const createNotification = async ({ userId, type, payload }) => {
@@ -56,6 +56,13 @@ export async function registerForEvent(eventId, userId, formData = {}) {
 			status: "CONFIRMED",
 			formData,
 		});
+
+		// Upsert EventStat — track attendee
+		await EventStatModel.findOneAndUpdate(
+			{ eventId: new mongoose.Types.ObjectId(eventId) },
+			{ $addToSet: { attendees: new mongoose.Types.ObjectId(userId) } },
+			{ upsert: true },
+		);
 
 		// Call createNotification
 		await createNotification({

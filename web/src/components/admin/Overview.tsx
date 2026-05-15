@@ -20,7 +20,7 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 	const profileImg = `http://localhost:5000/uploads/avatars/`;
 
 	const handleEventClick = (event: Event) => {
-		navigate(`/events?q=${event.id}`);
+		navigate(`/events/${event.id}`);
 	};
 
 	useEffect(() => {

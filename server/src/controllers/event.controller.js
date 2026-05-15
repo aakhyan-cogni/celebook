@@ -1,6 +1,6 @@
 import * as EventService from "../services/event.service.js";
 import { fromDoc } from "../models/util.js";
-import { EventModel } from "../models/index.js";
+import { EventModel, EventStatModel } from "../models/index.js";
 import fs from "fs";
 import path from "path";
 
@@ -136,6 +136,26 @@ export const getMyEvents = async (req, res) => {
 	}
 };
 
+
+export const getEventStats = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const event = await EventModel.findById(id);
+		if (!event) return res.status(404).json({ message: "Event not found" });
+
+		const isOrganizer = event.organizerId.toString() === req.user.userId;
+		const isAdmin = req.user.role === "ADMIN";
+		if (!isOrganizer && !isAdmin) {
+			return res.status(403).json({ message: "Forbidden" });
+		}
+
+		const stat = await EventStatModel.findOne({ eventId: event._id });
+		res.status(200).json(stat ?? null);
+	} catch (error) {
+		console.error("[getEventStats] Error:", error);
+		res.status(500).json({ message: "Error fetching event stats" });
+	}
+};
 
 const TIER_IMAGE_LIMITS = { FREE: 1, PRO: 5, ULTIMATE: 10 };
 

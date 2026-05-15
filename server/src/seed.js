@@ -8,11 +8,16 @@ config({ path: resolve(__dirname, "../.env") });
 const { connectDB } = await import("./lib/mongoose.js");
 const { UserModel } = await import("./models/user.model.js");
 const { EventModel } = await import("./models/event.model.js");
+const { getOrCreateTermsConfig } = await import("./services/consent.service.js");
 const { default: bcrypt } = await import("bcryptjs");
 
 await connectDB();
 
 async function seed() {
+	// Ensure terms config exists and grab the current version for consent records.
+	const terms = await getOrCreateTermsConfig();
+	const currentTermsVersion = terms.currentVersion;
+
 	// Admin seed
 	const existingAdmin = await UserModel.findOne({ role: "ADMIN" }).lean();
 
@@ -38,7 +43,7 @@ async function seed() {
 			tier: "ULTIMATE",
 			consentAccepted: true,
 			consentAcceptedAt: new Date(),
-			consentVersion: null,
+			consentVersion: currentTermsVersion,
 			refreshToken: null,
 		});
 
@@ -70,7 +75,7 @@ async function seed() {
 			tier: "FREE",
 			consentAccepted: true,
 			consentAcceptedAt: new Date(),
-			consentVersion: null,
+			consentVersion: currentTermsVersion,
 			refreshToken: null,
 		});
 
@@ -86,23 +91,52 @@ async function seed() {
 		console.log("Events already exists !");
 		process.exit(0);
 	} else {
-		await EventModel.create({
-			title: "Seeded Event",
+		const today = new Date();
+		const daysFromNow = (days) => {
+			const d = new Date(today);
+			d.setDate(d.getDate() + days);
+			return d;
+		};
+
+		const baseEvent = {
 			price: 0,
 			currency: "INR",
 			location: "DELHI",
 			category: "Social",
 			imgUrls: [],
-			description: "Its a Seeded mock event created by EMS for testing",
-			date: new Date(),
 			tags: [],
 			capacity: 100,
 			organizerId: user?._id,
 			organizerEmail: userEmail,
-			status: "PENDING",
-		});
+			visibility: "PUBLIC",
+			isCancelled: false,
+		};
 
-		console.log("Event created");
+		await EventModel.create([
+			{
+				...baseEvent,
+				title: "Pending Seeded Event",
+				description: "A pending event awaiting admin approval, 5 days ahead.",
+				date: daysFromNow(5),
+				status: "PENDING",
+			},
+			{
+				...baseEvent,
+				title: "Approved Seeded Event",
+				description: "An approved upcoming event, 3 days ahead.",
+				date: daysFromNow(3),
+				status: "APPROVED",
+			},
+			{
+				...baseEvent,
+				title: "Past Seeded Event",
+				description: "A past event, 3 days ago, for testing feedback flows.",
+				date: daysFromNow(-3),
+				status: "APPROVED",
+			},
+		]);
+
+		console.log("3 events created (pending +5d, approved +3d, past -3d)");
 	}
 
 	process.exit(0);

@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
 import toast from "react-hot-toast";
@@ -30,10 +30,25 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [showRejectModal, setShowRejectModal] = useState(false);
 	const [rejectReasonInput, setRejectReasonInput] = useState("");
 	const [adminActing, setAdminActing] = useState(false);
+	const [isRegistered, setIsRegistered] = useState<boolean>(!!event.userRegistration);
+	const [eventStat, setEventStat] = useState<any>(null);
 
 	const isPastEvent = new Date(event.date).getTime() < Date.now();
 	const isOrganizer = isAuthenticated && user?.id === event.organizerId;
 	const isAdmin = isAuthenticated && user?.role === "ADMIN";
+
+	useEffect(() => {
+		if (!(isOrganizer || isAdmin) || !accessToken) return;
+		const eid = eventId || event._id || event.id;
+		fetch(`${BASE_URL}/events/${eid}/stats`, {
+			headers: { Authorization: `Bearer ${accessToken}` },
+			credentials: "include",
+		})
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => setEventStat(data))
+			.catch(() => {});
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOrganizer, isAdmin, accessToken]);
 
 	const authHeaders = () => ({
 		"Content-Type": "application/json",
@@ -87,6 +102,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			}
 
 			setSuccess(true);
+			setIsRegistered(true);
 			toast.success("Registration successful!");
 			setFormData({ dietaryRestrictions: "", emergencyContact: "", phone: "", notes: "" });
 			setShowFormData(false);
@@ -97,6 +113,22 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			setError("An error occurred. Please try again.");
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const handleCancelRegistration = async () => {
+		const eid = eventId || event._id || event.id;
+		try {
+			const res = await fetch(`${BASE_URL}/events/${eid}/register`, {
+				method: "DELETE",
+				headers: authHeaders(),
+				credentials: "include",
+			});
+			if (!res.ok) throw new Error((await res.json()).message);
+			setIsRegistered(false);
+			toast.success("Registration cancelled.");
+		} catch (err: any) {
+			toast.error(err?.message || "Could not cancel registration.");
 		}
 	};
 
@@ -402,6 +434,16 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 						{primaryButton()}
 
 						{}
+						{isAuthenticated && !isOrganizer && !isAdmin && isRegistered && !isPastEvent && (
+							<button
+								className="btn btn-outline-danger rounded-pill px-4 fw-bold"
+								onClick={handleCancelRegistration}
+							>
+								Cancel Registration
+							</button>
+						)}
+
+						{}
 						{(isOrganizer || isAdmin) && (
 							<>
 								{}
@@ -426,7 +468,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 								)}
 
 								{}
-								{["APPROVED", "PENDING"].includes(eventStatus) && !event.isCancelled && !isPastEvent && (
+								{["APPROVED", "PENDING"].includes(eventStatus) && !event.isCancelled && !isPastEvent && !eventStat && (
 									<button
 										className="btn btn-outline-danger rounded-pill px-4 fw-bold"
 										onClick={handleCancel}
@@ -496,7 +538,12 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									<div className="small text-body-secondary">Visibility</div>
 								</div>
 							</div>
-
+							{eventStat && (
+								<div className="mt-3 pt-3 border-top border-primary border-opacity-10">
+									<div className="small text-body-secondary mb-1 text-uppercase fw-semibold">Attendees Tracked</div>
+									<div className="fw-bold fs-5">{eventStat.attendees?.length ?? 0}</div>
+								</div>
+							)}
 						</div>
 					)}
 				</div>

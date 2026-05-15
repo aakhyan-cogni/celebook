@@ -6,10 +6,11 @@ import { BASE_URL } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 
 export default function EventDetailPage() {
-	const { id }      = useParams<{ id: string }>();
-	const navigate    = useNavigate();
-	const location    = useLocation();
-	const accessToken = useAuthStore((s) => s.accessToken);
+	const { id }            = useParams<{ id: string }>();
+	const navigate          = useNavigate();
+	const location          = useLocation();
+	const accessToken       = useAuthStore((s) => s.accessToken);
+	const isAuthenticated   = useAuthStore((s) => s.isAuthenticated);
 
 	const [event,     setEvent]     = useState<any>(null);
 	const [loading,   setLoading]   = useState(true);
@@ -19,6 +20,13 @@ export default function EventDetailPage() {
 		if (!id) {
 			setErrorType("NOT_FOUND");
 			setLoading(false);
+			return;
+		}
+
+		// Hold the fetch until hydration finishes — otherwise an admin viewing a
+		// non-APPROVED event sees a brief FORBIDDEN error while accessToken is null.
+		if (isAuthenticated && !accessToken) {
+			setLoading(true);
 			return;
 		}
 
@@ -59,7 +67,7 @@ export default function EventDetailPage() {
 
 		fetchEvent();
 
-	}, [id, accessToken]);
+	}, [id, accessToken, isAuthenticated]);
 
 	if (loading) {
 		return (
