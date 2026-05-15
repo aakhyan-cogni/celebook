@@ -17,6 +17,21 @@ export async function getUserProfile(req, res) {
 	}
 }
 
+export const getUserProfileById = async(req,res) => {
+	try {
+
+		const user = await UserService.getUserById(req.params.id);
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		res.json(excludeFields(user, ["password", "refreshToken"]));
+	} catch (error) {
+		console.error("[getUserProfileById] Error in User controller:", error);
+		res.status(500).json({ message: "Error fetching user profile" });
+	}
+}
+
 export async function updateUser(req, res) {
 	try {
 		if (!req.user) throw new Error("User not authenticated");

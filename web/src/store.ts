@@ -30,6 +30,8 @@ export interface User {
 	role?: string;
 	companyWebsite?: string;
 	bio?: string;
+	designation?:string;
+	createdAt?:string;
 }
 
 export interface Event {
