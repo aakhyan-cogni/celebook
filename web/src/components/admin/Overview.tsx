@@ -29,8 +29,8 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 				setLoading(true);
 
 				const [eventsRes, usersRes] = await Promise.all([
-					apiFetch("/admin/events", { method: "GET" }, { page: "1", limit: "5" }),
-					apiFetch("/admin/users", { method: "GET" }, { page: "1", limit: "5" }),
+					apiFetch("/admin/events", { method: "GET" }, { page: "1", limit: "3" }),
+					apiFetch("/admin/users", { method: "GET" }, { page: "1", limit: "3" }),
 				]);
 
 				setEvents(eventsRes.events ?? eventsRes);
@@ -74,7 +74,7 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 					<div className="row g-4">
 						{eventsOverview.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
-								<EventCard event={event} onClick={handleEventClick} />
+								<EventCard event={event} onClick={handleEventClick} eventStatus={true}/>
 							</div>
 						))}
 					</div>
@@ -104,7 +104,9 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 				{userOverview.length > 0 ? (
 					<div className="row g-4">
 						{userOverview.map((user) => (
-							<div key={user.id} className="col-md-6 col-lg-4">
+							<div key={user.id} className="col-md-6 col-lg-4" style={{cursor:"pointer"}} onClick={()=>{
+								navigate(`/user/profile/${user.id}`)
+							}}>
 								<div className="card shadow-sm rounded-4 p-3">
 									<div className="d-flex align-items-center gap-3">
 										<img

@@ -20,6 +20,7 @@ import { Hydrate } from "./components/Hydrate.tsx";
 import ConsentModal from "./components/ConsentModal.tsx";
 import Terms from "./pages/Terms.tsx";
 import Admin from "./pages/Admin.tsx";
+import UserProfilePage from "./pages/UserProfilePage.tsx";
 
 createRoot(document.getElementById("root")!).render(<Root />);
 
@@ -60,7 +61,10 @@ function Root() {
 					<Route path="/pricing" element={<Pricing />} />
 					<Route path="/support" element={<SupportPage />} />
 					<Route path="/notifications" element={<NotificationPage />} />
+
 					<Route path="/admin" element={<Admin />} />
+					<Route path="/user/profile/:id" element={<UserProfilePage />} />
+					
 					<Route path="/terms" element={<Terms />} />
 				</Routes>
 				<Footer />

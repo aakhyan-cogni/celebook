@@ -28,7 +28,7 @@ export async function updateUserRole(userId, role) {
 }
 
 export async function getPaginatedEvents(page, limit, status) {
-	const filter = status ? { status } : {};
+	const filter = status ? { status } : { status : {$ne:"DRAFT"}};
 
 	const docs = await EventModel.find(filter)
 		.skip((page - 1) * limit)
