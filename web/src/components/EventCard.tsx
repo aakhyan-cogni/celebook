@@ -4,7 +4,7 @@ import { getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
 interface EventCardProps {
 	event: any;
 	onClick: (event: any) => void;
-	eventStatus?:boolean | false;
+	eventStatus?: boolean | false;
 }
 
 const fadeInUp = {
@@ -12,12 +12,12 @@ const fadeInUp = {
 	visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-export function EventCard({ event, onClick, eventStatus }: EventCardProps ) {
+export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	const [timeLeft, setTimeLeft] = useState("");
 	const eventTime = new Date(event.date).getTime();
 	const isPast = eventTime < Date.now();
 
-	console.log(eventStatus)
+	console.log(eventStatus);
 
 	useEffect(() => {
 		if (isPast) return;
@@ -123,13 +123,15 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps ) {
 				</div>
 				<p className="card-text text-body-secondary mb-3 line-clamp-2 small">{event.description}</p>
 
-				{(eventStatus)&& 
-				<div className="d-flex  align-items-start mb-2">
-					<p className={`card-text  mb-3 line-clamp-2 small  px-2 py-1 rounded-3  fw-bold fs-9 ${(event.status=="PENDING")?"bg-warning text-dark":((event.status=="APPROVED")?"bg-success text-light":((event.status=="REJECTED")?"bg-danger text-light":"bg-secondary text-dark"))}`}>
-						{event.status}
-					</p>
-				</div>}
-				
+				{eventStatus && (
+					<div className="d-flex align-items-start">
+						<p
+							className={`card-text line-clamp-2 small  px-2 py-1 rounded-3  fw-bold fs-9 ${event.status == "PENDING" ? "bg-warning text-dark" : event.status == "APPROVED" ? "bg-success text-light" : event.status == "REJECTED" ? "bg-danger text-light" : "bg-secondary text-dark"}`}
+						>
+							{event.status}
+						</p>
+					</div>
+				)}
 			</div>
 		</motion.div>
 	);

@@ -4,8 +4,6 @@ import { type Booking, type Event, type User } from "../../store";
 import { EventCard } from "../EventCard";
 import { motion } from "motion/react";
 import { apiFetch } from "../../lib/api";
-import { h1 } from "motion/react-client";
-
 interface DashboardProp {
 	viewEventsFn: () => void;
 	viewBookingsFn: () => void;

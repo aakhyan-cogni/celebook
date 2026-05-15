@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { type User } from "../../store";
 import { motion } from "motion/react";
 import { apiFetch } from "../../lib/api";
+import { useNavigate } from "react-router";
 
 const Users = () => {
 	const [baseUsers, setBaseUsers] = useState<User[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState("");
+
+	const navigate = useNavigate();
 
 	const profileImg = `http://localhost:5000/uploads/avatars/`;
 
@@ -105,7 +108,14 @@ const Users = () => {
 				{displayedUsers.length > 0 ? (
 					<div className="row g-4">
 						{displayedUsers.map((user) => (
-							<div key={user.id} className="col-md-6 col-lg-4">
+							<div
+								key={user.id}
+								className="col-md-6 col-lg-4"
+								style={{ cursor: "pointer" }}
+								onClick={() => {
+									navigate(`/user/profile/${user.id}`);
+								}}
+							>
 								<div className="card shadow-sm rounded-4 p-3">
 									<div className="d-flex align-items-center gap-3">
 										<img

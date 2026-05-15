@@ -16,7 +16,7 @@ const Events = () => {
 	const [search, setSearch] = useState("");
 
 	const handleEventClick = (event: Event) => {
-		navigate(`/events?q=${event.id}`);
+		navigate(`/events/${event.id}`);
 	};
 
 	useEffect(() => {
@@ -142,7 +142,7 @@ const Events = () => {
 					<div className="row g-4">
 						{displayEvents.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
-								<EventCard event={event} onClick={handleEventClick} />
+								<EventCard event={event} onClick={handleEventClick} eventStatus={true} />
 							</div>
 						))}
 					</div>
