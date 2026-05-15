@@ -18,6 +18,19 @@ export async function authenticate(req, res, next) {
 	}
 }
 
+export function optionalAuthenticate(req, res, next) {
+	try {
+		const authHeader = req.headers.authorization;
+		if (authHeader && authHeader.startsWith("Bearer ")) {
+			const token = authHeader.split(" ")[1];
+			req.user = verifyAccessToken(token);
+		}
+	} catch {
+		req.user = undefined;
+	}
+	next();
+}
+
 export function authorize(roles) {
 	return (req, res, next) => {
 		if (!req.user || !roles.includes(req.user.role)) {
@@ -26,3 +39,4 @@ export function authorize(roles) {
 		next();
 	};
 }
+
