@@ -16,40 +16,80 @@ The reference LLD (`Event Management System.pdf`) defines five bare-minimum modu
 - ✅ S2-001 · Consent System — Backend
 - ✅ S2-002 · Consent System — Frontend
 
-### Checkpoint 1 — PDF Bare Minimum  ⏳ 2 / 15 done
+### Checkpoint 1 — PDF Bare Minimum  ✅ 8 / 15 done · 🟡 5 in progress · ⏳ 2 pending
 Priority order top-to-bottom. Must ship to satisfy the PDF LLD.
 - ✅ S2-003 · Admin Role & Endpoints — Backend  *(required by the event-publish state machine)*
 - ✅ S2-004 · Admin Dashboard — Frontend
-- ⏳ S2-005 · Event Model & Core CRUD — Backend
-- ⏳ S2-006 · Event Search & Public Listing — Backend
-- ⏳ S2-007 · Event Creation & Management — Frontend Integration
-- ⏳ S2-008 · My Events Dashboard & Event Editing — Frontend
-- ⏳ S2-009 · Event Registration (Tickets) — Backend
-- ⏳ S2-010 · Event Registration (Tickets) — Frontend
-- ⏳ S2-015 · File Upload — Backend  *(avatar portion only; event gallery descopable to CP3)*
-- ⏳ S2-016 · File Upload — Frontend  *(avatar portion only; event gallery descopable to CP3)*
-- ⏳ S2-017 · Notification System — Backend
-- ⏳ S2-018 · Notification System — Frontend
+- ✅ S2-005 · Event Model & Core CRUD — Backend
+- ✅ S2-006 · Event Search & Public Listing — Backend
+- ✅ S2-007 · Event Creation & Management — Frontend Integration
+- ✅ S2-008 · My Events Dashboard & Event Editing — Frontend
+- 🟡 S2-009 · Event Registration (Tickets) — Backend  *(formData persistence missing; notification stub still console.log)*
+- 🟡 S2-010 · Event Registration (Tickets) — Frontend  *("My Registrations" Dashboard section + Event Full button state missing)*
+- ✅ S2-015 · File Upload — Backend  *(avatar portion)*
+- 🟡 S2-016 · File Upload — Frontend  *(event banner upload done; profile avatar is preset-picker, not real file upload)*
+- 🟡 S2-017 · Notification System — Backend  *(model/service/endpoints done; not wired into admin approve/reject, registration, or publish-submit)*
+- 🟡 S2-018 · Notification System — Frontend  *(NotificationPage uses mock data; Navbar bell has no unread badge)*
 - ⏳ S2-022 · Feedback & Ratings — Backend  *(NEW — added to satisfy PDF Module 4.5)*
 - ⏳ S2-023 · Feedback & Ratings — Frontend  *(NEW — added to satisfy PDF Module 4.5)*
-- ⏳ S2-021 · User Profile — Backend Integration & Subscription Tier
+- ✅ S2-021 · User Profile — Backend Integration & Subscription Tier
 
 ### Checkpoint 2 — Hardening (cross-cutting, run alongside CP1)
-- ⏳ S2-019 · Backend Security Hardening
-- ⏳ S2-020 · Frontend Auth Guards & Route Protection
+- 🟡 S2-019 · Backend Security Hardening  *(ownership checks done; Zod, rate-limit, env validation, magic-byte checks all missing)*
+- 🟡 S2-020 · Frontend Auth Guards & Route Protection  *(inline checks on /admin and /dashboard; no ProtectedRoute/AdminRoute/TierGate component; /notifications and /support unguarded; no intended-path redirect)*
 
 ### Checkpoint 3 — Plus Features (descope first if time runs out)
 - ⏳ S2-011 · Custom Form Builder — Backend
 - ⏳ S2-012 · Custom Form Builder — Frontend
 - ⏳ S2-013 · Team Participation — Backend
 - ⏳ S2-014 · Team Participation — Frontend
-- ⏳ S2-015 (gallery) · Event Image Gallery — Backend continuation of S2-015
-- ⏳ S2-016 (gallery) · Event Image Gallery — Frontend continuation of S2-016
+- ✅ S2-015 (gallery) · Event Image Gallery — Backend continuation of S2-015  *(tier-based limits FREE=1 / PRO=5 / ULTIMATE=10)*
+- ✅ S2-016 (gallery) · Event Image Gallery — Frontend continuation of S2-016  *(EventCreationForm wires uploads with client-side type/size validation)*
+- ✅ S2-024 · Event Stats Collection (Full-stack) — *(2026-05-15; tracks attendees + powers organizer panel)*
 
 > **Note on S2-015 / S2-016:** The same task body covers both avatar upload (CP1) and event-image gallery (CP3). The avatar portion is bare-minimum; the gallery portion is descopable. Devs should ship avatar first and treat gallery as optional follow-up.
 
 ### How to update status
 Devs flip the emoji on their task as they progress: ⏳ → 🟡 (when work starts) → ✅ (when merged). Also bump the per-task `**Status:**` line below. Anyone reading this file should be able to see the project state from the top of the file alone.
+
+---
+
+## Session Log — 2026-05-15
+
+Work landed today across event stats, registration lifecycle, and several refresh/auth bugs.
+
+**New feature — EventStat collection (see S2-024 below)**
+- New `EventStatModel` (`server/src/models/eventStat.model.js`): `{ eventId (unique), attendees: [userId], avgFeedback? }`.
+- `registerForEvent` upserts the doc and `$addToSet`s the userId; `cancelRegistration` `$pull`s the userId — cancelled attendees do not count toward stats or capacity.
+- New endpoint `GET /api/events/:id/stats` (organizer/admin only).
+- `getEventById` now attaches `userRegistration` (the viewer's CONFIRMED reg, if any) so the frontend can render registered-state without a second round-trip.
+- `SingleEvent.tsx`: shows **✓ Already Registered** disabled CTA + a **Cancel Registration** button for registered users; organizer Cancel Event button is gated on `!eventStat` (no attendees yet); organizer panel surfaces an Attendees Tracked count.
+
+**Registration schema cleanup**
+- Reduced `Registration.status` enum to `["CONFIRMED", "CANCELLED"]`, default `CONFIRMED` (PENDING removed — never used in flow).
+- `registerForEvent` now reactivates an existing CANCELLED row (instead of tripping the unique `(eventId, userId)` index) so a user can re-register after cancelling.
+
+**Seed fixes** (`server/src/seed.js`)
+- Seeded users now get the real `consentVersion` (from `TermsConfig`) instead of `null` — fixes spurious re-consent prompts.
+- Three events now seed: `PENDING` at +5d, `APPROVED` at +3d, `APPROVED` past at -3d (for feedback-flow testing).
+
+**Auth / hydration bugs**
+- Fixed page-refresh logout race: `Hydrate.tsx` now awaits `/auth/refresh` *before* firing `/user/profile`. The old parallel pattern caused two refresh requests against the rotating refresh token in DB — the loser triggered `logout()`.
+- `Event.tsx` and `Dashboard.tsx` now wait for the access token to be set before fetching when `isAuthenticated` is true (avoids 401 → empty state on refresh).
+
+**Admin event flow**
+- Fixed broken navigation in `admin/Overview.tsx` and `admin/Events.tsx`: `/events?q=ID` → `/events/${id}` (the old URL pointed at the public events search route, which silently rejects non-APPROVED events).
+- `EventCard` now renders a top-left status badge (`Pending Review` / `Rejected` / `Draft`) when status ≠ `APPROVED`, so admins immediately spot what needs action. Removed the now-duplicate badge from `Dashboard.tsx`.
+
+**TS tooling**
+- Added `web/src/vite-env.d.ts` (`/// <reference types="vite/client" />`) to fix `Cannot find module './index.css'` errors across `.tsx` files.
+
+**Status audit (rolled up into Checkpoint Status above)**
+After a full codebase pass:
+- Flipped to ✅: S2-005, S2-006, S2-007, S2-008, S2-015 (avatar **+** gallery), S2-021.
+- Flipped to 🟡 with per-task gap notes: S2-009 (formData not persisted, notification stub still console.log), S2-010 (no My Registrations section, no Event Full state), S2-016 (avatar is preset picker not file upload), S2-017 (model+endpoints done but `createNotification` not called from admin / registration / publish), S2-018 (page on mock data, no bell badge), S2-019 (only ownership checks done), S2-020 (inline checks instead of guard components, no intended-path redirect, /notifications + /support unguarded).
+- New: S2-024 (EventStat) — done.
+- Still ⏳: S2-011 / S2-012 (form builder), S2-013 / S2-014 (teams), S2-022 / S2-023 (feedback).
 
 ---
 
@@ -268,7 +308,7 @@ tier: { type: String, enum: TIERS, default: "FREE" },
 **Type:** Backend  
 **Depends on:** Nothing  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.1 Event Management  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  
 
 **What to build:**
 
@@ -336,7 +376,7 @@ Endpoints:
 **Type:** Backend  
 **Depends on:** S2-005  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.1 search/filter  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  
 
 **What to build:**
 - `GET /api/events` — Public listing. Build a Mongoose filter that always includes `{ status: "APPROVED", visibility: { $in: ["PUBLIC", "UNLISTED"] } }`. Never return `"PRIVATE"` events in the listing. Support query params: `?q=` (text search on title + description), `?category=`, `?location=`, `?dateFrom=`, `?dateTo=`, `?page=1`, `?limit=20`. Use `EventModel.find(filter).skip().limit().lean()` + `EventModel.countDocuments()` for pagination.
@@ -357,7 +397,7 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** S2-005, S2-006  
 **Checkpoint:** 1 (Bare Minimum)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  
 
 **What to build:**
 - Wire `EventCreationForm.tsx` to `POST /api/events` then `POST /api/events/:id/publish`.
@@ -381,7 +421,7 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** S2-005, S2-007  
 **Checkpoint:** 1 (Bare Minimum)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  
 
 **What to build:**
 - Rework the "Events You're Organizing" section in `Dashboard.tsx` to use `GET /api/events/mine`.
@@ -407,7 +447,15 @@ Endpoints:
 **Type:** Backend  
 **Depends on:** S2-005  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.3 Ticket Booking  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- `formData` is NOT declared on `RegistrationModel` schema — service writes it but Mongoose strict mode drops it. Form-submission data is silently lost.
+- `registration.service.js` still has a local `createNotification` stub (console.log). Should call the real `notification.service.createNotification` so `REGISTRATION_CONFIRMED` rows land in the `Notification` collection.
+- `teamId` field on Registration not present (needed by S2-013).
+- The non-unique indexes `{userId: 1}` and `{eventId: 1, status: 1}` from the spec are not declared.
+- `GET /api/registrations/mine` route is actually mounted at `/api/registrations/my-registrations` (cosmetic — frontend uses this path).
+
 
 **What to build:**
 
@@ -457,7 +505,13 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** S2-009  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.3 Ticket Booking  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- "My Registrations" Dashboard section is NOT implemented — the backend endpoint `GET /api/registrations/my-registrations` exists but no frontend component consumes it.
+- The Register CTA has no `Event Full` state — capacity errors only surface as a toast after the user clicks Register.
+- All other states (Login to Register / Register / ✓ Already Registered / Registration Closed / Event Cancelled) and the optional registration form modal are wired and working. Cancel Registration button works and freed seats are reclaimable (re-register reactivates a CANCELLED row).
+
 
 **What to build:**
 - On the event detail page (`SingleEvent.tsx` / `Event.tsx`), replace any placeholder with a real **Register** button.
@@ -642,7 +696,8 @@ Endpoints:
 **Type:** Backend  
 **Depends on:** Nothing (Multer already configured)  
 **Checkpoint:** 1 (avatar — Bare Minimum) / 3 (event-image gallery — Plus Feature)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  *(both avatar and event-image gallery)*
+
 
 **What to build:**
 - `POST /api/user/avatar` (auth) — Upload profile avatar. Accept: `image/jpeg`, `image/png`, `image/webp`. Max size: 2MB. Store in `server/public/avatars/`. Return the public URL. Update `User.avatar` in DB.
@@ -662,7 +717,12 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** S2-015  
 **Checkpoint:** 1 (avatar — Bare Minimum) / 3 (event-image gallery — Plus Feature)  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- Event banner upload in EventCreationForm is **done** (tier-aware, client-side type/size validation, previews).
+- Profile avatar is currently a **preset-image picker**, not a real file upload — `BasicProfileInfo.tsx` does not call `POST /api/user/avatar`. Wire the existing backend endpoint and add file-picker + client-side validation.
+
 
 **What to build:**
 - **Profile avatar upload:** In `BasicProfileInfo.tsx`, clicking the avatar opens a file picker. Validate type (JPEG/PNG/WebP) and size (<2MB) client-side. Show a preview before uploading. On confirm, call `POST /api/user/avatar`. Update `useAuthStore` with the new avatar URL. Show progress indicator.
@@ -684,7 +744,13 @@ Endpoints:
 **Type:** Backend  
 **Depends on:** S2-003 (approve/reject), S2-009 (registration)  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.4 Notifications & Reminders  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- `NotificationModel`, `createNotification`, `notifyAdminsEventSubmitted`, list / mark-read / mark-all / delete endpoints — **done**.
+- **Not wired** anywhere in the request path: `admin.service::approveEvent` / `rejectEvent` do not call `createNotification`, `registration.service::registerForEvent` uses a local console.log stub, and `event.service::publishEvent` does not call `notifyAdminsEventSubmitted`. The collection stays empty in practice.
+- `EVENT_REMINDER` cron job not implemented (backlog item).
+
 
 **What to build:**
 
@@ -742,7 +808,14 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** S2-017  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.4 Notifications & Reminders  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- `NotificationPage.tsx` still renders **hardcoded mock data** — not wired to `GET /api/notifications`.
+- Navbar has a bell icon but no unread-count badge (no call to the unread count endpoint).
+- No "Mark all as read" button surfaced in the page UI.
+- No type-specific icons or Team Invite Accept/Decline action buttons.
+
 
 **What to build:**
 - Wire `NotificationPage.tsx` to `GET /api/notifications`. Render notifications in a list with type icons:
@@ -770,7 +843,16 @@ Endpoints:
 **Type:** Backend  
 **Depends on:** Nothing (can start immediately, apply as other tasks land)  
 **Checkpoint:** 2 (Hardening) — cross-cutting, run alongside CP1  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- **Ownership checks** are in place for PATCH/DELETE on events and images (organizerId vs req.user.userId, admin bypass).
+- **Zod input validation** not started — no `zod` dependency, no `validate.middleware.js`.
+- **Rate limiting** not started — no `express-rate-limit`.
+- **Env validation** on startup not implemented.
+- **File upload MIME check** is `mimetype` only — no magic-byte verification.
+- **`eventVisibilityFilter` utility** not extracted — current filters are inline.
+
 
 **What to build:**
 - **Input validation:** Install `zod`. Create a `validate(schema)` middleware factory in `server/src/middleware/validate.middleware.js`. Apply Zod schemas to request bodies for: register, login, event create/update, form schema create, team create, invite. Return `400` with a structured error list on validation failure. Note: Mongoose `enum` validation provides a schema-level safety net, but Zod handles full request-body validation at the controller layer.
@@ -796,7 +878,15 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** Nothing  
 **Checkpoint:** 2 (Hardening) — cross-cutting, run alongside CP1  
-**Status:** ⏳ Pending  
+**Status:** 🟡 In Progress
+
+**Audit (2026-05-15) — gaps remaining:**
+- **Inline auth checks** on `/dashboard` and `/admin` redirect non-auth / non-admin users — works, but not reusable.
+- **`ProtectedRoute`, `AdminRoute`, `TierGate` components** are NOT extracted. Inline checks duplicated across pages.
+- **Routes still unguarded:** `/notifications`, `/support`.
+- **No intended-path redirect** after login (always lands on `/dashboard`).
+- **Token-refresh 401 flow** is wired in `lib/api.ts` and verified end-to-end (Hydrate serialization, Event/Dashboard wait-for-token).
+
 
 **What to build:**
 - **`ProtectedRoute` component:** Wraps routes that require authentication. If `!isAuthenticated`, redirect to `/login` and store the intended path in location state so the user is redirected back after login.
@@ -822,7 +912,8 @@ Endpoints:
 **Type:** Frontend  
 **Depends on:** S2-015 (avatar upload)  
 **Checkpoint:** 1 (Bare Minimum) — PDF Module 4.2 Manage user profiles  
-**Status:** ⏳ Pending  
+**Status:** ✅ Done  *(avatar-as-file-upload tracked under S2-016)*
+
 
 **What to build:**
 - Wire all profile tabs to the real API:
@@ -915,6 +1006,39 @@ Update event listing/detail responses (`event.service.js::getAllEvents`, `getEve
 - "Edit" and "Delete" buttons are hidden once 7 days have passed since submission.
 - User cannot see a submit form for an event they didn't attend (form hidden, replaced with "Only registered attendees can leave feedback").
 - Average rating on event listing cards reflects backend `avgRating` accurately.
+
+---
+
+### Module 12 — Event Stats
+
+---
+
+#### S2-024 · Event Stats Collection — Backend + Frontend
+**Type:** Full-stack
+**Depends on:** S2-005 (Event), S2-009 (Registration)
+**Checkpoint:** 1 (Bare Minimum) — supports organizer attendee tracking
+**Status:** ✅ Done (2026-05-15)
+
+**What was built:**
+- New `EventStatModel` (`server/src/models/eventStat.model.js`):
+  ```js
+  { eventId: ObjectId (unique ref Event), attendees: [ObjectId ref User], avgFeedback?: Number }
+  ```
+- One-to-one with `Event` via the unique `eventId` index.
+- `registerForEvent` upserts the doc and `$addToSet`s the registrant's `userId`.
+- `cancelRegistration` `$pull`s the registrant's `userId` — cancelled attendees never count toward stats *or* capacity (capacity already filters on `status: "CONFIRMED"`).
+- New endpoint `GET /api/events/:id/stats` (auth + organizer/admin guard) — returns the EventStat doc or `null`.
+- `event.service.getEventById` attaches `userRegistration` (current viewer's CONFIRMED reg) to the response.
+- Frontend (`SingleEvent.tsx`):
+  - Fetches `/events/:id/stats` when organizer/admin is viewing; renders attendee count in the Organizer Panel.
+  - Registered users see a disabled **✓ Already Registered** CTA plus a **Cancel Registration** button.
+  - Organizer's **Cancel Event** button is hidden once anyone has registered (`!eventStat`).
+
+**Acceptance criteria (met):**
+- Registering creates/updates the EventStat doc with the userId in `attendees`.
+- Cancelling removes the userId; the slot is freed for someone else.
+- Non-organizer/non-admin GET to `/events/:id/stats` returns `403`.
+- Re-registering after cancelling works (reactivates the existing row instead of hitting the unique-index constraint).
 
 ---
 
