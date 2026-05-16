@@ -1,385 +1,162 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { EventCard } from "../EventCard";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/useAuthStore";
-import { BASE_URL } from "../../lib/api";
-import toast from "react-hot-toast";
+import { apiFetch } from "../../lib/api";
 
-export default function Dashboard() {
+interface DashboardProps {
+	viewEventsFn: () => void;
+	viewBookingsFn: () => void;
+}
+
+const OVERVIEW_LIMIT = 5;
+
+export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardProps) {
 	const navigate        = useNavigate();
 	const accessToken     = useAuthStore((s) => s.accessToken);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-	const [myEvents,     setMyEvents]     = useState<any[]>([]);
-	const [loading,      setLoading]      = useState(true);
-
-	const [deleteTarget, setDeleteTarget] = useState<any>(null);
-	const [deleting,     setDeleting]     = useState(false);
-
-	const [cancelTarget, setCancelTarget] = useState<any>(null);
-	const [cancelReason, setCancelReason] = useState("");
-	const [cancelling,   setCancelling]   = useState(false);
-
-	const authHeaders = () => ({
-		"Content-Type": "application/json",
-		Authorization:  `Bearer ${accessToken}`,
-	});
-
-	const fetchMyEvents = async () => {
-		try {
-			setLoading(true);
-			const res = await fetch(`${BASE_URL}/events/mine`, {
-				method: "GET",
-				headers: authHeaders(),
-				credentials: "include",
-			});
-			if (!res.ok) throw new Error("Failed to load");
-			const data = await res.json();
-			setMyEvents(data);
-		} catch {
-			toast.error("Could not load your events.");
-		} finally {
-			setLoading(false);
-		}
-	};
+	const [myEvents,   setMyEvents]   = useState<any[]>([]);
+	const [myBookings, setMyBookings] = useState<any[]>([]);
+	const [loading,    setLoading]    = useState(true);
 
 	useEffect(() => {
 		// Wait for hydration: on page refresh accessToken is briefly null while
-		// /auth/refresh runs. Firing fetch with "Bearer null" returns 401 and the
-		// user's events vanish.
+		// /auth/refresh runs. Firing apiFetch before then sends "Bearer null".
 		if (isAuthenticated && !accessToken) {
 			setLoading(true);
 			return;
 		}
 		if (!accessToken) return;
-		fetchMyEvents();
+
+		let cancelled = false;
+		const load = async () => {
+			setLoading(true);
+			try {
+				const [eventsRes, bookingsRes] = await Promise.all([
+					apiFetch("/events/mine", { method: "GET" }),
+					apiFetch("/registrations/my-registrations", { method: "GET" }),
+				]);
+				if (cancelled) return;
+				const events = Array.isArray(eventsRes) ? eventsRes : (eventsRes.events ?? []);
+				const bookings = bookingsRes?.data ?? bookingsRes ?? [];
+				setMyEvents(events.slice(0, OVERVIEW_LIMIT));
+				setMyBookings(bookings.slice(0, OVERVIEW_LIMIT));
+			} catch (err) {
+				console.error("Failed to load dashboard overview:", err);
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		};
+		load();
+		return () => { cancelled = true; };
 	}, [accessToken, isAuthenticated]);
 
-	const handlePublish = async (eventId: string) => {
-		try {
-			const res = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
-				method: "POST", headers: authHeaders(), credentials: "include",
-			});
-			const data = await res.json();
-			if (!res.ok) {
-				toast.error(
-					data.message === "TIER_LIMIT_EXCEEDED"
-						? "You've reached your plan's event limit. Upgrade to publish more."
-						: data.message || "Could not publish.",
-				);
-				return;
-			}
-			if (data.status === "PENDING") {
-				toast.success("Submitted for review. You'll be notified when approved.", { duration: 5000 });
-			} else if (data.status === "APPROVED") {
-				toast.success("Event is live! 🎉");
-			}
-			fetchMyEvents();
-		} catch {
-			toast.error("Could not publish event.");
-		}
-	};
-
-	const handleDelete = async () => {
-		if (!deleteTarget) return;
-		setDeleting(true);
-		try {
-			const res = await fetch(`${BASE_URL}/events/${deleteTarget.id}`, {
-				method: "DELETE", headers: authHeaders(), credentials: "include",
-			});
-			const data = await res.json();
-			if (!res.ok) {
-				toast.error(
-					data.message === "HAS_REGISTRATIONS"
-						? "This event has registered attendees and cannot be deleted."
-						: data.message || "Could not delete.",
-				);
-				return;
-			}
-			toast.success("Event deleted.");
-			setDeleteTarget(null);
-			fetchMyEvents();
-		} catch {
-			toast.error("Could not delete event.");
-		} finally {
-			setDeleting(false);
-		}
-	};
-
-	const handleCancel = async () => {
-		if (!cancelTarget) return;
-		setCancelling(true);
-		try {
-			const res = await fetch(`${BASE_URL}/events/${cancelTarget.id}/cancel`, {
-				method: "POST",
-				headers: authHeaders(),
-				credentials: "include",
-				body: JSON.stringify({ reason: cancelReason.trim() || null }),
-			});
-			if (!res.ok) throw new Error((await res.json()).message);
-			toast.success("Event cancelled.");
-			setCancelTarget(null);
-			setCancelReason("");
-			fetchMyEvents();
-		} catch (err: any) {
-			toast.error(err?.message || "Could not cancel event.");
-		} finally {
-			setCancelling(false);
-		}
-	};
-
-	const handleDuplicate = async (eventId: string) => {
-		try {
-			const res = await fetch(`${BASE_URL}/events/${eventId}/duplicate`, {
-				method: "POST", headers: authHeaders(), credentials: "include",
-			});
-			if (!res.ok) throw new Error();
-			toast.success("Event duplicated as a new draft.");
-			fetchMyEvents();
-		} catch {
-			toast.error("Could not duplicate event.");
-		}
-	};
-
-	const goToEdit = (event: any) => {
-		navigate(`/create?edit=${event.id}`, { state: { eventData: event } });
-	};
-
-	const actionButtons = (event: any) => {
-		if (event.isCancelled) return null;
-
+	if (loading) {
 		return (
-			<div className="d-flex gap-1 flex-wrap mt-2">
-				{/* DRAFT → Edit, Publish, Duplicate, Delete */}
-				{event.status === "DRAFT" && (
-					<>
-						<button
-							className="btn btn-sm btn-outline-primary rounded-pill"
-							onClick={(e) => { e.stopPropagation(); goToEdit(event); }}
-						>
-							 Edit
-						</button>
-						<button
-							className="btn btn-sm btn-success rounded-pill"
-							onClick={(e) => { e.stopPropagation(); handlePublish(event.id); }}
-						>
-							 Publish
-						</button>
-						<button
-							className="btn btn-sm btn-outline-secondary rounded-pill"
-							onClick={(e) => { e.stopPropagation(); handleDuplicate(event.id); }}
-						>
-							 Duplicate
-						</button>
-						<button
-							className="btn btn-sm btn-outline-danger rounded-pill"
-							onClick={(e) => { e.stopPropagation(); setDeleteTarget(event); }}
-						>
-							 Delete
-						</button>
-					</>
-				)}
-
-				{/* PENDING → View only, Cancel */}
-				{event.status === "PENDING" && (
-					<>
-						<span className="small text-muted fst-italic align-self-center">
-							Awaiting admin review — editing locked
-						</span>
-						<button
-							className="btn btn-sm btn-outline-danger rounded-pill"
-							onClick={(e) => { e.stopPropagation(); setCancelTarget(event); setCancelReason(""); }}
-						>
-							Cancel Event
-						</button>
-					</>
-				)}
-
-				{/* APPROVED → Duplicate, Cancel */}
-				{event.status === "APPROVED" && (
-					<>
-						<button
-							className="btn btn-sm btn-outline-secondary rounded-pill"
-							onClick={(e) => { e.stopPropagation(); handleDuplicate(event.id); }}
-						>
-							 Duplicate
-						</button>
-						<button
-							className="btn btn-sm btn-outline-danger rounded-pill"
-							onClick={(e) => { e.stopPropagation(); setCancelTarget(event); setCancelReason(""); }}
-						>
-							Cancel Event
-						</button>
-					</>
-				)}
-
-				{/* REJECTED → Edit & Resubmit, Delete */}
-				{event.status === "REJECTED" && (
-					<>
-						<button
-							className="btn btn-sm btn-primary rounded-pill"
-							onClick={(e) => { e.stopPropagation(); goToEdit(event); }}
-						>
-							 Edit & Resubmit
-						</button>
-						<button
-							className="btn btn-sm btn-outline-danger rounded-pill"
-							onClick={(e) => { e.stopPropagation(); setDeleteTarget(event); }}
-						>
-							 Delete
-						</button>
-					</>
-				)}
+			<div className="d-flex justify-content-center align-items-center p-5">
+				<div className="spinner-border text-primary" role="status">
+					<span className="visually-hidden">Loading...</span>
+				</div>
 			</div>
 		);
-	};
+	}
 
 	return (
 		<div className="container">
+			{/* Events you're organizing */}
 			<section className="mb-5">
-				<div className="d-flex justify-content-between align-items-center mb-4">
-					<h3 className="fw-bold mb-0">Events You're Organizing</h3>
-					<motion.button
-						whileTap={{ scale: 0.95 }}
-						onClick={() => navigate("/create")}
-						className="btn btn-primary px-3 py-1 rounded-pill shadow-sm fw-bold d-flex align-items-center"
-					>
-						<i className="bi bi-plus-lg"></i>
-						<span>Create New Event</span>
-					</motion.button>
+				<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+					<h3 className="fw-bold mb-0">Your Events</h3>
+					<div className="d-flex align-items-center gap-2">
+						<motion.button
+							whileTap={{ scale: 0.95 }}
+							className="btn btn-primary rounded-pill px-4 fw-bold"
+							onClick={() => navigate("/create")}
+						>
+							+ Create event
+						</motion.button>
+						<motion.button
+							whileTap={{ scale: 0.95 }}
+							onClick={viewEventsFn}
+							className="btn border px-3 py-1 rounded-3 shadow-sm fw-bold"
+						>
+							View More
+						</motion.button>
+					</div>
 				</div>
 
-				{loading ? (
-					<div className="d-flex justify-content-center p-5">
-						<div className="spinner-border text-primary" role="status">
-							<span className="visually-hidden">Loading...</span>
-						</div>
-					</div>
-				) : myEvents.length > 0 ? (
+				{myEvents.length > 0 ? (
 					<div className="row g-4">
 						{myEvents.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
-								<div className="position-relative">
-									{event.registrationCount > 0 && (
-										<div className="position-absolute top-0 start-0 m-3" style={{ zIndex: 10 }}>
-											<span className="badge bg-info text-dark fs-6 rounded-2 px-3 py-1">
-												👥 {event.registrationCount}
-											</span>
-										</div>
-									)}
-									<EventCard
-										event={event}
-										onClick={() => navigate(`/events/${event.id}`, { state: { eventData: event } })}
-									/>
-									{event.status === "REJECTED" && event.rejectionReason && (
-										<div className="mt-1 px-2">
-											<small className="text-danger">
-												 Rejected: {event.rejectionReason}
-											</small>
-										</div>
-									)}
-									<div className="px-2 pb-2">
-										{actionButtons(event)}
-									</div>
-								</div>
+								<EventCard
+									event={event}
+									eventStatus
+									onClick={() => navigate(`/events/${event.id}`, { state: { eventData: event } })}
+								/>
 							</div>
 						))}
 					</div>
 				) : (
 					<div className="text-center p-5 rounded-4 border border-dashed">
 						<p className="text-muted mb-2">You haven't created any events yet.</p>
-						<button
-							className="btn btn-primary rounded-pill px-4"
+						<motion.button
+							whileTap={{ scale: 0.95 }}
+							className="btn btn-primary rounded-pill px-4 my-2"
 							onClick={() => navigate("/create")}
 						>
 							Create your first event
-						</button>
+						</motion.button>
 					</div>
 				)}
 			</section>
 
-			{/* Delete confirmation modal */}
-			<AnimatePresence>
-				{deleteTarget && (
-					<motion.div
-						initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-						className="modal d-block"
-						style={{ background: "rgba(0,0,0,0.5)" }}
-						onClick={() => setDeleteTarget(null)}
-					>
-						<div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-							<div className="modal-content rounded-4 border-0 shadow-lg">
-								<div className="modal-header border-0 pb-0">
-									<h5 className="modal-title fw-bold">Delete Event?</h5>
-									<button className="btn-close" onClick={() => setDeleteTarget(null)} />
-								</div>
-								<div className="modal-body">
-									<p className="text-body-secondary">
-										Are you sure you want to permanently delete{" "}
-										<strong>{deleteTarget?.title}</strong>? This cannot be undone.
-									</p>
-									
-								</div>
-								<div className="modal-footer border-0 pt-0">
-									<button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => setDeleteTarget(null)}>
-										Cancel
-									</button>
-									<button className="btn btn-danger rounded-pill px-4" onClick={handleDelete} disabled={deleting}>
-										{deleting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
-										Delete
-									</button>
-								</div>
-							</div>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
+			<hr className="my-5 opacity-10" />
 
-			{/* Cancel confirmation modal */}
-			<AnimatePresence>
-				{cancelTarget && (
-					<motion.div
-						initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-						className="modal d-block"
-						style={{ background: "rgba(0,0,0,0.5)" }}
-						onClick={() => setCancelTarget(null)}
+			{/* Your bookings */}
+			<section>
+				<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+					<h3 className="fw-bold mb-0">Your Bookings</h3>
+					<motion.button
+						whileTap={{ scale: 0.95 }}
+						onClick={viewBookingsFn}
+						className="btn border px-3 py-1 rounded-3 shadow-sm fw-bold"
 					>
-						<div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
-							<div className="modal-content rounded-4 border-0 shadow-lg">
-								<div className="modal-header border-0 pb-0">
-									<h5 className="modal-title fw-bold">Cancel Event?</h5>
-									<button className="btn-close" onClick={() => setCancelTarget(null)} />
+						View More
+					</motion.button>
+				</div>
+
+				{myBookings.length > 0 ? (
+					<div className="row g-4">
+						{myBookings.map((booking) => {
+							const ev = booking.eventId;
+							if (!ev) return null;
+							const evId = ev.id ?? ev._id;
+							return (
+								<div key={booking._id ?? booking.id ?? evId} className="col-md-6 col-lg-4">
+									<EventCard
+										event={{ ...ev, id: evId }}
+										onClick={() => navigate(`/events/${evId}`, { state: { eventData: ev } })}
+									/>
 								</div>
-								<div className="modal-body">
-									<p className="text-body-secondary">
-										Are you sure you want to cancel <strong>{cancelTarget?.title}</strong>?
-										Registered attendees will be notified.
-									</p>
-									<div className="mb-2">
-										<label className="form-label fw-semibold small">Reason (optional)</label>
-										<textarea
-											className="form-control rounded-3" rows={3}
-											placeholder="e.g. Venue unavailable, rescheduled..."
-											value={cancelReason}
-											onChange={(e) => setCancelReason(e.target.value)}
-										/>
-									</div>
-								</div>
-								<div className="modal-footer border-0 pt-0">
-									<button className="btn btn-outline-secondary rounded-pill px-4" onClick={() => setCancelTarget(null)}>
-										Keep Event
-									</button>
-									<button className="btn btn-danger rounded-pill px-4" onClick={handleCancel} disabled={cancelling}>
-										{cancelling ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
-										Cancel Event
-									</button>
-								</div>
-							</div>
-						</div>
-					</motion.div>
+							);
+						})}
+					</div>
+				) : (
+					<div className="text-center p-5 rounded-4 border border-dashed">
+						<p className="text-muted mb-2">You haven't booked any events yet.</p>
+						<motion.button
+							whileTap={{ scale: 0.95 }}
+							className="btn btn-primary rounded-pill px-4 my-2"
+							onClick={() => navigate("/events")}
+						>
+							Discover events
+						</motion.button>
+					</div>
 				)}
-			</AnimatePresence>
+			</section>
 		</div>
 	);
 }

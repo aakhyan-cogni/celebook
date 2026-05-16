@@ -22,8 +22,8 @@ export default function ProfileLayout() {
 		setActive("events");
 	};
 
-	const viewUsers = () => {
-		setActive("users");
+	const viewBookings = () => {
+		setActive("bookings");
 	};
 
 	return (
@@ -119,18 +119,17 @@ export default function ProfileLayout() {
 								as
 							</div>
 							<div className="nav-item d-flex">
-								{/* <NavButton id="users" label="users Details" icon={"👤"}/> */}
 								<button
 									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
-									onClick={() => setActive("users")}
-									onMouseOver={() => setHover("users")}
+									onClick={() => setActive("bookings")}
+									onMouseOver={() => setHover("bookings")}
 									onMouseOut={() => setHover("")}
 								>
 									<span className="me-2">{"👥"}</span>
 									{"Bookings"}
 								</button>
 								<div
-									className={`rouded-3 rounded-top rounded-bottom ${active === "users" ? "bg-primary" : ""} my-2`}
+									className={`rouded-3 rounded-top rounded-bottom ${active === "bookings" ? "bg-primary" : ""} my-2`}
 									style={{
 										marginLeft: "auto",
 										width: "5px",
@@ -142,7 +141,7 @@ export default function ProfileLayout() {
 								</div>
 							</div>
 							<div
-								className={`d-none d-lg-block ${hover === "users" ? "bg-primary" : ""} overflow-hidden ms-3`}
+								className={`d-none d-lg-block ${hover === "bookings" ? "bg-primary" : ""} overflow-hidden ms-3`}
 								style={{
 									width: "65%",
 									height: "2px",
@@ -229,10 +228,10 @@ export default function ProfileLayout() {
 				<main className="col-12 col-md-9 col-lg-10 p-3">
 					<div className="card shadow-sm h-100">
 						<div className="card-body">
-							{active === "dashboard" && <Dashboard viewEventsFn={viewEvents} viewBookingsFn={viewUsers} />}
+							{active === "dashboard" && <Dashboard viewEventsFn={viewEvents} viewBookingsFn={viewBookings} />}
 							{active === "personal" && <PersonalContent />}
 							{active === "payment" && <PaymentContent />}
-							{active === "users" && <Bookings />}
+							{active === "bookings" && <Bookings />}
 							{active === "events" && <Events />}
 						</div>
 					</div>

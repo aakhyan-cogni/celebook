@@ -13,6 +13,8 @@ interface State {
 
 export type EventStatus ="PENDING" | "REJECTED" | "APPROVED" | "DRAFT";
 
+export type RegistrationStatus = "CONFIRMED" | "CANCELLED";
+
 export interface User {
 	id?: string;
 	name: string;
@@ -47,11 +49,13 @@ export interface Event {
 	createdAt: string;
 }
 
-export interface Booking{
-	eventId: Event,
-	userId: string,
-	status: EventStatus,
-	registeredAt: string,
+export interface Booking {
+	_id?: string;
+	id?: string;
+	eventId: Event;
+	userId: string;
+	status: RegistrationStatus;
+	registeredAt: string;
 }
 
 type Gender = "Male" | "Female" | "Others";

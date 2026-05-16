@@ -17,8 +17,6 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	const eventTime = new Date(event.date).getTime();
 	const isPast = eventTime < Date.now();
 
-	console.log(eventStatus);
-
 	useEffect(() => {
 		if (isPast) return;
 
@@ -105,18 +103,27 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 						{event.category}
 					</span>
 				</div>
-				{event.status && event.status !== "APPROVED" && (
+				{/*
+				  Status badge (single source of truth).
+				  - Default: only renders for non-APPROVED statuses (so public listings stay clean).
+				  - `eventStatus` opts in to showing all statuses incl. APPROVED — used by
+				    Dashboard / Admin sub-views where status visibility is the point.
+				  - Suppressed when the event is cancelled — the bottom-left "Cancelled" badge
+				    from getStatusBadge() already covers that case.
+				*/}
+				{!event.isCancelled && event.status && (eventStatus || event.status !== "APPROVED") && (
 					<div className="position-absolute top-0 start-0 m-3">
 						{event.status === "PENDING" && (
-							<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">
-								Pending Review
-							</span>
+							<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Pending Review</span>
 						)}
 						{event.status === "REJECTED" && (
 							<span className="badge bg-danger px-3 py-2 shadow-sm">Rejected</span>
 						)}
 						{event.status === "DRAFT" && (
 							<span className="badge bg-secondary px-3 py-2 shadow-sm">Draft</span>
+						)}
+						{event.status === "APPROVED" && (
+							<span className="badge bg-success px-3 py-2 shadow-sm">Approved</span>
 						)}
 					</div>
 				)}
@@ -137,16 +144,6 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 					<p className="text-body-secondary small mb-0">📍 {event.location}</p>
 				</div>
 				<p className="card-text text-body-secondary mb-3 line-clamp-2 small">{event.description}</p>
-
-				{eventStatus && (
-					<div className="d-flex align-items-start">
-						<p
-							className={`card-text line-clamp-2 small  px-2 py-1 rounded-3  fw-bold fs-9 ${event.status == "PENDING" ? "bg-warning text-dark" : event.status == "APPROVED" ? "bg-success text-light" : event.status == "REJECTED" ? "bg-danger text-light" : "bg-secondary text-dark"}`}
-						>
-							{event.status}
-						</p>
-					</div>
-				)}
 			</div>
 		</motion.div>
 	);
