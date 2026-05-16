@@ -1,50 +1,62 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { type Booking, type Event } from "../../store";
 import { EventCard } from "../EventCard";
-import { motion } from "motion/react";
+import { useAuthStore } from "../../store/useAuthStore";
 import { apiFetch } from "../../lib/api";
+import type { Booking } from "../../store";
 
-const Bookings = () => {
-	const navigate = useNavigate();
+type StatusFilter = "ALL" | "CONFIRMED" | "CANCELLED";
 
-	const [eventsOverview, setEvents] = useState<Booking[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [page, setPage] = useState(1);
-	let eventsRes = null;
-	const [search, setSearch] = useState("");
+export default function Bookings() {
+	const navigate        = useNavigate();
+	const accessToken     = useAuthStore((s) => s.accessToken);
+	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-	const handleEventClick = (event: Event) => {
-		navigate(`/events?q=${event.id}`);
-	};
+	const [bookings, setBookings] = useState<Booking[]>([]);
+	const [loading,  setLoading]  = useState(true);
+	const [search,   setSearch]   = useState("");
+	const [status,   setStatus]   = useState<StatusFilter>("ALL");
 
 	useEffect(() => {
-		const fetchData = async () => {
-			console.log(page);
+		if (isAuthenticated && !accessToken) {
+			setLoading(true);
+			return;
+		}
+		if (!accessToken) return;
 
+		let cancelled = false;
+		const load = async () => {
+			setLoading(true);
 			try {
-				setLoading(true);
-
-				eventsRes = await apiFetch(
-					"/registrations/my-registrations",
-					{ method: "GET" },
-					{ page: page.toString(), limit: "20" },
-				);
-
-				setEvents(eventsRes.data || []);
-
-				if (eventsRes.events.length <= 0) {
-					setPage((prev) => prev - 1);
-				}
+				const res = await apiFetch("/registrations/my-registrations", { method: "GET" });
+				if (cancelled) return;
+				// Controller wraps the array in { success, data: [...] }.
+				const list: Booking[] = res?.data ?? res ?? [];
+				setBookings(list);
 			} catch (err) {
-				console.error("Failed to fetch overview data:", err);
+				console.error("Failed to load bookings:", err);
 			} finally {
-				setLoading(false);
+				if (!cancelled) setLoading(false);
 			}
 		};
+		load();
+		return () => { cancelled = true; };
+	}, [accessToken, isAuthenticated]);
 
-		fetchData();
-	}, [page]);
+	const displayBookings = useMemo(() => {
+		const term = search.trim().toLowerCase();
+		return bookings.filter((b) => {
+			if (status !== "ALL" && b.status !== status) return false;
+			if (!term) return true;
+			const ev = b.eventId as any;
+			if (!ev) return false;
+			const haystack = [ev.title, ev.description, ev.category, ev.location, ev.organizerEmail]
+				.filter(Boolean)
+				.join(" ")
+				.toLowerCase();
+			return haystack.includes(term);
+		});
+	}, [bookings, search, status]);
 
 	if (loading) {
 		return (
@@ -56,87 +68,80 @@ const Bookings = () => {
 		);
 	}
 
-	if (page <= 0) setPage(1);
-
-	const displayEvents =
-		search === ""
-			? eventsOverview
-			: eventsOverview.filter((e) => {
-				const event =e.eventId
-					return (
-						event.category.toString() +
-						event.description.toString() +
-						event.location.toString() +
-						event.price.toString() +
-						event.title.toString() +
-						event.organizerEmail.toString()
-					)
-						.toLowerCase()
-						.includes(search.toLowerCase());
-				});
-
 	return (
 		<div className="container">
-			{/* My Event */}
 			<section className="mb-5">
-				<div className="d-flex justify-content-between align-items-center mb-4">
-					<h3 className="fw-bold mb-0">My booked Events</h3>
-
-					<div className="d-flex justify-content-around gap-3 align-items-center mb-4">
+				<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+					<h3 className="fw-bold mb-0">Your Bookings</h3>
+					<div className="d-flex gap-2 align-items-center flex-wrap">
 						<input
 							className="form-control w-auto"
 							type="search"
 							placeholder="Search"
 							value={search}
-							onChange={(event) => {
-								setSearch(event.target.value);
-							}}
+							onChange={(e) => setSearch(e.target.value)}
 						/>
-						
-						<motion.button
-							whileTap={{ scale: 0.95 }}
-							onClick={() => {
-								setPage((prev) => prev - 1);
-							}}
-							className={`btn ${page > 1 ? "btn-info" : "btn-secondary"} border border-1 px-3 py-1 rounded-3 shadow-sm fw-bold d-flex align-items-center gap-1`}
+						<select
+							className="form-select w-auto"
+							value={status}
+							onChange={(e) => setStatus(e.target.value as StatusFilter)}
 						>
-							<span>{"← " + (page - 1)}</span>
-						</motion.button>
-						<motion.button
-							whileTap={{ scale: 0.95 }}
-							disabled={true}
-							className={`btn btn-info border border-1 px-3 py-1 rounded-3 shadow-sm fw-bold d-flex align-items-center gap-1`}
-						>
-							<span>{page}</span>
-						</motion.button>
-						<motion.button
-							whileTap={{ scale: 0.95 }}
-							onClick={() => {
-								setPage((prev) => prev + 1);
-							}}
-							className="btn btn-secondary border border-1 px-3 py-1 rounded-3 shadow-sm fw-bold d-flex align-items-center gap-1"
-						>
-							<span>{"→ " + (page + 1)}</span>
-						</motion.button>
+							<option value="ALL">All</option>
+							<option value="CONFIRMED">Confirmed</option>
+							<option value="CANCELLED">Cancelled</option>
+						</select>
 					</div>
 				</div>
 
-				{displayEvents.length > 0 ? (
+				{displayBookings.length > 0 ? (
 					<div className="row g-4">
-						{displayEvents.map((event) => (
-							<div key={event.eventId.id} className="col-md-6 col-lg-4">
-								<EventCard event={event.eventId} onClick={handleEventClick} />
-							</div>
-						))}
+						{displayBookings.map((booking) => {
+							const ev = booking.eventId as any;
+							if (!ev) return null;
+							const evId = ev.id ?? ev._id;
+							const bookingId = (booking as any)._id ?? (booking as any).id ?? evId;
+							return (
+								<div key={bookingId} className="col-md-6 col-lg-4">
+									<div className="position-relative">
+										<div
+											className="position-absolute top-0 end-0 m-3"
+											style={{ zIndex: 10 }}
+										>
+											<span
+												className={`badge px-3 py-2 shadow-sm ${
+													booking.status === "CANCELLED" ? "bg-danger" : "bg-success"
+												}`}
+											>
+												{booking.status === "CANCELLED" ? "Cancelled" : "Confirmed"}
+											</span>
+										</div>
+										<EventCard
+											event={{ ...ev, id: evId }}
+											onClick={() => navigate(`/events/${evId}`, { state: { eventData: ev } })}
+										/>
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				) : (
 					<div className="text-center p-5 rounded-4 border border-dashed">
-						<p className="text-muted mb-0">No events available right now.</p>
+						<p className="text-muted mb-2">
+							{bookings.length === 0
+								? "You haven't booked any events yet."
+								: "No bookings match the current filters."}
+						</p>
+						{bookings.length === 0 && (
+							<button
+								className="btn btn-primary rounded-pill px-4 my-2"
+								onClick={() => navigate("/events")}
+							>
+								Discover events
+							</button>
+						)}
 					</div>
 				)}
 			</section>
 		</div>
 	);
-};
-
-export default Bookings;
+}
