@@ -18,6 +18,13 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [error, setError] = useState<string | null>(null);
 	const [success, setSuccess] = useState(false);
 	const [showConfirm, setShowConfirm] = useState(false);
+	const [eventStatus, setEventStatus] = useState<string>(event.status);
+	const [rejectionReason, setRejectionReason] = useState<string>(event.rejectionReason ?? "");
+	const [showRejectModal, setShowRejectModal] = useState(false);
+	const [rejectReasonInput, setRejectReasonInput] = useState("");
+	const [adminActing, setAdminActing] = useState(false);
+	const [isRegistered, setIsRegistered] = useState<boolean>(!!event.userRegistration);
+	const [eventStat, setEventStat] = useState<any>(null);
 
 	const isPastEvent = new Date(event.date).getTime() < Date.now();
 	const isOrganizer = isAuthenticated && user?.id === event.organizerId;
@@ -33,7 +40,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			.then((r) => (r.ok ? r.json() : null))
 			.then((data) => setEventStat(data))
 			.catch(() => {});
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOrganizer, isAdmin, accessToken]);
 
 	const authHeaders = () => ({
@@ -57,7 +64,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				method: "POST",
 				headers: authHeaders(),
 				credentials: "include",
-				body: JSON.stringify({}),
 			});
 
 			const data = await res.json();
@@ -92,7 +98,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			toast.success("Registration successful!");
 			setShowConfirm(false);
 
-			setTimeout(() => { onClose?.(); }, 2000);
+			setTimeout(() => {
+				onClose?.();
+			}, 2000);
 		} catch (err) {
 			console.error("Registration error:", err);
 			setError("An error occurred. Please try again.");
@@ -271,11 +279,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			<div className="col-md-5 col-lg-4">
 				<motion.img
 					layoutId={`${event._id || event.id}`}
-					src={
-						event.imgUrls?.[0]
-							? getImageUrl(event.imgUrls[0])
-							: EVENT_FALLBACK_IMG
-					}
+					src={event.imgUrls?.[0] ? getImageUrl(event.imgUrls[0]) : EVENT_FALLBACK_IMG}
 					className="img-fluid rounded-4 shadow-sm w-100 object-fit-cover"
 					style={{
 						maxHeight: "320px",
@@ -325,7 +329,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							animate={{ scale: 1 }}
 							className="alert alert-success py-2 px-3 rounded-3 small mb-3"
 						>
-							 Registration successful! Redirecting...
+							Registration successful! Redirecting...
 						</motion.div>
 					)}
 
@@ -400,8 +404,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 					<div className="d-flex gap-2 pt-2 flex-wrap">
 						{}
 						{primaryButton()}
-
-						{}
 						{isAuthenticated && !isOrganizer && !isAdmin && isRegistered && !isPastEvent && (
 							<button
 								className="btn btn-outline-danger rounded-pill px-4 fw-bold"
@@ -410,8 +412,21 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 								Cancel Registration
 							</button>
 						)}
+						{isAuthenticated &&
+							!isOrganizer &&
+							!isAdmin &&
+							isRegistered &&
+							isPastEvent &&
+							!event.isCancelled && (
+								<button
+									className="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"
+									onClick={() => navigate(`/events/${event._id || event.id}/feedback`)}
+								>
+									📋 Give Feedback
+								</button>
+							)}
 
-						{}
+						{/* Organizer + Admin controls */}
 						{(isOrganizer || isAdmin) && (
 							<>
 								{}
@@ -420,7 +435,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 										className="btn btn-outline-primary rounded-pill px-4 fw-bold"
 										onClick={() => navigate(`/create?edit=${event._id || event.id}`)}
 									>
-										 Edit
+										Edit
 									</button>
 								)}
 
@@ -428,7 +443,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 								{["DRAFT", "REJECTED"].includes(eventStatus) && !event.isCancelled && (
 									<button
 										className="btn btn-success rounded-pill px-4 fw-bold"
-
 										onClick={() => navigate(`/create?edit=${event._id || event.id}&publish=1`)}
 									>
 										Publish
@@ -436,14 +450,17 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 								)}
 
 								{}
-								{["APPROVED", "PENDING"].includes(eventStatus) && !event.isCancelled && !isPastEvent && !eventStat && (
-									<button
-										className="btn btn-outline-danger rounded-pill px-4 fw-bold"
-										onClick={handleCancel}
-									>
-										Cancel Event
-									</button>
-								)}
+								{["APPROVED", "PENDING"].includes(eventStatus) &&
+									!event.isCancelled &&
+									!isPastEvent &&
+									!eventStat && (
+										<button
+											className="btn btn-outline-danger rounded-pill px-4 fw-bold"
+											onClick={handleCancel}
+										>
+											Cancel Event
+										</button>
+									)}
 
 								{}
 								{isAdmin && eventStatus === "PENDING" && (
@@ -453,15 +470,17 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 											onClick={handleApprove}
 											disabled={adminActing}
 										>
-											{adminActing ? <span className="spinner-border spinner-border-sm me-1" role="status" /> : null}
-											 Approve
+											{adminActing ? (
+												<span className="spinner-border spinner-border-sm me-1" role="status" />
+											) : null}
+											Approve
 										</button>
 										<button
 											className="btn btn-danger rounded-pill px-4 fw-bold"
 											onClick={() => setShowRejectModal(true)}
 											disabled={adminActing}
 										>
-											 Reject
+											Reject
 										</button>
 									</>
 								)}
@@ -477,9 +496,11 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 						{isPastEvent && isAuthenticated && !isOrganizer && !isAdmin && (
 							<button
 								className="btn btn-outline-warning rounded-pill px-4 fw-bold"
-								onClick={() => document.getElementById("feedback-section")?.scrollIntoView({ behavior: "smooth" })}
+								onClick={() =>
+									document.getElementById("feedback-section")?.scrollIntoView({ behavior: "smooth" })
+								}
 							>
-								 Leave Feedback
+								Leave Feedback
 							</button>
 						)}
 					</div>
@@ -508,7 +529,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							</div>
 							{eventStat && (
 								<div className="mt-3 pt-3 border-top border-primary border-opacity-10">
-									<div className="small text-body-secondary mb-1 text-uppercase fw-semibold">Attendees Tracked</div>
+									<div className="small text-body-secondary mb-1 text-uppercase fw-semibold">
+										Attendees Tracked
+									</div>
 									<div className="fw-bold fs-5">{eventStat.attendees?.length ?? 0}</div>
 								</div>
 							)}
@@ -524,10 +547,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 					style={{ background: "rgba(0,0,0,0.5)", position: "absolute", inset: 0, zIndex: 50 }}
 					onClick={() => setShowRejectModal(false)}
 				>
-					<div
-						className="modal-dialog modal-dialog-centered"
-						onClick={(e) => e.stopPropagation()}
-					>
+					<div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
 						<div className="modal-content rounded-4 border-0 shadow-lg">
 							<div className="modal-header border-0 pb-0">
 								<h5 className="modal-title fw-bold">Reject Event</h5>
@@ -549,7 +569,10 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							<div className="modal-footer border-0 pt-0">
 								<button
 									className="btn btn-outline-secondary rounded-pill px-4"
-									onClick={() => { setShowRejectModal(false); setRejectReasonInput(""); }}
+									onClick={() => {
+										setShowRejectModal(false);
+										setRejectReasonInput("");
+									}}
 								>
 									Cancel
 								</button>
@@ -558,9 +581,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									onClick={handleReject}
 									disabled={adminActing || !rejectReasonInput.trim()}
 								>
-									{adminActing
-										? <span className="spinner-border spinner-border-sm me-2" role="status" />
-										: null}
+									{adminActing ? (
+										<span className="spinner-border spinner-border-sm me-2" role="status" />
+									) : null}
 									Confirm Rejection
 								</button>
 							</div>

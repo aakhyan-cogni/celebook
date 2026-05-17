@@ -2,7 +2,7 @@ import { RegistrationModel, EventModel, EventStatModel } from "../models/index.j
 import mongoose from "mongoose";
 import { createNotification } from "./notification.service.js";
 
-export async function registerForEvent(eventId, userId, formData = {}) {
+export async function registerForEvent(eventId, userId) {
 	// Check event exists
 	const event = await EventModel.findById(eventId);
 	if (!event) {
@@ -60,7 +60,6 @@ export async function registerForEvent(eventId, userId, formData = {}) {
 				throw duplicateError;
 			}
 			existing.status = "CONFIRMED";
-			existing.formData = formData;
 			existing.registeredAt = new Date();
 			registration = await existing.save();
 		} else {
@@ -68,7 +67,6 @@ export async function registerForEvent(eventId, userId, formData = {}) {
 				eventId: new mongoose.Types.ObjectId(eventId),
 				userId: new mongoose.Types.ObjectId(userId),
 				status: "CONFIRMED",
-				formData,
 			});
 		}
 

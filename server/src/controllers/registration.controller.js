@@ -9,13 +9,12 @@ export async function registerForEvent(req, res) {
 
 		const { id: eventId } = req.params;
 		const userId = req.user.userId;
-		const { formData = {} } = req.body;
 
 		if (!eventId) {
 			return res.status(400).json({ message: "Event ID is required" });
 		}
 
-		const result = await RegistrationService.registerForEvent(eventId, userId, formData);
+		const result = await RegistrationService.registerForEvent(eventId, userId);
 
 		return res.status(201).json({
 			success: true,
