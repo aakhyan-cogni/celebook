@@ -56,6 +56,8 @@ export interface Booking {
 	userId: string;
 	status: RegistrationStatus;
 	registeredAt: string;
+	attendanceStatus?: "PENDING" | "PRESENT";
+	checkedInAt?: string | null;
 }
 
 type Gender = "Male" | "Female" | "Others";

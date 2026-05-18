@@ -8,3 +8,6 @@ export const registrationRouter = Router();
 
 // I changed path from /mine to /my-registrations
 registrationRouter.get("/my-registrations", authenticate, RegistrationController.getMyRegistrations);
+
+// GET /api/registrations/:registrationId/ticket-token — Get signed QR token for a registration
+registrationRouter.get("/:registrationId/ticket-token", authenticate, RegistrationController.getTicketToken);

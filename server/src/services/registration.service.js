@@ -1,4 +1,5 @@
 import { RegistrationModel, EventModel, EventStatModel } from "../models/index.js";
+import { generateTicketToken, verifyTicketToken } from "../lib/jwt.js";
 import mongoose from "mongoose";
 import { createNotification } from "./notification.service.js";
 
@@ -198,4 +199,72 @@ export async function checkRegistration(eventId, userId) {
 		eventId: new mongoose.Types.ObjectId(eventId),
 		userId: new mongoose.Types.ObjectId(userId),
 	});
+}
+
+export async function generateTicketTokenForRegistration(registrationId, requestingUserId) {
+	const registration = await RegistrationModel.findById(registrationId);
+
+	if (!registration) {
+		const error = new Error("Registration not found");
+		error.code = "REGISTRATION_NOT_FOUND";
+		throw error;
+	}
+
+	if (registration.userId.toString() !== requestingUserId) {
+		const error = new Error("Forbidden");
+		error.code = "FORBIDDEN";
+		throw error;
+	}
+
+	if (registration.status !== "CONFIRMED") {
+		const error = new Error("Registration is not confirmed");
+		error.code = "REGISTRATION_NOT_CONFIRMED";
+		throw error;
+	}
+
+	const token = generateTicketToken({
+		registrationId: registration._id.toString(),
+		eventId: registration.eventId.toString(),
+		userId: registration.userId.toString(),
+	});
+
+	return { token };
+}
+
+export async function checkInAttendee(rawToken, eventId, confirm) {
+	let payload;
+	try {
+		payload = verifyTicketToken(rawToken);
+	} catch {
+		const error = new Error("Invalid or expired ticket token");
+		error.code = "INVALID_TOKEN";
+		throw error;
+	}
+
+	if (payload.eventId !== eventId) {
+		const error = new Error("Token does not belong to this event");
+		error.code = "TOKEN_EVENT_MISMATCH";
+		throw error;
+	}
+
+	const registration = await RegistrationModel.findById(payload.registrationId).populate({
+		path: "userId",
+		select: "name email avatar",
+	});
+
+	if (!registration) {
+		const error = new Error("Registration not found");
+		error.code = "REGISTRATION_NOT_FOUND";
+		throw error;
+	}
+
+	const alreadyPresent = registration.attendanceStatus === "PRESENT";
+
+	if (confirm && !alreadyPresent) {
+		registration.attendanceStatus = "PRESENT";
+		registration.checkedInAt = new Date();
+		await registration.save();
+	}
+
+	return { alreadyPresent, registration };
 }

@@ -6,6 +6,8 @@ const registrationSchema = new mongoose.Schema(
 		userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 		status: { type: String, enum: ["CONFIRMED", "CANCELLED"], default: "CONFIRMED" },
 		registeredAt: { type: Date, default: Date.now },
+		attendanceStatus: { type: String, enum: ["PENDING", "PRESENT"], default: "PENDING" },
+		checkedInAt: { type: Date, default: null },
 	},
 	{ timestamps: true },
 );

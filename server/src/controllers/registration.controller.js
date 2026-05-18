@@ -142,6 +142,75 @@ export async function getEventRegistrations(req, res) {
 	}
 }
 
+export async function getTicketToken(req, res) {
+	try {
+		if (!req.user) {
+			return res.status(401).json({ message: "User not authenticated" });
+		}
+
+		const { registrationId } = req.params;
+		const result = await RegistrationService.generateTicketTokenForRegistration(registrationId, req.user.userId);
+
+		return res.json({ success: true, data: result });
+	} catch (error) {
+		console.error("[getTicketToken] Error:", error);
+
+		if (error.code === "REGISTRATION_NOT_FOUND" || error.code === "REGISTRATION_NOT_CONFIRMED") {
+			return res.status(404).json({ success: false, code: error.code, message: error.message });
+		}
+		if (error.code === "FORBIDDEN") {
+			return res.status(403).json({ success: false, message: error.message });
+		}
+
+		return res.status(500).json({ success: false, message: "Error generating ticket token" });
+	}
+}
+
+export async function checkIn(req, res) {
+	try {
+		if (!req.user) {
+			return res.status(401).json({ message: "User not authenticated" });
+		}
+
+		const { id: eventId } = req.params;
+		const { token, confirm = false } = req.body;
+
+		if (!token) {
+			return res.status(400).json({ success: false, message: "Token is required" });
+		}
+
+		const event = await EventModel.findById(eventId);
+		if (!event) {
+			return res.status(404).json({ success: false, message: "Event not found" });
+		}
+
+		const isOrganizer = event.organizerId.toString() === req.user.userId.toString();
+		const isAdmin = req.user.role === "ADMIN";
+
+		if (!isOrganizer && !isAdmin) {
+			return res.status(403).json({ success: false, message: "Forbidden: only organizer or admin can check in attendees" });
+		}
+
+		const result = await RegistrationService.checkInAttendee(token, eventId, confirm);
+
+		return res.json({ success: true, data: result });
+	} catch (error) {
+		console.error("[checkIn] Error:", error);
+
+		if (error.code === "INVALID_TOKEN") {
+			return res.status(400).json({ success: false, code: error.code, message: error.message });
+		}
+		if (error.code === "TOKEN_EVENT_MISMATCH") {
+			return res.status(400).json({ success: false, code: error.code, message: error.message });
+		}
+		if (error.code === "REGISTRATION_NOT_FOUND") {
+			return res.status(404).json({ success: false, code: error.code, message: error.message });
+		}
+
+		return res.status(500).json({ success: false, message: "Error during check-in" });
+	}
+}
+
 export async function getMyRegistrations(req, res) {
 	try {
 		if (!req.user) {
