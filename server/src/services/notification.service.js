@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
-import { NotificationModel, UserModel } from "../models/index.js";
+import { NotificationModel, UserModel, EventModel, RegistrationModel } from "../models/index.js";
 import { fromDoc } from "../models/util.js";
 import { emitToUser } from "../lib/socket.js";
+
+const FEEDBACK_REMINDER_DELAY_MS = 3 * 60 * 60 * 1000; // 3 hours after event start
 
 const buildTitleAndMessage = (type, data = {}) => {
 	switch (type) {
@@ -88,6 +90,45 @@ export async function notifyAdminsEventSubmitted() {
 		results.push(created);
 	}
 	return results;
+}
+
+// Find events whose start time was >= 3h ago, that haven't been processed yet,
+// and send a FEEDBACK_REMINDER to every confirmed attendee. Idempotent: marks
+// feedbackReminderSentAt so the next sweep skips them.
+export async function sendDueFeedbackReminders() {
+	const cutoff = new Date(Date.now() - FEEDBACK_REMINDER_DELAY_MS);
+	const dueEvents = await EventModel.find({
+		status: "APPROVED",
+		isCancelled: false,
+		feedbackReminderSentAt: null,
+		date: { $lte: cutoff },
+	}).select("_id title");
+
+	for (const event of dueEvents) {
+		try {
+			const registrations = await RegistrationModel.find({
+				eventId: event._id,
+				status: "CONFIRMED",
+			}).select("userId");
+
+			for (const reg of registrations) {
+				await createNotification({
+					userId: reg.userId,
+					type: "FEEDBACK_REMINDER",
+					data: { eventTitle: event.title, eventId: event._id.toString() },
+				});
+			}
+
+			await EventModel.updateOne(
+				{ _id: event._id, feedbackReminderSentAt: null },
+				{ $set: { feedbackReminderSentAt: new Date() } },
+			);
+		} catch (err) {
+			console.error(`[sendDueFeedbackReminders] event ${event._id} failed:`, err);
+		}
+	}
+
+	return { processedEvents: dueEvents.length };
 }
 
 export async function listForUser(userId, { page = 1, limit = 20, unreadOnly = false } = {}) {
