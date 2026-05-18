@@ -30,6 +30,16 @@ export const getEventById = async (req, res) => {
 	}
 };
 
+export const checkPublishEligibility = async (req, res) => {
+	try {
+		const result = await EventService.canPublish(req.user.userId);
+		res.status(200).json(result);
+	} catch (error) {
+		console.error("[checkPublishEligibility] Error:", error);
+		res.status(500).json({ message: "Error checking publish eligibility" });
+	}
+};
+
 export const createEvent = async (req, res) => {
 	try {
 		const event = await EventService.createEvent(req.user.userId, req.user.email, req.body);

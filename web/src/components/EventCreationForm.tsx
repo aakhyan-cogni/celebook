@@ -180,7 +180,6 @@ const EventCreationForm = () => {
 				const err = await res.json();
 				throw new Error(err.message || "Image upload failed.");
 			}
-			toast.success("Images uploaded.");
 		} finally {
 			setUploading(false);
 		}
@@ -283,6 +282,17 @@ const EventCreationForm = () => {
 				if (!res.ok) throw new Error((await res.json()).message);
 				eventId = editId;
 			} else {
+				const eligRes = await fetch(`${BASE_URL}/events/can-publish`, {
+					headers: authHeaders(), credentials: "include",
+				});
+				if (eligRes.ok) {
+					const { allowed } = await eligRes.json();
+					if (!allowed) {
+						toast.error("You've reached your plan's event limit. Upgrade to publish more.");
+						return;
+					}
+				}
+
 				const res = await fetch(`${BASE_URL}/events`, {
 					method: "POST", headers: authHeaders(), credentials: "include",
 					body: JSON.stringify(payload),
@@ -292,7 +302,7 @@ const EventCreationForm = () => {
 				eventId = created.id;
 			}
 
-			await uploadImages(eventId);
+			await uploadImages(eventId); // TODO: cancel event image publish if tier limit exceeded at this stage
 
 			const pubRes = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
 				method: "POST", headers: authHeaders(), credentials: "include",

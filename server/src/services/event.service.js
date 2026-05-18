@@ -142,6 +142,15 @@ export const countActiveEvents = async (organizerId) => {
 	});
 };
 
+export const canPublish = async (organizerId) => {
+	const user = await UserModel.findById(organizerId).lean();
+	if (!user) return { allowed: false };
+
+	const activeCount = await countActiveEvents(organizerId);
+	const tierLimit = TIER_LIMITS[user.tier] ?? 0;
+	return { allowed: activeCount < tierLimit };
+};
+
 export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
 	const event = await EventModel.findById(eventId);
 	if (!event) {
