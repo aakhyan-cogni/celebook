@@ -10,6 +10,11 @@ const buildTitleAndMessage = (type, data = {}) => {
 				title: "Registration confirmed",
 				message: `You're confirmed for "${data.eventTitle ?? "the event"}". See you there!`,
 			};
+		case "REGISTRATION_MILESTONE":
+			return {
+				title: "Registration milestone",
+				message: `${data.bookedCount ?? 0} people have booked "${data.eventTitle ?? "your event"}".`,
+			};
 		case "EVENT_REMINDER":
 			return {
 				title: "Event reminder",
