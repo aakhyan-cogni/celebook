@@ -74,7 +74,7 @@ export async function registerForEvent(eventId, userId) {
 		// Upsert EventStat — track attendee
 		await EventStatModel.findOneAndUpdate(
 			{ eventId: new mongoose.Types.ObjectId(eventId) },
-			{ $addToSet: { attendees: new mongoose.Types.ObjectId(userId) } },
+			{ $addToSet: { registeredAttendees: new mongoose.Types.ObjectId(userId) } },
 			{ upsert: true },
 		);
 
@@ -165,7 +165,7 @@ export async function cancelRegistration(eventId, userId) {
 	// Cancelled attendees don't count toward stats — pull them from the EventStat
 	await EventStatModel.updateOne(
 		{ eventId: new mongoose.Types.ObjectId(eventId) },
-		{ $pull: { attendees: new mongoose.Types.ObjectId(userId) } },
+		{ $pull: { registeredAttendees: new mongoose.Types.ObjectId(userId) } },
 	);
 
 	return registration.populate([{ path: "eventId" }, { path: "userId" }]);
@@ -264,6 +264,11 @@ export async function checkInAttendee(rawToken, eventId, confirm) {
 		registration.attendanceStatus = "PRESENT";
 		registration.checkedInAt = new Date();
 		await registration.save();
+
+		await EventStatModel.updateOne(
+			{ eventId: registration.eventId },
+			{ $addToSet: { presentAttendees: registration.userId._id } },
+		);
 	}
 
 	return { alreadyPresent, registration };

@@ -73,17 +73,19 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			scanner
 				.start(
 					{ facingMode: "environment" },
-					{ fps: 10, qrbox: { width: 220, height: 220 } },
+					{ fps: 15, qrbox: { width: 280, height: 280 } },
 					async (decodedText: string) => {
 						if (scanLoading) return;
 						setScanLoading(true);
 						try {
 							await scanner.stop();
+							scannerRef.current = null;
 							setShowScanner(false);
 							const result = await checkInAttendee(eid, decodedText, false);
 							setLastScannedToken(decodedText);
 							setScanResult(result);
 						} catch (err: any) {
+							scannerRef.current = null;
 							toast.error(err.message || "Invalid QR code");
 							setShowScanner(false);
 						} finally {
@@ -112,9 +114,14 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		const eid = eventId || event._id || event.id;
 		setMarking(true);
 		try {
-			const updated = await checkInAttendee(eid, lastScannedToken, true);
-			setScanResult(updated);
+			await checkInAttendee(eid, lastScannedToken, true);
 			toast.success("Marked as present!");
+			setScanResult(null);
+			setLastScannedToken(null);
+			setEventStat((prev: any) => prev ? {
+				...prev,
+				presentAttendees: [...(prev.presentAttendees ?? []), "1"],
+			} : prev);
 		} catch (err: any) {
 			toast.error(err.message || "Failed to mark present");
 		} finally {
@@ -592,45 +599,80 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 					{}
 					{(isOrganizer || isAdmin) && (
-						<div className="mt-4 p-3 bg-body-tertiary rounded-4 border border-primary border-opacity-10">
-							<h6 className="fw-bold small text-primary text-uppercase mb-3">Organizer Panel</h6>
-							<div className="row g-3 text-center">
-								<div className="col-3">
-									<div className="fw-bold fs-5">{event.capacity}</div>
-									<div className="small text-body-secondary">Capacity</div>
-								</div>
-								<div className="col-3">
-									<div className="fw-bold fs-5">{event.registrationCount ?? 0}</div>
-									<div className="small text-body-secondary">Registered</div>
-								</div>
-								<div className="col-3">
-									<div className="fw-bold fs-5">{event.price === 0 ? "FREE" : `₹${event.price}`}</div>
-									<div className="small text-body-secondary">Ticket Price</div>
-								</div>
-								<div className="col-3">
-									<div className="fw-bold fs-5">{event.visibility}</div>
-									<div className="small text-body-secondary">Visibility</div>
-								</div>
-							</div>
-							{eventStat && (
-								<div className="mt-3 pt-3 border-top border-primary border-opacity-10">
-									<div className="small text-body-secondary mb-1 text-uppercase fw-semibold">
-										Attendees Tracked
+						<div className="card border-0 bg-body-tertiary rounded-4 overflow-hidden mt-4">
+							{/* Panel header */}
+							<div
+								className="px-4 py-3 d-flex align-items-center justify-content-between"
+								style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}
+							>
+								<div>
+									<div className="text-white fw-bold small text-uppercase" style={{ letterSpacing: "0.07em" }}>
+										Organizer Panel
 									</div>
-									<div className="fw-bold fs-5">{eventStat.attendees?.length ?? 0}</div>
+									<div className="text-white opacity-75" style={{ fontSize: "0.72rem" }}>
+										Only visible to you
+									</div>
 								</div>
-							)}
-							<div className="mt-3 pt-3 border-top border-primary border-opacity-10">
-								<button
-									className="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2"
-									onClick={() => setShowScanner(true)}
-									disabled={scanLoading}
-								>
-									{scanLoading
-										? <span className="spinner-border spinner-border-sm" role="status" />
-										: <ScanLine size={16} />}
-									Scan QR
-								</button>
+								<span className={`badge rounded-pill px-3 py-2 ${{
+									APPROVED: "bg-success",
+									PENDING: "bg-warning text-dark",
+									REJECTED: "bg-danger",
+									DRAFT: "bg-secondary",
+								}[eventStatus] ?? "bg-secondary"}`} style={{ fontSize: "0.72rem" }}>
+									{{ APPROVED: "Approved", PENDING: "Under Review", REJECTED: "Rejected", DRAFT: "Draft" }[eventStatus] ?? eventStatus}
+								</span>
+							</div>
+
+							<div className="p-4">
+								{/* Capacity bar */}
+								<div className="mb-4">
+									<div className="d-flex justify-content-between align-items-center mb-2">
+										<span className="small text-body-secondary fw-semibold">Capacity</span>
+										<span className="small fw-bold text-body">
+											{event.registrationCount ?? 0} / {event.capacity} registered
+										</span>
+									</div>
+									<div className="progress rounded-pill bg-body" style={{ height: 8 }}>
+										<div
+											className="progress-bar rounded-pill bg-primary"
+											style={{ width: `${Math.min(((event.registrationCount ?? 0) / event.capacity) * 100, 100)}%` }}
+										/>
+									</div>
+								</div>
+
+								{/* Stats row */}
+								<div className="row g-3 mb-4">
+									<div className="col-4 text-center">
+										<div className="fw-bold fs-5 text-primary">{event.registrationCount ?? 0}</div>
+										<div className="small text-body-secondary">Registered</div>
+									</div>
+									<div className="col-4 text-center border-start border-end border-secondary border-opacity-25">
+										<div className="fw-bold fs-5 text-success">{eventStat?.presentAttendees?.length ?? 0}</div>
+										<div className="small text-body-secondary">Present</div>
+									</div>
+									<div className="col-4 text-center">
+										<div className="fw-bold fs-5 text-body">{event.price === 0 ? "FREE" : `₹${event.price}`}</div>
+										<div className="small text-body-secondary">Price</div>
+									</div>
+								</div>
+
+								{/* Footer row */}
+								<div className="d-flex align-items-center justify-content-between">
+									<div className="d-flex align-items-center gap-2">
+										<span className="small text-body-secondary">Visibility</span>
+										<span className="badge rounded-pill text-bg-secondary">{event.visibility}</span>
+									</div>
+									<button
+										className="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2"
+										onClick={() => setShowScanner(true)}
+										disabled={scanLoading}
+									>
+										{scanLoading
+											? <span className="spinner-border spinner-border-sm" role="status" />
+											: <ScanLine size={15} />}
+										Scan QR
+									</button>
+								</div>
 							</div>
 						</div>
 					)}

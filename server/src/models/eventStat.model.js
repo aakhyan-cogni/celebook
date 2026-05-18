@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const eventStatSchema = new mongoose.Schema(
 	{
 		eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true, unique: true },
-		attendees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+		registeredAttendees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+		presentAttendees: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 		avgFeedback: { type: Number },
 	},
 	{ timestamps: true },
