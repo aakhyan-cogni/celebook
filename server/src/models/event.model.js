@@ -30,6 +30,7 @@ const eventSchema = new mongoose.Schema(
 		formSchemaId: { type: mongoose.Schema.Types.ObjectId, ref: "FormSchema", default: null },
 		isCancelled: { type: Boolean, default: false },
 		cancelReason: { type: String, default: null },
+		feedbackReminderSentAt: { type: Date, default: null },
 	},
 	{ timestamps: true },
 );
