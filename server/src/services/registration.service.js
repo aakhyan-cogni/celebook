@@ -88,6 +88,27 @@ export async function registerForEvent(eventId, userId) {
 			},
 		});
 
+		// Notify organizer on every 10% capacity milestone (10, 20, 30… of capacity)
+		const step = Math.floor(event.capacity / 10);
+		if (step >= 1) {
+			const bookedCount = await RegistrationModel.countDocuments({
+				eventId: new mongoose.Types.ObjectId(eventId),
+				status: "CONFIRMED",
+			});
+			if (bookedCount > 0 && bookedCount % step === 0) {
+				await createNotification({
+					userId: event.organizerId,
+					type: "REGISTRATION_MILESTONE",
+					data: {
+						eventTitle: event.title,
+						eventId: eventId.toString(),
+						bookedCount,
+						capacity: event.capacity,
+					},
+				});
+			}
+		}
+
 		// Populate and return
 		const populatedRegistration = await registration.populate([{ path: "eventId" }, { path: "userId" }]);
 
