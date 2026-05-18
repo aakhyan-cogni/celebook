@@ -14,7 +14,7 @@ import {
 	getEventStats,
 	checkPublishEligibility,
 } from "../controllers/event.controller.js";
-import { registerForEvent, cancelRegistration, getEventRegistrations } from "../controllers/registration.controller.js";
+import { registerForEvent, cancelRegistration, getEventRegistrations, checkIn } from "../controllers/registration.controller.js";
 import { authenticate, optionalAuthenticate } from "../middleware/auth.middleware.js";
 import { consentCheck } from "../middleware/consent.middleware.js";
 import { eventImageUpload } from "../lib/upload.js";
@@ -27,6 +27,7 @@ eventRouter.patch("/:id",          authenticate, consentCheck, updateEvent);
 eventRouter.post("/:id/cancel",    authenticate, cancelEvent);
 eventRouter.post("/:id/duplicate", authenticate, duplicateEvent);
 eventRouter.post("/:id/register",  authenticate, consentCheck, registerForEvent);
+eventRouter.post("/:id/check-in",  authenticate, checkIn);
 eventRouter.post("/:id/images",    authenticate, eventImageUpload.array("images", 10), uploadEventImages);
 eventRouter.delete("/:id",         authenticate, deleteEvent);
 eventRouter.delete("/:id/register", authenticate, cancelRegistration);

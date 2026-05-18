@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const TICKET_SECRET = process.env.TICKET_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRY = Number(process.env.ACCESS_TOKEN_EXPIRY);
 const REFRESH_TOKEN_EXPIRY = Number(process.env.REFRESH_TOKEN_EXPIRY);
 
@@ -19,6 +20,14 @@ export const verifyAccessToken = (token) => {
 
 export const verifyRefreshToken = (token) => {
 	return jwt.verify(token, REFRESH_SECRET);
+};
+
+export const generateTicketToken = (payload) => {
+	return jwt.sign(payload, TICKET_SECRET, { expiresIn: "24h" });
+};
+
+export const verifyTicketToken = (token) => {
+	return jwt.verify(token, TICKET_SECRET);
 };
 
 export const generateTokens = (user) => {

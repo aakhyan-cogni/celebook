@@ -1,8 +1,12 @@
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { ScanLine, X, Ticket } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
-import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
+import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG, checkInAttendee } from "../lib/api";
+import type { CheckInResult } from "../lib/api";
+import ParticipantCard from "./ParticipantCard";
+import TicketModal from "./TicketModal";
 import toast from "react-hot-toast";
 
 interface SingleEventProps {
@@ -26,6 +30,14 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [isRegistered, setIsRegistered] = useState<boolean>(!!event.userRegistration);
 	const [eventStat, setEventStat] = useState<any>(null);
 
+	const [showTicket, setShowTicket] = useState(false);
+	const [showScanner, setShowScanner] = useState(false);
+	const [scanResult, setScanResult] = useState<CheckInResult | null>(null);
+	const [scanLoading, setScanLoading] = useState(false);
+	const [marking, setMarking] = useState(false);
+	const [lastScannedToken, setLastScannedToken] = useState<string | null>(null);
+	const scannerRef = useRef<any>(null);
+
 	const isPastEvent = new Date(event.date).getTime() < Date.now();
 	const isOrganizer = isAuthenticated && user?.id === event.organizerId;
 	const isAdmin = isAuthenticated && user?.role === "ADMIN";
@@ -47,6 +59,68 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		"Content-Type": "application/json",
 		Authorization: `Bearer ${accessToken}`,
 	});
+
+	useEffect(() => {
+		if (!showScanner) return;
+
+		let scanner: any;
+		const eid = eventId || event._id || event.id;
+
+		import("html5-qrcode").then(({ Html5Qrcode }) => {
+			scanner = new Html5Qrcode("qr-reader-se");
+			scannerRef.current = scanner;
+
+			scanner
+				.start(
+					{ facingMode: "environment" },
+					{ fps: 10, qrbox: { width: 220, height: 220 } },
+					async (decodedText: string) => {
+						if (scanLoading) return;
+						setScanLoading(true);
+						try {
+							await scanner.stop();
+							setShowScanner(false);
+							const result = await checkInAttendee(eid, decodedText, false);
+							setLastScannedToken(decodedText);
+							setScanResult(result);
+						} catch (err: any) {
+							toast.error(err.message || "Invalid QR code");
+							setShowScanner(false);
+						} finally {
+							setScanLoading(false);
+						}
+					},
+					() => {},
+				)
+				.catch(() => {
+					toast.error("Could not access camera. Please allow camera permissions.");
+					setShowScanner(false);
+				});
+		});
+
+		return () => {
+			if (scannerRef.current) {
+				scannerRef.current.stop().catch(() => {});
+				scannerRef.current = null;
+			}
+		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [showScanner]);
+
+	const handleMarkPresent = async () => {
+		if (!lastScannedToken || !scanResult) return;
+		const eid = eventId || event._id || event.id;
+		setMarking(true);
+		try {
+			const updated = await checkInAttendee(eid, lastScannedToken, true);
+			setScanResult(updated);
+			toast.success("Marked as present!");
+		} catch (err: any) {
+			toast.error(err.message || "Failed to mark present");
+		} finally {
+			setMarking(false);
+		}
+	};
 
 	const handleRegister = async () => {
 		if (!accessToken) {
@@ -426,6 +500,17 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 								</button>
 							)}
 
+						{}
+						{isAuthenticated && !isOrganizer && !isAdmin && isRegistered && (
+							<button
+								className="btn btn-outline-primary rounded-pill px-4 fw-bold d-flex align-items-center gap-2"
+								onClick={() => setShowTicket(true)}
+							>
+								<Ticket size={16} />
+								View Ticket
+							</button>
+						)}
+
 						{/* Organizer + Admin controls */}
 						{(isOrganizer || isAdmin) && (
 							<>
@@ -535,10 +620,99 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									<div className="fw-bold fs-5">{eventStat.attendees?.length ?? 0}</div>
 								</div>
 							)}
+							<div className="mt-3 pt-3 border-top border-primary border-opacity-10">
+								<button
+									className="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2"
+									onClick={() => setShowScanner(true)}
+									disabled={scanLoading}
+								>
+									{scanLoading
+										? <span className="spinner-border spinner-border-sm" role="status" />
+										: <ScanLine size={16} />}
+									Scan QR
+								</button>
+							</div>
 						</div>
 					)}
 				</div>
 			</div>
+
+			{/* View Ticket modal */}
+			<AnimatePresence>
+				{showTicket && (
+					<TicketModal
+						booking={{
+							_id: String(event.userRegistration?._id ?? event.userRegistration?.id ?? ""),
+							eventId: event,
+							userId: user?.id ?? "",
+							status: "CONFIRMED",
+							registeredAt: event.userRegistration?.registeredAt ?? "",
+						}}
+						onClose={() => setShowTicket(false)}
+					/>
+				)}
+			</AnimatePresence>
+
+			{/* QR Scanner modal */}
+			<AnimatePresence>
+				{showScanner && (
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						onClick={() => setShowScanner(false)}
+						style={{
+							position: "fixed",
+							inset: 0,
+							zIndex: 1050,
+							backgroundColor: "rgba(0,0,0,0.75)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							padding: "1rem",
+						}}
+					>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							exit={{ opacity: 0, scale: 0.95 }}
+							onClick={(e) => e.stopPropagation()}
+							className="card border-0 shadow-lg rounded-4 overflow-hidden"
+							style={{ width: "100%", maxWidth: 400 }}
+						>
+							<div className="card-header border-0 d-flex justify-content-between align-items-center py-3 px-4 bg-dark text-white">
+								<div className="d-flex align-items-center gap-2">
+									<ScanLine size={18} />
+									<span className="fw-semibold">Scan Attendee QR</span>
+								</div>
+								<button
+									className="btn btn-sm btn-outline-light rounded-circle d-flex align-items-center justify-content-center p-1"
+									style={{ width: 32, height: 32 }}
+									onClick={() => setShowScanner(false)}
+								>
+									<X size={16} />
+								</button>
+							</div>
+							<div className="card-body p-0">
+								<div id="qr-reader-se" style={{ width: "100%" }} />
+							</div>
+							<div className="card-footer border-0 bg-transparent text-center py-3">
+								<small className="text-secondary">Point the camera at the attendee's QR code</small>
+							</div>
+						</motion.div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			{/* Participant card after scan */}
+			{scanResult && (
+				<ParticipantCard
+					result={scanResult}
+					marking={marking}
+					onMarkPresent={handleMarkPresent}
+					onClose={() => { setScanResult(null); setLastScannedToken(null); }}
+				/>
+			)}
 
 			{}
 			{showRejectModal && (
