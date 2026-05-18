@@ -16,7 +16,7 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 	const formData = registration.formData ?? {};
 	const formEntries = Object.entries(formData).filter(([, v]) => v !== undefined && v !== "");
 
-	const avatarUrl = getImageUrl(participant.avatar);
+	const avatarUrl = getImageUrl(`uploads/avatars/${participant.avatar}`);
 	const initials = participant.name?.charAt(0).toUpperCase() ?? "?";
 
 	return (

@@ -137,7 +137,7 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 
 						{!loading && token && (
 							<div className="p-3 rounded-3 border" style={{ background: "#fff" }}>
-								<QRCodeSVG value={token} size={200} level="M" />
+								<QRCodeSVG value={token} size={280} level="L" />
 							</div>
 						)}
 
