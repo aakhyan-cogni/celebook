@@ -47,7 +47,6 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 				<div className="flex-grow-1 overflow-y-auto overflow-x-hidden content-pane">
 					<form className="px-3 pb-3" onSubmit={(e) => e.preventDefault()}>
 						<div className="row g-3">
-							{/* Country */}
 							<div className="col-12 col-lg-6">
 								<label className="form-label">Country</label>
 								<input
@@ -62,7 +61,6 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 								/>
 							</div>
 
-							{/* State */}
 							<div className="col-12 col-lg-6">
 								<label className="form-label">State</label>
 								<input

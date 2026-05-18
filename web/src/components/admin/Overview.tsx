@@ -57,7 +57,6 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 
 	return (
 		<div className="container">
-			{/* Event Stats */}
 			<section className="mb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4">
 					<h3 className="fw-bold mb-0">Event Stats</h3>
@@ -87,7 +86,6 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 
 			<hr className="my-5 opacity-10" />
 
-			{/* User Stats */}
 			<section>
 				<div className="d-flex justify-content-between align-items-center mb-4">
 					<h3 className="fw-bold mb-0">User Stats</h3>

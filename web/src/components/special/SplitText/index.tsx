@@ -42,7 +42,6 @@ const SplitText: React.FC<SplitTextProps> = ({
 	const onCompleteRef = useRef(onLetterAnimationComplete);
 	const [fontsLoaded, setFontsLoaded] = useState<boolean>(false);
 
-	// Keep callback ref updated
 	useEffect(() => {
 		onCompleteRef.current = onLetterAnimationComplete;
 	}, [onLetterAnimationComplete]);

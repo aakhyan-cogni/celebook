@@ -10,7 +10,7 @@ import Navbar from "./components/Navbar";
 import "bootstrap";
 import Footer from "./components/Footer";
 import Antigravity from "./components/special/Antigravity";
-import EventCreationForm from "./components/EventCreationForm.tsx";
+import EventCreationForm from "./components/EventCreationForm";
 import { Toaster } from "react-hot-toast";
 import Dashboard from "./pages/Dashboard.tsx";
 import Pricing from "./pages/Pricing.tsx";

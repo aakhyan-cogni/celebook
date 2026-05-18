@@ -1,7 +1,6 @@
 const TransactionHistory = () => {
 	return (
 		<div className="container-fluid h-100 d-flex flex-column personal-wrapper">
-			{/* Header */}
 			<div className="flex-shrink-0">
 				<div className="d-flex align-items-center w-100 overflow-hidden">
 					<div className="bg-info rounded-circle mx-2" style={{ width: 10, height: 10 }} />
@@ -10,7 +9,6 @@ const TransactionHistory = () => {
 				<hr className="my-2 border-info border-2 opacity-95" />
 			</div>
 
-			{/* Table */}
 			<div className="mt-2" style={{ height: "28rem"  }}>
 				<div className="w-100 h-100 overflow-auto">
 					<table className={`w-100 table table-striped table-hover text-center`}>

@@ -65,7 +65,6 @@ export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardPro
 
 	return (
 		<div className="container">
-			{/* Events you're organizing */}
 			<section className="mb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
 					<h3 className="fw-bold mb-0">Your Events</h3>
@@ -115,7 +114,6 @@ export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardPro
 
 			<hr className="my-5 opacity-10" />
 
-			{/* Your bookings */}
 			<section>
 				<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
 					<h3 className="fw-bold mb-0">Your Bookings</h3>

@@ -68,7 +68,6 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 					className="card border-0 shadow-lg rounded-4 overflow-hidden"
 					style={{ width: "100%", maxWidth: 460 }}
 				>
-					{/* Header */}
 					<div
 						className="card-header border-0 d-flex justify-content-between align-items-center py-3 px-4"
 						style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}
@@ -86,7 +85,6 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 						</button>
 					</div>
 
-					{/* Event details strip */}
 					<div className="px-4 py-3 border-bottom d-flex flex-column gap-1" style={{ background: "#f8f9ff" }}>
 						<div className="d-flex align-items-center gap-2 text-secondary small">
 							<Calendar size={14} />
@@ -106,7 +104,6 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 						)}
 					</div>
 
-					{/* Attendee row */}
 					<div className="px-4 py-3 border-bottom d-flex align-items-center gap-3">
 						<div
 							className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
@@ -120,7 +117,6 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 						</div>
 					</div>
 
-					{/* QR code */}
 					<div className="card-body d-flex flex-column align-items-center py-4 gap-3">
 						{loading && (
 							<div className="d-flex flex-column align-items-center gap-2 py-3">

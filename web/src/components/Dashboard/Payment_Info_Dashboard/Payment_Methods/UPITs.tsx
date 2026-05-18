@@ -1,4 +1,3 @@
-// UPIs
 export default function Upis() {
 	const upis = [
 		{ id: "u1", vpa: "sushant@okhdfcbank", name: "Primary UPI", linkedBank: "HDFC" },
@@ -41,7 +40,6 @@ export default function Upis() {
 				</div>
 			))}
 
-			{/* Add UPI tile */}
 			<div className="col-12 col-lg-6 d-flex">
 				<button
 					type="button"

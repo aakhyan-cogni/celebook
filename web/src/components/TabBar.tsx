@@ -1,10 +1,12 @@
-import { useState } from "react";
-import Dashboard from "./Dashboard/Dashboard";
+import { Fragment, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
+import Dashboard from "./Dashboard/Dashboard";
 import PersonalContent from "./Dashboard/Personal_Info_Dashboard/PersonalConent";
 import PaymentContent from "./Dashboard/Payment_Info_Dashboard/PaymentContent";
-import Events from "../components/Dashboard/Events";
+import Events from "./Dashboard/Events";
 import Bookings from "./Dashboard/Bookings";
+import { TABS } from "./TabBar/tabs";
+import { SidebarNavItem } from "./TabBar/SidebarNav";
 
 export default function ProfileLayout() {
 	const [active, setActive] = useState("dashboard");
@@ -18,13 +20,8 @@ export default function ProfileLayout() {
 		return null;
 	}
 
-	const viewEvents = () => {
-		setActive("events");
-	};
-
-	const viewBookings = () => {
-		setActive("bookings");
-	};
+	const viewEvents = () => setActive("events");
+	const viewBookings = () => setActive("bookings");
 
 	return (
 		<div className="container-fluid" style={{ overflow: "hidden", height: "100%", width: "100%" }}>
@@ -37,190 +34,30 @@ export default function ProfileLayout() {
 						</div>
 
 						<nav className="nav nav-pills flex-wrap flex-lg-column py-2">
-							<div className="nav-item d-flex">
-								{/* <NavButton id="dashboard" label="Dashboard" icon={"🗓️"}/> */}
-								<button
-									className={`btn outline-none decoration m-1 mb-0 ms-2 text-start px-3 pt-2 border-none `}
-									onClick={() => setActive("dashboard")}
-									aria-current={active === "dashboard" ? "page" : undefined}
-									onMouseOver={() => setHover("dashboard")}
-									onMouseOut={() => setHover("")}
-								>
-									<span className="me-2">{"🗓️"}</span>
-									{"Dashboard"}
-								</button>
-								<div
-									className={`rouded-3 rounded-top rounded-bottom ${active === "dashboard" ? "bg-primary" : ""} my-2`}
-									style={{
-										marginLeft: "auto",
-										width: "5px",
-										backgroundColor: "transparent",
-										color: "transparent",
-									}}
-								>
-									as
-								</div>
-							</div>
-							<div
-								className={`  d-none d-lg-block rouded-2 rounded-start rounded-end ${hover === "dashboard" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "70%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
-							
-							<div
-								className={`d-none d-lg-block rounded-lg ${hover === "settings" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "60%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
-							<div className="nav-item d-flex">
-								{/* <NavButton id="events" label="events Details" icon={"💰"}/> */}
-								<button
-									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
-									onClick={() => setActive("events")}
-									onMouseOver={() => setHover("events")}
-									onMouseOut={() => setHover("")}
-								>
-									<span className="me-2">{"📢"}</span>
-									{"Events"}
-								</button>
-								<div
-									className={`rouded-3 rounded-top rounded-bottom ${active === "events" ? "bg-primary" : ""} my-2`}
-									style={{
-										marginLeft: "auto",
-										width: "5px",
-										backgroundColor: "transparent",
-										color: "transparent",
-									}}
-								>
-									as
-								</div>
-							</div>
-							<div
-								className={`d-none d-lg-block ${hover === "events" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "65%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
-							<div className="nav-item d-flex">
-								<button
-									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
-									onClick={() => setActive("bookings")}
-									onMouseOver={() => setHover("bookings")}
-									onMouseOut={() => setHover("")}
-								>
-									<span className="me-2">{"👥"}</span>
-									{"Bookings"}
-								</button>
-								<div
-									className={`rouded-3 rounded-top rounded-bottom ${active === "bookings" ? "bg-primary" : ""} my-2`}
-									style={{
-										marginLeft: "auto",
-										width: "5px",
-										backgroundColor: "transparent",
-										color: "transparent",
-									}}
-								>
-									as
-								</div>
-							</div>
-							<div
-								className={`d-none d-lg-block ${hover === "bookings" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "65%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
-							
-														<div className="nav-item d-flex">
-								{/* <NavButton id="personal" label="Personal Details" icon={"👤"}/> */}
-								<button
-									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
-									onClick={() => setActive("personal")}
-									onMouseOver={() => setHover("personal")}
-									onMouseOut={() => setHover("")}
-								>
-									<span className="me-2">{"👤"}</span>
-									{"Personal Details"}
-								</button>
-								<div
-									className={`rouded-3 rounded-top rounded-bottom ${active === "personal" ? "bg-primary" : ""} my-2`}
-									style={{
-										marginLeft: "auto",
-										width: "5px",
-										backgroundColor: "transparent",
-										color: "transparent",
-									}}
-								>
-									as
-								</div>
-							</div>
-							<div
-								className={`d-none d-lg-block ${hover === "personal" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "80%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
-
-							<div className="nav-item d-flex">
-								{/* <NavButton id="payment" label="Payment Details" icon={"💰"}/> */}
-								<button
-									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
-									onClick={() => setActive("payment")}
-									onMouseOver={() => setHover("payment")}
-									onMouseOut={() => setHover("")}
-								>
-									<span className="me-2">{"💰"}</span>
-									{"Payment Details"}
-								</button>
-								<div
-									className={`rouded-3 rounded-top rounded-bottom ${active === "payment" ? "bg-primary" : ""} my-2`}
-									style={{
-										marginLeft: "auto",
-										width: "5px",
-										backgroundColor: "transparent",
-										color: "transparent",
-									}}
-								>
-									as
-								</div>
-							</div>
-							<div
-								className={`d-none d-lg-block ${hover === "payment" ? "bg-primary" : ""} overflow-hidden ms-3`}
-								style={{
-									width: "80%",
-									height: "2px",
-									backgroundColor: "transparent",
-									color: "transparent",
-								}}
-							>
-								as
-							</div>
+							{TABS.map((tab, i) => (
+								<Fragment key={tab.id}>
+									<SidebarNavItem
+										tab={tab}
+										active={active}
+										hover={hover}
+										onSelect={setActive}
+										onHover={setHover}
+									/>
+									{i === 0 && (
+										<div
+											className={`d-none d-lg-block rounded-lg ${hover === "settings" ? "bg-primary" : ""} overflow-hidden ms-3`}
+											style={{
+												width: "60%",
+												height: "2px",
+												backgroundColor: "transparent",
+												color: "transparent",
+											}}
+										>
+											as
+										</div>
+									)}
+								</Fragment>
+							))}
 						</nav>
 					</div>
 				</aside>

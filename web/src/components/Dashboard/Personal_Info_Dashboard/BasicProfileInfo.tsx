@@ -36,7 +36,6 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 	const [state, dispatch] = useReducer(reducer, user);
 
 	useEffect(() => {
-		// Updating cached function
 		registerSave(() => {
 			const [fname, _] = state.name.split(" ");
 			if (fname.length === 0) {
@@ -160,7 +159,6 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 							/>
 						</div>
 
-						{/* Last Name */}
 						<div className="col-12 col-lg-6">
 							<label className="form-label">Last Name</label>
 							<input
