@@ -54,6 +54,7 @@ ADMIN_EMAIL=admin@ems.com
 ADMIN_PASSWORD=1234
 USER_EMAIL=user@ems.com
 USER_PASSWORD=1234
+TICKET_TOKEN_SECRET=abcdefgh
 ```
 
 > The `ADMIN_*` and `USER_*` env vars are read by `npm run db:seed` ([`server/src/seed.js`](server/src/seed.js)) to create a seeded admin user, a seeded regular user, and a sample event on a fresh database.
