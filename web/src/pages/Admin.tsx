@@ -48,7 +48,6 @@ const Admin = () => {
 
 						<nav className="nav nav-pills flex-wrap flex-lg-column py-2">
 							<div className="nav-item d-flex">
-								{/* <NavButton id="overview" label="overview" icon={"🗓️"}/> */}
 								<button
 									className={`btn outline-none decoration m-1 mb-0 ms-2 text-start px-3 pt-2 border-none `}
 									onClick={() => setActive("overview")}
@@ -83,7 +82,6 @@ const Admin = () => {
 								as
 							</div>
 							<div className="nav-item d-flex">
-								{/* <NavButton id="events" label="events Details" icon={"💰"}/> */}
 								<button
 									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
 									onClick={() => setActive("events")}
@@ -117,7 +115,6 @@ const Admin = () => {
 								as
 							</div>
 							<div className="nav-item d-flex">
-								{/* <NavButton id="users" label="users Details" icon={"👤"}/> */}
 								<button
 									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
 									onClick={() => setActive("users")}

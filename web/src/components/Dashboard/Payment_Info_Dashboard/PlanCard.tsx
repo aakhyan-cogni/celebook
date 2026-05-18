@@ -1,6 +1,5 @@
 import React from "react";
 import { PricingDetails } from "../../../config/constants";
-// import { p } from "motion/react-client";
 
 type props = {
 	active?: boolean;
@@ -28,7 +27,6 @@ const PlanCard: React.FC<props> = ({ active, title }) => {
 				)}
 			</div>
 			<div className="text-center">
-				{/* <h3>{PricingDetails.title.description}</h3> */}
                 <hr className="mx-2 border border-dark opacity-75"/>
 				<p className="py-2 px-1 fw-bold text-light">{card.description}</p>
 

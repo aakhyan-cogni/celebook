@@ -66,7 +66,6 @@ const NotificationPage: React.FC = () => {
 		<div>
 			<div className="container-fluid bg-body-tertiary min-vh-100 p-0">
 				<div className="row g-0">
-					{/* Sidebar for larger screens */}
 					<aside className="col-md-3 col-lg-2 d-none d-md-flex flex-column vh-100 sticky-top bg-body border-end shadow-sm">
 						<div className="p-4">
 							<div className="nav flex-column nav-pills gap-2">
@@ -117,7 +116,6 @@ const NotificationPage: React.FC = () => {
 								</button>
 							</div>
 
-							{/* alternate for sidebar - small screens*/}
 							<div className="d-flex d-md-none gap-2 mt-3 flex-wrap">
 								<button
 									className={`btn btn-sm ${display === "all" ? "btn-primary" : "btn-outline-primary"}`}

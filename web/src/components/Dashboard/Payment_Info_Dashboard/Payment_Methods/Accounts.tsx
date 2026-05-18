@@ -1,4 +1,3 @@
-// Bank Accounts
 export default function Accounts() {
 	const accounts = [
 		{ id: "a1", bank: "HDFC Bank", accMasked: "XXXXXX1234", ifsc: "HDFC0000123", type: "Savings" },
@@ -56,7 +55,6 @@ export default function Accounts() {
 				</div>
 			))}
 
-			{/* Add Account tile */}
 			<div className="col-12 col-lg-6 d-flex">
 				<button
 					type="button"

@@ -38,7 +38,6 @@ export default function GlobalEventPage() {
 	const [totalPages, setTotalPages] = useState(1);
 	const [total, setTotal] = useState(0);
 
-	// 400ms debounce — so API isn't called on every keystroke
 	const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const fetchEvents = async (search: string, category: string, location: string, currentPage: number) => {
@@ -66,12 +65,10 @@ export default function GlobalEventPage() {
 		}
 	};
 
-	// Fetch on mount + whenever page / category / location changes
 	useEffect(() => {
 		fetchEvents(searchTerm, selectedCategory, selectedLocation, page);
 	}, [page, selectedCategory, selectedLocation]);
 
-	// Debounced search input handler
 	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const val = e.target.value;
 		setSearchTerm(val);
@@ -94,7 +91,6 @@ export default function GlobalEventPage() {
 
 	return (
 		<div className="min-vh-100 bg-body position-relative overflow-hidden">
-			{/* Background blobs — kept exactly from original */}
 			<div
 				className="position-absolute top-0 start-0 translate-middle bg-primary opacity-10 rounded-circle"
 				style={{ width: "600px", height: "600px", filter: "blur(100px)", zIndex: 0 }}
@@ -105,7 +101,6 @@ export default function GlobalEventPage() {
 			></div>
 
 			<main className="container py-5 position-relative" style={{ zIndex: 1 }}>
-				{/* Heading — kept exactly from original */}
 				<motion.div variants={fadeInUp} initial="hidden" animate="visible" className="text-center mb-5">
 					<h1 className="display-4 fw-bold text-body mb-2">
 						Explore <span className="text-primary">Global Events</span>
@@ -115,7 +110,6 @@ export default function GlobalEventPage() {
 					</p>
 				</motion.div>
 
-				{/* Search bar — kept original structure, added loading spinner */}
 				<div className="row justify-content-center mb-4">
 					<div className="col-lg-8">
 						<div className="p-2 bg-body-tertiary border border-primary border-opacity-10 rounded-pill shadow d-flex align-items-center px-4 backdrop-blur">
@@ -137,7 +131,6 @@ export default function GlobalEventPage() {
 								value={searchTerm}
 								onChange={handleSearchChange}
 							/>
-							{/* Spinner appears inside search bar while loading */}
 							{loading && (
 								<div
 									className="spinner-border spinner-border-sm text-primary ms-2 flex-shrink-0"
@@ -150,7 +143,6 @@ export default function GlobalEventPage() {
 					</div>
 				</div>
 
-				{/* Category pills — kept exactly from original */}
 				<div className="d-flex justify-content-center gap-2 mb-5 flex-wrap">
 					{CATEGORIES.map((cat) => (
 						<button
@@ -163,7 +155,6 @@ export default function GlobalEventPage() {
 					))}
 				</div>
 
-				{/* Error state */}
 				{error && (
 					<div className="alert alert-danger text-center rounded-4">
 						{error}
@@ -176,7 +167,6 @@ export default function GlobalEventPage() {
 					</div>
 				)}
 
-				{/* Loading skeleton */}
 				{loading && events.length === 0 && (
 					<div className="row g-4">
 						{Array.from({ length: 6 }).map((_, i) => (
@@ -194,7 +184,6 @@ export default function GlobalEventPage() {
 					</div>
 				)}
 
-				{/* Empty state */}
 				{!loading && !error && events.length === 0 && (
 					<div className="text-center py-5">
 						<div
@@ -208,19 +197,16 @@ export default function GlobalEventPage() {
 					</div>
 				)}
 
-				{/* Events grid — same layout as original */}
 				{!loading && events.length > 0 && (
 					<motion.div variants={staggerContainer} initial="hidden" animate="visible" className="row g-4">
 						{events.map((event) => (
 							<motion.div key={event._id} layout variants={fadeInUp} className="col-12 col-md-6 col-lg-4">
-								{/* Navigate to /events/:_id with MongoDB ObjectId */}
 								<EventCard event={event} onClick={() => navigate(`/events/${event._id}`)} />
 							</motion.div>
 						))}
 					</motion.div>
 				)}
 
-				{/* Pagination controls */}
 				{totalPages > 1 && (
 					<div className="d-flex justify-content-center align-items-center gap-3 mt-5">
 						<motion.button
