@@ -16,8 +16,6 @@ const SupportPage = () => {
     <div className="container py-5 mt-5">
       <div className="row justify-content-center">
         <div className="col-lg-10">
-          
-          {/* Header Section */}
           <div className="text-center mb-5">
             <motion.h2 
               initial={{ opacity: 0, y: -20 }} 
@@ -46,7 +44,6 @@ const SupportPage = () => {
           </div>
 
           <div className="row g-4">
-            {/* Quick Contact Cards */}
             <div className="col-md-4">
               <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
                 <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
@@ -86,7 +83,6 @@ const SupportPage = () => {
               </div>
             </div>
 
-            {/* FAQ Section */}
             <div className="col-12 mt-5">
               <motion.div 
                 initial={{ opacity: 0, y: 20 }} 
@@ -116,7 +112,6 @@ const SupportPage = () => {
         </div>
       </div>
 
-      {/* --- FLOATING CHAT COMPONENT --- */}
       <div className="position-fixed bottom-0 end-0 m-4" style={{ zIndex: 1050 }}>
         <AnimatePresence>
           {chatOpen && (

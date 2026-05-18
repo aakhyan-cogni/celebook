@@ -64,7 +64,6 @@ const Users = () => {
 
 	return (
 		<div className="container">
-			{/* User Stats */}
 			<section>
 				<div className="d-flex justify-content-between align-items-center mb-4">
 					<h3 className="fw-bold mb-0">User Stats</h3>
@@ -104,7 +103,6 @@ const Users = () => {
 					</div>
 				</div>
 
-				{/* 5. Map over 'displayedUsers' instead of the raw state */}
 				{displayedUsers.length > 0 ? (
 					<div className="row g-4">
 						{displayedUsers.map((user) => (

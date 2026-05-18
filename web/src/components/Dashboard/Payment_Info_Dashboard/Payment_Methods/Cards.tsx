@@ -1,4 +1,3 @@
-// Cards
 export default function Cards() {
 	const cards = [
 		{ id: "1", cardNo: "1234567812345678", expiryNo: "06/27", brand: "BOB", type: "Credit" },
@@ -51,7 +50,6 @@ export default function Cards() {
 				</div>
 			))}
 
-			{/* Add Card tile */}
 			<div className="col-12 col-lg-6 d-flex">
 				<button
 					type="button"

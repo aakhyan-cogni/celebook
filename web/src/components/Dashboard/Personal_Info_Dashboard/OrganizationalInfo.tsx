@@ -21,7 +21,6 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 	const [state, dispatch] = useReducer(reducer, user);
 
 	useEffect(() => {
-		// Updating cached function
 		registerSave(() => {
 			if (!isUpdated) return;
 			syncUser({
@@ -92,7 +91,6 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 							<label className="form-label">Bio / description</label>
 							<textarea
 								rows={3}
-								// onKeyUp={() => setUpdate(true)}
 								onChange={(e) => {
 									setUpdate(true);
 									dispatch({ type: "bio", value: e.target.value });

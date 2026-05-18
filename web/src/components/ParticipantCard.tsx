@@ -46,7 +46,6 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 					className="card border-0 shadow-lg rounded-4 overflow-hidden"
 					style={{ width: "100%", maxWidth: 440 }}
 				>
-					{/* Header */}
 					<div className="card-header border-0 d-flex justify-content-between align-items-center py-3 px-4 bg-dark text-white">
 						<div className="d-flex align-items-center gap-2">
 							<UserCheck size={18} />
@@ -61,7 +60,6 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 						</button>
 					</div>
 
-					{/* Participant info */}
 					<div className="card-body px-4 py-4">
 						<div className="d-flex align-items-center gap-3 mb-4">
 							{avatarUrl ? (
@@ -85,7 +83,6 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 							</div>
 						</div>
 
-						{/* Attendance status */}
 						{alreadyPresent && (
 							<div className="alert alert-success d-flex align-items-center gap-2 py-2 mb-3 rounded-3">
 								<CheckCircle size={16} />
@@ -93,7 +90,6 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 							</div>
 						)}
 
-						{/* Form data */}
 						{formEntries.length > 0 && (
 							<div className="mb-3">
 								<div className="text-muted small fw-semibold mb-2 text-uppercase" style={{ letterSpacing: "0.05em" }}>
@@ -111,7 +107,6 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 						)}
 					</div>
 
-					{/* Footer actions */}
 					<div className="card-footer border-0 bg-transparent px-4 pb-4 d-flex gap-2">
 						<button
 							className="btn btn-success rounded-pill flex-grow-1 d-flex align-items-center justify-content-center gap-2"

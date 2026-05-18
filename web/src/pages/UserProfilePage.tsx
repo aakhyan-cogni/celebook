@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-// import { type User } from "../store.js";
 
 const UserProfilePage = () => {
 	const { id } = useParams<{ id: string }>();
@@ -64,11 +63,9 @@ const UserProfilePage = () => {
 
 
 	return (
-		/* bg-body-tertiary acts as a subtle background in both light and dark modes */
 		<div className="container-fluid  bg-body-tertiary py-5">
 			<div className="container">
 				<div className="row g-4">
-					{/* 1. Primary Identity Tile */}
 					<div className="col-12 col-lg-5">
 						<div className="card text-bg-info rounded-4 h-100 border-0 p-4 p-md-5 d-flex flex-column justify-content-between shadow-sm">
 							<div className="">
@@ -103,7 +100,6 @@ const UserProfilePage = () => {
 						</div>
 					</div>
 
-					{/* 3. Location Tile */}
 					<div className="col-12 col-md-8 ">
 						<div className="card bg-body  text-body rounded-4 h-100 border-0 p-4 p-md-5  shadow-sm d-flex flex-column justify-content-center">
 							<h6 className="text-uppercase text-body-secondary fw-bold mb-3">About</h6>
@@ -113,10 +109,8 @@ const UserProfilePage = () => {
 						</div>
 					</div>
 
-					{/* 5. Website/Call to Action Tile */}
 					<div className="col-12 col-lg-4">
 						{userProfile?.companyWebsite ? (
-							/* Using a secondary background for the link card to give it distinction */
 							<div className="card bg-body-secondary text-body rounded-4 h-100 border-0 shadow-sm d-flex flex-column">
 								<div className="card-body d-flex flex-column justify-content-center align-items-center text-center p-4">
 									<h4 className="fw-bold mb-1">Visit Website</h4>
