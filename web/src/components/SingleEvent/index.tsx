@@ -3,7 +3,8 @@ import { useNavigate } from "react-router";
 import { useState } from "react";
 import { Ticket } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG, checkInAttendee } from "../../lib/api";
+import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG } from "../../lib/api";
+import { checkInAttendee } from "../../api/registration.api";
 import ParticipantCard from "../ParticipantCard";
 import TicketModal from "../TicketModal";
 import toast from "react-hot-toast";
@@ -57,7 +58,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const isAdmin = isAuthenticated && user?.role === "ADMIN";
 	const eid = eventId || event._id || event.id;
 
-	const [eventStat, setEventStat] = useEventStats(eid, accessToken, isOrganizer || isAdmin);
+	const [eventStat, setEventStat] = useEventStats(eid, isOrganizer || isAdmin);
 	const { scanResult, scanLoading, lastScannedToken, clearScan } = useQRScanner({
 		showScanner,
 		eventId: eid,

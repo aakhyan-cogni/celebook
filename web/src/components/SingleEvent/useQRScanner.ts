@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { checkInAttendee } from "../../lib/api";
-import type { CheckInResult } from "../../lib/api";
+import { checkInAttendee } from "../../api/registration.api";
+import type { CheckInResult } from "../../api/registration.api";
 
 export function useQRScanner(opts: {
 	showScanner: boolean;

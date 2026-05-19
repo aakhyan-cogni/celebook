@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { X, MapPin, Calendar, Tag } from "lucide-react";
-import { fetchTicketToken } from "../lib/api";
+import { fetchTicketToken } from "../api/registration.api";
 import { useAuthStore } from "../store/useAuthStore";
 import type { Booking } from "../store";
 

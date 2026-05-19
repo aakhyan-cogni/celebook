@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { X, CheckCircle, UserCheck } from "lucide-react";
 import { getImageUrl } from "../lib/api";
-import type { CheckInResult } from "../lib/api";
+import type { CheckInResult } from "../api/registration.api";
 
 interface ParticipantCardProps {
 	result: CheckInResult;
