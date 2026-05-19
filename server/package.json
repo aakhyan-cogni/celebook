@@ -7,7 +7,7 @@
 	"type": "module",
 	"main": "src/index.js",
 	"scripts": {
-		"db:up": "mongod --port 27018 --dbpath \"./mongo-data\" --replSet rs0",
+		"db:up": "mongod --port 27018 --dbpath \"./mongo-data\" --replSet rs0 --logpath ../mongod.log",
 		"dev": "nodemon src/index.js",
 		"db:seed": "node src/seed.js",
 		"start": "npm run db:seed && node src/index.js",

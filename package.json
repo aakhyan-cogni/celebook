@@ -7,10 +7,12 @@
 	"type": "module",
 	"main": "index.js",
 	"scripts": {
+		"start": "concurrently \"npm run db:up\" \"npm run dev\" --kill-others",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"dev": "concurrently \"npm run web\" \"npm run server\"",
 		"web": "npm run dev --prefix web",
-		"server": "npm run dev --prefix server"
+		"server": "npm run dev --prefix server",
+		"db:up": "npm run db:up --prefix server"
 	},
 	"devDependencies": {
 		"concurrently": "^9.2.1"

@@ -1,9 +1,6 @@
-import { createRequire } from "module";
 import path from "path";
 import fs from "fs";
-
-const require = createRequire(import.meta.url);
-const multer = require("multer");
+import multer from 'multer';
 
 const imageFilter = (req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
