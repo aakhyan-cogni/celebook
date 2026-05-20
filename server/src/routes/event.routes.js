@@ -18,6 +18,7 @@ import { registerForEvent, cancelRegistration, getEventRegistrations, checkIn } 
 import { authenticate, optionalAuthenticate } from "../middleware/auth.middleware.js";
 import { consentCheck } from "../middleware/consent.middleware.js";
 import { eventImageUpload } from "../lib/upload.js";
+import { getMyFeedback, submitFeedback, triggerHostFeedback, getFeedbackSummary } from "../controllers/feedback.controller.js";
 
 export const eventRouter = Router();
 
@@ -37,6 +38,11 @@ eventRouter.get("/mine",              authenticate, getMyEvents);
 eventRouter.get("/can-publish",       authenticate, checkPublishEligibility);
 eventRouter.get("/:id/registrations", authenticate, getEventRegistrations);
 eventRouter.get("/:id/stats",         authenticate, getEventStats);
+
+eventRouter.post("/:id/feedback/host-trigger", authenticate, triggerHostFeedback);
+eventRouter.post("/:id/feedback", authenticate, submitFeedback);
+eventRouter.get("/:id/feedback/mine", authenticate, getMyFeedback);
+eventRouter.get("/:id/feedback", optionalAuthenticate, getFeedbackSummary); 
 
 eventRouter.get("/:id",               optionalAuthenticate, getEventById);
 eventRouter.get("/",                  getEvents);

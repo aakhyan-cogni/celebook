@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Ticket } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG } from "../../lib/api";
@@ -14,6 +14,8 @@ import ConfirmRegisterModal from "./ConfirmRegisterModal";
 import OrganizerStatsPanel from "./OrganizerStatsPanel";
 import ScannerOverlay from "./ScannerOverlay";
 import RejectReasonModal from "./RejectReasonModal";
+import FeedbackSummary from "./FeedbackSummary";
+import { triggerHostFeedback, getMyFeedback } from "../../api/feedback.api";
 
 interface SingleEventProps {
 	event: any;
@@ -48,10 +50,18 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [rejectReasonInput, setRejectReasonInput] = useState("");
 	const [adminActing, setAdminActing] = useState(false);
 	const [isRegistered, setIsRegistered] = useState<boolean>(!!event.userRegistration);
+	const didAttend = event.userRegistration?.attendanceStatus === "PRESENT";
 
 	const [showTicket, setShowTicket] = useState(false);
 	const [showScanner, setShowScanner] = useState(false);
 	const [marking, setMarking] = useState(false);
+
+	const [hostFeedbackSentAt, setHostFeedbackSentAt] = useState<string | null>(
+		event.hostFeedbackSentAt ?? null,
+	);
+	const [sendingFeedbackTrigger, setSendingFeedbackTrigger] = useState(false);
+	const [myFeedbackSubmitted, setMyFeedbackSubmitted] = useState(false);
+	const [feedbackSummaryRefresh, setFeedbackSummaryRefresh] = useState(0);
 
 	const isPastEvent = new Date(event.date).getTime() < Date.now();
 	const isOrganizer = isAuthenticated && user?.id === event.organizerId;
@@ -134,7 +144,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 			setSuccess(true);
 			setIsRegistered(true);
-			toast.success("Registration successful!");
 			setShowConfirm(false);
 
 			setTimeout(() => {
@@ -145,6 +154,41 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			setError("An error occurred. Please try again.");
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		setHostFeedbackSentAt(event.hostFeedbackSentAt ?? null);
+	}, [event.hostFeedbackSentAt]);
+
+	useEffect(() => {
+		// check whether attendee already submitted feedback and disable the "Give Feedback" button
+		if (!isAuthenticated || isOrganizer || isAdmin || !isRegistered || !isPastEvent) return;
+		if (!hostFeedbackSentAt) return;
+		let cancelled = false;
+		getMyFeedback(eid)
+			.then((res) => {
+				if (cancelled) return;
+				if (res?.data) setMyFeedbackSubmitted(true);
+			})
+			.catch(() => {});
+		return () => {
+			cancelled = true;
+		};
+	}, [eid, isAuthenticated, isOrganizer, isAdmin, isRegistered, isPastEvent, hostFeedbackSentAt]);
+
+	const handleHostFeedbackTrigger = async () => {
+		if (sendingFeedbackTrigger || hostFeedbackSentAt) return;
+		setSendingFeedbackTrigger(true);
+		try {
+			const res = await triggerHostFeedback(eid);
+			setHostFeedbackSentAt(res.hostFeedbackSentAt);
+			setFeedbackSummaryRefresh((n) => n + 1);
+			toast.success("Feedback request sent to attendees!");
+		} catch (err: any) {
+			toast.error(err?.message || "Could not send feedback request");
+		} finally {
+			setSendingFeedbackTrigger(false);
 		}
 	};
 
@@ -398,14 +442,30 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							!isOrganizer &&
 							!isAdmin &&
 							isRegistered &&
+							didAttend &&
 							isPastEvent &&
 							!event.isCancelled && (
-								<button
-									className="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"
-									onClick={() => navigate(`/events/${event._id || event.id}/feedback`)}
-								>
-									📋 Give Feedback
-								</button>
+								myFeedbackSubmitted ? (
+									<button
+										className="btn btn-success px-4 fw-bold rounded-pill"
+										disabled
+									>
+										✓ Feedback Submitted
+									</button>
+								) : (
+									<button
+										className="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"
+										onClick={() => navigate(`/events/${event._id || event.id}/feedback`)}
+										disabled={!hostFeedbackSentAt}
+										title={
+											hostFeedbackSentAt
+												? undefined
+												: "The host hasn't opened feedback for this event yet"
+										}
+									>
+										📋 Give Feedback
+									</button>
+								)
 							)}
 
 						{isAuthenticated && !isOrganizer && !isAdmin && isRegistered && (
@@ -478,14 +538,22 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							Share
 						</button>
 
-						{isPastEvent && isAuthenticated && !isOrganizer && !isAdmin && (
+						{isAuthenticated && isOrganizer && isPastEvent && !event.isCancelled && (
 							<button
-								className="btn btn-outline-warning rounded-pill px-4 fw-bold"
-								onClick={() =>
-									document.getElementById("feedback-section")?.scrollIntoView({ behavior: "smooth" })
-								}
+								className={`btn rounded-pill px-4 fw-bold ${hostFeedbackSentAt ? "btn-success" : "btn-warning"}`}
+								onClick={handleHostFeedbackTrigger}
+								disabled={!!hostFeedbackSentAt || sendingFeedbackTrigger}
 							>
-								Leave Feedback
+								{sendingFeedbackTrigger ? (
+									<>
+										<span className="spinner-border spinner-border-sm me-2" role="status" />
+										Sending...
+									</>
+								) : hostFeedbackSentAt ? (
+									"✓ Feedback Sent"
+								) : (
+									"Leave Feedback"
+								)}
 							</button>
 						)}
 					</div>
@@ -498,6 +566,10 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							scanLoading={scanLoading}
 							onScan={() => setShowScanner(true)}
 						/>
+					)}
+
+					{isPastEvent && !event.isCancelled && (
+						<FeedbackSummary eventId={eid} refreshKey={feedbackSummaryRefresh} />
 					)}
 				</div>
 			</div>

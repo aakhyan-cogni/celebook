@@ -4,4 +4,5 @@ export { EventModel, EVENT_COLLECTION } from "./event.model.js";
 export { RegistrationModel, REGISTRATION_COLLECTION } from "./registration.model.js";
 export { EventStatModel, EVENT_STAT_COLLECTION } from "./eventStat.model.js";
 export { NotificationModel, NOTIFICATION_COLLECTION } from "./notification.model.js";
+export { FeedbackModel, FEEDBACK_COLLECTION, FEEDBACK_RATING_FIELDS } from "./feedback.model.js";
 export { fromDoc } from "./util.js";
