@@ -106,4 +106,7 @@ type API_PATH =
 	| `/notifications/${string}`
 	| `/registrations/my-registrations`
 	| `/registrations/${string}/ticket-token`
-	| `/events/${string}/check-in`;
+	| `/events/${string}/check-in`
+	| `/events/${string}/feedback`
+	| `/events/${string}/feedback/host-trigger`
+	| `/events/${string}/feedback/mine`;

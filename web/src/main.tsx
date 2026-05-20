@@ -22,6 +22,7 @@ import NotificationSocketProvider from "./components/NotificationSocketProvider.
 import Terms from "./pages/Terms.tsx";
 import Admin from "./pages/Admin.tsx";
 import UserProfilePage from "./pages/UserProfilePage.tsx";
+import FeedbackPage from "./pages/Feedback.tsx";
 
 createRoot(document.getElementById("root")!).render(<Root />);
 
@@ -57,6 +58,7 @@ function Root() {
 					<Route path="/events" element={<GlobalEventPage />} />
 					
 					<Route path="/events/:id" element={<EventDetailPage />} />
+					<Route path="/events/:id/feedback" element={<FeedbackPage />} />
 
 					<Route path="/dashboard" element={<Dashboard />} />
 					<Route path="/create" element={<EventCreationForm />} />

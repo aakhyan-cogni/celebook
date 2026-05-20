@@ -1,4 +1,5 @@
 import * as EventService from "../services/event.service.js";
+import { notifyAdminsEventSubmitted } from "../services/notification.service.js";
 import { fromDoc } from "../models/util.js";
 import { EventModel, EventStatModel } from "../models/index.js";
 import fs from "fs";
@@ -90,6 +91,11 @@ export const publishEvent = async (req, res) => {
 		if (result.error) {
 			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : result.error === "NOT_PUBLISHABLE" ? 400 : result.error === "TIER_LIMIT_EXCEEDED" ? 403 : 400;
 			return res.status(status).json({ message: result.error });
+		}
+		if (result.event.status === "PENDING") {
+			notifyAdminsEventSubmitted().catch((err) =>
+				console.error("[publishEvent] notifyAdminsEventSubmitted failed:", err),
+			);
 		}
 		res.status(200).json(fromDoc(result.event));
 	} catch (error) {

@@ -9,6 +9,7 @@ import {
 	adminRouter,
 	registrationRouter,
 	notificationRouter,
+	feedbackRouter,
 } from "./routes/index.js";
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(express.static("public"));
 app.use("/api/events", eventRouter);
 app.use("/api/registrations", registrationRouter);
 app.use("/api/notifications", notificationRouter);
+app.use("/api", feedbackRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/consent", consentRouter);
