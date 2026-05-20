@@ -3,6 +3,7 @@ import {
 	FeedbackModel,
 	EventModel,
 	RegistrationModel,
+	EventStatModel,
 	FEEDBACK_RATING_FIELDS,
 } from "../models/index.js";
 import { createNotification } from "./notification.service.js";
@@ -41,21 +42,22 @@ export async function triggerHostFeedback(eventId, requestingUserId, isAdmin = f
 	const now = new Date();
 	event.hostFeedbackSentAt = now;
 	await event.save();
-
-	const registrations = await RegistrationModel.find({
+// notify feedback only to present attendees, CHANGED
+	const stat = await EventStatModel.findOne({
 		eventId: new mongoose.Types.ObjectId(eventId),
-		status: "CONFIRMED",
-	}).select("userId");
+	}).select("presentAttendees");
 
-	for (const reg of registrations) {
+	const presentAttendees = stat?.presentAttendees ?? [];
+
+	for (const userId of presentAttendees) {
 		try {
 			await createNotification({
-				userId: reg.userId,
+				userId,
 				type: "FEEDBACK_REMINDER",
 				data: { eventTitle: event.title, eventId: event._id.toString() },
 			});
 		} catch (err) {
-			console.error(`[triggerHostFeedback] notify failed for user ${reg.userId}:`, err);
+			console.error(`[triggerHostFeedback] notify failed for user ${userId}:`, err);
 		}
 	}
 
@@ -168,11 +170,7 @@ export async function getEventFeedbackSummary(eventId) {
 	return {
 		hostFeedbackSentAt: event.hostFeedbackSentAt ?? null,
 		averages,
-		comments: comments.map((c) => ({
-			id: c._id.toString(),
-			text: c.areasOfImprovement,
-			createdAt: c.createdAt,
-		})),
+		comments,
 	};
 }
 
