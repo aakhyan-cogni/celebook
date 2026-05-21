@@ -9,6 +9,7 @@ import {
 	adminRouter,
 	registrationRouter,
 	notificationRouter,
+	appFeedbackRouter
 	termsRouter,
 } from "./routes/index.js";
 
@@ -34,6 +35,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/consent", consentRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/feedback",appFeedbackRouter);
 app.use("/api/terms", termsRouter);
 
 // Global error handler
