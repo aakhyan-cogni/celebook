@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNotificationStore } from "../store/useNotificationStore";
 import { connectSocket, disconnectSocket } from "../lib/socket";
+import { apiFetch } from "../lib/api";
 import type { NotificationDTO } from "../api/notification.api";
 
 interface NewNotificationEvent {
@@ -17,6 +18,8 @@ export default function NotificationSocketProvider() {
 	const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
 	const prependNotification = useNotificationStore((s) => s.prependNotification);
 	const reset = useNotificationStore((s) => s.reset);
+	const setConsentRequired = useAuthStore((s) => s.setConsentRequired);
+	const updateUser = useAuthStore((s) => s.updateUser);
 
 	useEffect(() => {
 		if (!isAuthenticated || !accessToken) {
@@ -48,15 +51,44 @@ export default function NotificationSocketProvider() {
 			);
 		};
 
+		const handleTermsUpdated = async (payload: { version: string }) => {
+			toast(
+				(t) => (
+					<span
+						style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+						onClick={() => toast.dismiss(t.id)}
+					>
+						<Bell size={18} />
+						<span>
+							<strong>Terms &amp; Conditions updated</strong>
+							<br />
+							<small>Please review and accept version {payload.version}.</small>
+						</span>
+					</span>
+				),
+				{ duration: 6000 },
+			);
+			try {
+				const me = await apiFetch("/auth/me", { method: "GET" });
+				if (me?.user) updateUser({ ...me.user });
+				setConsentRequired(me?.consent?.needsRenewal === true);
+			} catch {
+				// Fall back to the next API-call 403 trigger.
+				setConsentRequired(true);
+			}
+		};
+
 		socket.on("notification:new", handleNewNotification);
+		socket.on("terms:updated", handleTermsUpdated);
 		socket.on("connect_error", (err) => {
 			console.error("[socket] connect_error:", err.message);
 		});
 
 		return () => {
 			socket.off("notification:new", handleNewNotification);
+			socket.off("terms:updated", handleTermsUpdated);
 		};
-	}, [isAuthenticated, accessToken, fetchNotifications, prependNotification, reset]);
+	}, [isAuthenticated, accessToken, fetchNotifications, prependNotification, reset, setConsentRequired, updateUser]);
 
 	return null;
 }

@@ -48,8 +48,16 @@ export async function apiFetch(
 	if (response.status === 403) {
 		const errorData = await response.json().catch(() => ({}));
 		if (errorData.code === "CONSENT_REQUIRED" && endpoint !== "/consent/accept") {
-			setPendingRequest(() => apiFetch(endpoint, options));
+			// Don't throw — that would let the caller toast a confusing "Consent required"
+			// message even though the modal is opening. Instead, return a Promise that
+			// resolves once the user accepts and the queued retry completes. From the
+			// caller's perspective, the original action just took a long time.
 			setConsentRequired(true);
+			return new Promise((resolve, reject) => {
+				setPendingRequest(() =>
+					apiFetch(endpoint, options, queryParams).then(resolve, reject),
+				);
+			});
 		}
 		throw new Error(errorData.message || "Access forbidden");
 	}

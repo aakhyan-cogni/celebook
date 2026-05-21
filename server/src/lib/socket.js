@@ -44,3 +44,8 @@ export function emitToUser(userId, event, payload) {
 	if (!io || !userId) return;
 	io.to(userRoom(userId.toString())).emit(event, payload);
 }
+
+export function emitToAll(event, payload) {
+	if (!io) return;
+	io.emit(event, payload);
+}

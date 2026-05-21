@@ -47,7 +47,8 @@ export const useAuthStore = create<AuthState>()(
 			consentRequired: false,
 			pendingRequest: null,
 
-			setAuth: (user, accessToken) => set({ user, accessToken, isAuthenticated: true }),
+			setAuth: (user, accessToken) =>
+				set({ user, accessToken, isAuthenticated: true, consentRequired: false, pendingRequest: null }),
 			setAccessToken: (accessToken) => set({ accessToken }),
 			updateUser: (userData) =>
 				set((state) => ({

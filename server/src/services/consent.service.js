@@ -2,6 +2,7 @@ import sanitizeHtml from "sanitize-html";
 import { TermsConfigModel } from "../models/terms-config.model.js";
 import { UserModel } from "../models/user.model.js";
 import { DEFAULT_TERMS_VERSION } from "../config/constants.js";
+import { emitToAll } from "../lib/socket.js";
 
 const SANITIZE_OPTIONS = {
 	allowedTags: ["h1", "h2", "h3", "h4", "h5", "h6", "p", "strong", "em", "u", "ul", "ol", "li", "a", "br", "hr", "blockquote"],
@@ -112,6 +113,11 @@ export async function updateTerms({ version, content, publisherUserId }) {
 	}
 
 	const dto = toDto(updated.toObject());
+
+	// Broadcast to every connected client so already-logged-in users get prompted
+	// immediately rather than at their next mutating action.
+	emitToAll("terms:updated", { version: dto.currentVersion, updatedAt: dto.updatedAt });
+
 	return { version: dto.currentVersion, content: dto.content, updatedAt: dto.updatedAt };
 }
 

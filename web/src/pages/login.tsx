@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import { login as loginUser, register as registerUser } from "../api/auth.api";
+import { apiFetch } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthForm from "../components/auth/AuthForm";
 import AuthBackground from "../components/auth/AuthBackground";
@@ -16,6 +17,8 @@ export default function Login() {
 	const [isLogin, setIsLogin] = useState(true);
 	const navigate = useNavigate();
 	const setAuth = useAuthStore((s) => s.setAuth);
+	const updateUser = useAuthStore((s) => s.updateUser);
+	const setConsentRequired = useAuthStore((s) => s.setConsentRequired);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
 	useEffect(() => {
@@ -34,6 +37,18 @@ export default function Login() {
 				: await registerUser(name, email, password, termsAccepted, true);
 
 			setAuth(response.user, response.accessToken);
+
+			// Probe /auth/me right after login so a stale consent version pops the
+			// modal immediately (Hydrate's mount-time effect already ran with
+			// isAuthenticated=false and won't re-fire).
+			try {
+				const me = await apiFetch("/auth/me", { method: "GET" });
+				if (me?.user) updateUser({ ...me.user });
+				setConsentRequired(me?.consent?.needsRenewal === true);
+			} catch {
+				// Non-critical — defense-in-depth via 403 handler still applies.
+			}
+
 			toast.success(response.message || "Success!");
 			navigate("/dashboard");
 		} catch (error: any) {
