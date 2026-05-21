@@ -132,6 +132,19 @@ export const getEventById = async (eventId, requestingUser = null) => {
 		event.userRegistration = reg ?? null;
 	}
 
+	// Admins reviewing an event need organizer context to judge legitimacy.
+	if (isAdmin && event.organizerId) {
+		const organizer = await UserModel.findById(event.organizerId)
+			.select(
+				"name email avatar phoneNumber gender orgName designation companyWebsite bio country city state role tier createdAt",
+			)
+			.lean();
+		if (organizer) {
+			const { _id, ...rest } = organizer;
+			event.organizer = { id: _id?.toString(), ...rest };
+		}
+	}
+
 	return { event };
 };
 
