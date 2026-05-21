@@ -15,6 +15,7 @@ import OrganizerStatsPanel from "./OrganizerStatsPanel";
 import OrganizerDetailsPanel from "./OrganizerDetailsPanel";
 import ScannerOverlay from "./ScannerOverlay";
 import RejectReasonModal from "./RejectReasonModal";
+import CancelReasonModal from "./CancelReasonModal";
 import FeedbackSummary from "./FeedbackSummary";
 import { triggerHostFeedback, getMyFeedback } from "../../api/feedback.api";
 
@@ -48,6 +49,8 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [eventStatus, setEventStatus] = useState<string>(event.status);
 	const [rejectionReason, setRejectionReason] = useState<string>(event.rejectionReason ?? "");
 	const [showRejectModal, setShowRejectModal] = useState(false);
+	const [showCancelModal, setShowCancelModal] = useState(false);
+	const [cancelReasonInput, setCancelReasonInput] = useState("");
 	const [rejectReasonInput, setRejectReasonInput] = useState("");
 	const [adminActing, setAdminActing] = useState(false);
 	const [isRegistered, setIsRegistered] = useState<boolean>(!!event.userRegistration);
@@ -163,7 +166,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	}, [event.hostFeedbackSentAt]);
 
 	useEffect(() => {
-		// check whether attendee already submitted feedback and disable the "Give Feedback" button
 		if (!isAuthenticated || isOrganizer || isAdmin || !isRegistered || !isPastEvent) return;
 		if (!hostFeedbackSentAt) return;
 		let cancelled = false;
@@ -228,23 +230,22 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		}
 	};
 
-	const handleCancel = async () => {
-		// Step 1 — ask for confirmation first, stop immediately if user clicks Cancel
-		const confirmed = window.confirm("Are you sure you want to cancel this event? This cannot be undone.");
-		if (!confirmed) return;
+	const handleCancel = () => {
+		setShowCancelModal(true);
+	};
 
-		// Step 2 — only if confirmed, ask for reason
-		const reason = prompt("Reason for cancellation (optional):") ?? "";
-
+	const handleConfirmCancel = async () => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${event._id || event.id}/cancel`, {
 				method: "POST",
 				headers: authHeaders(),
 				credentials: "include",
-				body: JSON.stringify({ reason }),
+				body: JSON.stringify({ reason: cancelReasonInput }),
 			});
 			if (!res.ok) throw new Error((await res.json()).message);
 			toast.success("Event cancelled.");
+			setShowCancelModal(false);
+			setCancelReasonInput("");
 			navigate("/dashboard");
 		} catch (err: any) {
 			toast.error(err?.message || "Could not cancel the event.");
@@ -638,6 +639,19 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 						setRejectReasonInput("");
 					}}
 					onConfirm={handleReject}
+				/>
+			)}
+
+			{showCancelModal && (
+				<CancelReasonModal
+					value={cancelReasonInput}
+					acting={false}
+					onChange={setCancelReasonInput}
+					onClose={() => {
+						setShowCancelModal(false);
+						setCancelReasonInput("");
+					}}
+					onConfirm={handleConfirmCancel}
 				/>
 			)}
 		</div>
