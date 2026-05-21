@@ -12,6 +12,7 @@ import { useEventStats } from "./useEventStats";
 import { useQRScanner } from "./useQRScanner";
 import ConfirmRegisterModal from "./ConfirmRegisterModal";
 import OrganizerStatsPanel from "./OrganizerStatsPanel";
+import OrganizerDetailsPanel from "./OrganizerDetailsPanel";
 import ScannerOverlay from "./ScannerOverlay";
 import RejectReasonModal from "./RejectReasonModal";
 import FeedbackSummary from "./FeedbackSummary";
@@ -358,6 +359,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 					}}
 					alt={event.title}
 				/>
+				{isAdmin && !isOrganizer && event.organizer && (
+					<OrganizerDetailsPanel organizer={event.organizer} eventStatus={eventStatus} />
+				)}
 			</div>
 
 			<div className="col-md-7 col-lg-8">
