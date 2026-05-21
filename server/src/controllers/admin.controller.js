@@ -1,4 +1,5 @@
 import * as AdminService from "../services/admin.service.js";
+import * as ConsentService from "../services/consent.service.js";
 import { createNotification } from "../services/notification.service.js";
 import { EventModel } from "../models/index.js";
 
@@ -109,6 +110,37 @@ export async function getStats(req, res) {
 		const stats = await AdminService.getStats();
 		res.json(stats);
 	} catch {
+		res.status(500).json({ message: "Internal server error" });
+	}
+}
+
+export async function getTerms(req, res) {
+	try {
+		const terms = await ConsentService.getCurrentTerms();
+		res.json(terms);
+	} catch (error) {
+		console.error("[getTerms] Error in Admin controller:", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+}
+
+export async function updateTerms(req, res) {
+	try {
+		const { version, content } = req.body ?? {};
+		const updated = await ConsentService.updateTerms({
+			version,
+			content,
+			publisherUserId: req.user?.userId,
+		});
+		res.json(updated);
+	} catch (error) {
+		if (error?.code === "VERSION_INVALID") {
+			return res.status(400).json({ message: "Version is required" });
+		}
+		if (error?.code === "VERSION_UNCHANGED") {
+			return res.status(400).json({ message: "New version must differ from current" });
+		}
+		console.error("[updateTerms] Error in Admin controller:", error);
 		res.status(500).json({ message: "Internal server error" });
 	}
 }

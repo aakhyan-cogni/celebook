@@ -25,24 +25,24 @@ export const eventRouter = Router();
 eventRouter.post("/",              authenticate, consentCheck, createEvent);
 eventRouter.post("/:id/publish",   authenticate, consentCheck, publishEvent);
 eventRouter.patch("/:id",          authenticate, consentCheck, updateEvent);
-eventRouter.post("/:id/cancel",    authenticate, cancelEvent);
-eventRouter.post("/:id/duplicate", authenticate, duplicateEvent);
+eventRouter.post("/:id/cancel",    authenticate, consentCheck, cancelEvent);
+eventRouter.post("/:id/duplicate", authenticate, consentCheck, duplicateEvent);
 eventRouter.post("/:id/register",  authenticate, consentCheck, registerForEvent);
-eventRouter.post("/:id/check-in",  authenticate, checkIn);
-eventRouter.post("/:id/images",    authenticate, eventImageUpload.array("images", 10), uploadEventImages);
-eventRouter.delete("/:id",         authenticate, deleteEvent);
-eventRouter.delete("/:id/register", authenticate, cancelRegistration);
-eventRouter.delete("/:id/images",  authenticate, deleteEventImage);
+eventRouter.post("/:id/check-in",  authenticate, consentCheck, checkIn);
+eventRouter.post("/:id/images",    authenticate, consentCheck, eventImageUpload.array("images", 10), uploadEventImages);
+eventRouter.delete("/:id",         authenticate, consentCheck, deleteEvent);
+eventRouter.delete("/:id/register", authenticate, consentCheck, cancelRegistration);
+eventRouter.delete("/:id/images",  authenticate, consentCheck, deleteEventImage);
 
 eventRouter.get("/mine",              authenticate, getMyEvents);
 eventRouter.get("/can-publish",       authenticate, checkPublishEligibility);
 eventRouter.get("/:id/registrations", authenticate, getEventRegistrations);
 eventRouter.get("/:id/stats",         authenticate, getEventStats);
 
-eventRouter.post("/:id/feedback/host-trigger", authenticate, triggerHostFeedback);
-eventRouter.post("/:id/feedback", authenticate, submitFeedback);
+eventRouter.post("/:id/feedback/host-trigger", authenticate, consentCheck, triggerHostFeedback);
+eventRouter.post("/:id/feedback", authenticate, consentCheck, submitFeedback);
 eventRouter.get("/:id/feedback/mine", authenticate, getMyFeedback);
-eventRouter.get("/:id/feedback", optionalAuthenticate, getFeedbackSummary); 
+eventRouter.get("/:id/feedback", optionalAuthenticate, getFeedbackSummary);
 
 eventRouter.get("/:id",               optionalAuthenticate, getEventById);
 eventRouter.get("/",                  getEvents);

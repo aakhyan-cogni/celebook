@@ -9,6 +9,7 @@ import {
 	adminRouter,
 	registrationRouter,
 	notificationRouter,
+	termsRouter,
 } from "./routes/index.js";
 
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/consent", consentRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/terms", termsRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

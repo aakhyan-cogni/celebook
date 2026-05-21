@@ -17,6 +17,11 @@ export async function findUserByEmail(email) {
 	return fromDoc(doc);
 }
 
+export async function findUserById(userId) {
+	const doc = await UserModel.findById(userId).lean();
+	return fromDoc(doc);
+}
+
 export async function updateRefreshToken(userId, refreshToken) {
 	const doc = await UserModel.findByIdAndUpdate(userId, { $set: { refreshToken } }, { new: true }).lean();
 	return fromDoc(doc);

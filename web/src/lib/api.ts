@@ -92,9 +92,12 @@ type API_PATH =
 	| `/auth/register`
 	| `/auth/refresh`
 	| `/auth/logout`
+	| `/auth/me`
 	| `/user/profile`
 	| `/events`
 	| `/consent/accept`
+	| `/terms`
+	| `/admin/terms`
 	| `/admin/events`
 	| `/admin/users`
 	| `/events/mine`
