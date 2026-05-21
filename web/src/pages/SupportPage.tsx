@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, PhoneCall, MessageSquare, Search, Send, X } from "lucide-react";
+import FeedbackForm from "./FeedbackForm";
 
 const SupportPage = () => {
   const [chatOpen, setChatOpen] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const faqs = [
     { q: "How can I create an event?", a: "A user can create an event by clicking the 'Create Event' button and providing details like name, date, and location." },
@@ -16,99 +18,118 @@ const SupportPage = () => {
     <div className="container py-5 mt-5">
       <div className="row justify-content-center">
         <div className="col-lg-10">
-          <div className="text-center mb-5">
-            <motion.h2 
-              initial={{ opacity: 0, y: -20 }} 
-              animate={{ opacity: 1, y: 0 }}
-              className="fw-bold display-5"
-            >
-              How can we <span className="text-primary text-gradient">Help?</span>
-            </motion.h2>
-            <p className="text-muted">Search our knowledge base or contact our team directly.</p>
-            
-            <div className="mt-4 position-relative mx-auto" style={{ maxWidth: "500px" }}>
-              <input 
-                type="text" 
-                className="form-control form-control-lg rounded-pill shadow-sm ps-4 pe-5" 
-                placeholder="Search for 'Create Event' or 'Refunds'..." 
-                style={{ paddingRight: "110px" }} 
-              />
-              <button 
-                className="btn btn-primary position-absolute end-0 top-50 translate-middle-y me-2 rounded-pill px-3 btn-sm d-flex align-items-center gap-2"
-                style={{ height: "calc(100% - 12px)", zIndex: 5 }}
-              >
-                <Search size={16} />
-                <span>Search</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="row g-4">
-            <div className="col-md-4">
-              <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
-                <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
-                  <Mail size={32} className="text-primary" />
-                </div>
-                <h5 className="fw-bold">Email Us</h5>
-                <p className="small text-muted">Response within 24 hours.</p>
-                <a href="mailto:support@celebookems.com" className="btn btn-outline-primary btn-sm rounded-pill w-100 text-truncate">
-                  support@celebookems.com
-                </a>
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
-                <div className="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
-                  <PhoneCall size={32} className="text-info" />
-                </div>
-                <h5 className="fw-bold">Call Us</h5>
-                <p className="small text-muted">Mon - Fri, 9am - 6pm.</p>
-                <button className="btn btn-outline-info btn-sm rounded-pill w-100">
-                  +91 9640457670
-                </button>
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
-                <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
-                  <MessageSquare size={32} className="text-success" />
-                </div>
-                <h5 className="fw-bold">Give Feedback</h5>
-                <p className="small text-muted">Write your opinion about our website.</p>
-                <button className="btn btn-outline-success btn-sm rounded-pill w-100">
-                  Submit Feedback
-                </button>
-              </div>
-            </div>
-
-            <div className="col-12 mt-5">
+          
+          <AnimatePresence mode="wait">
+            {!showFeedback ? (
+              /* --- STANDARD HELP MAIN INTERFACE --- */
               <motion.div 
-                initial={{ opacity: 0, y: 20 }} 
+                key="main-support-view"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="card border-0 shadow-lg rounded-4 p-4 p-md-5 backdrop-blur"
+                exit={{ opacity: 0, y: -10 }}
               >
-                <h4 className="fw-bold mb-4">Frequently Asked Questions</h4>
-                <div className="accordion accordion-flush" id="faqAccordion">
-                  {faqs.map((faq, index) => (
-                    <div className="accordion-item bg-transparent" key={index}>
-                      <h2 className="accordion-header">
-                        <button className="accordion-button collapsed bg-transparent fw-bold py-3 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target={`#faq${index}`}>
-                          {faq.q}
-                        </button>
-                      </h2>
-                      <div id={`faq${index}`} className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                        <div className="accordion-body text-muted">
-                          {faq.a}
-                        </div>
+                {/* Header Section */}
+                <div className="text-center mb-5">
+                  <motion.h2 
+                    initial={{ opacity: 0, y: -20 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="fw-bold display-5"
+                  >
+                    How can we <span className="text-primary text-gradient">Help?</span>
+                  </motion.h2>
+                  <p className="text-muted">Search our knowledge base or contact our team directly.</p>
+                  
+                  <div className="mt-4 position-relative mx-auto" style={{ maxWidth: "500px" }}>
+                    <input 
+                      type="text" 
+                      className="form-control form-control-lg rounded-pill shadow-sm ps-4 pe-5" 
+                      placeholder="Search for 'Create Event' or 'Refunds'..." 
+                      style={{ paddingRight: "110px" }} 
+                    />
+                    <button 
+                      className="btn btn-primary position-absolute end-0 top-50 translate-middle-y me-2 rounded-pill px-3 btn-sm d-flex align-items-center gap-2"
+                      style={{ height: "calc(100% - 12px)", zIndex: 5 }}
+                    >
+                      <Search size={16} />
+                      <span>Search</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="row g-4">
+                  {/* Quick Contact Cards */}
+                  <div className="col-md-4">
+                    <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
+                      <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
+                        <Mail size={32} className="text-primary" />
+                      </div>
+                      <h5 className="fw-bold">Email Us</h5>
+                      <p className="small text-muted">Response within 24 hours.</p>
+                      <a href="mailto:support@celebookems.com" className="btn btn-outline-primary btn-sm rounded-pill w-100 text-truncate">
+                        support@celebookems.com
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="col-md-4">
+                    <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
+                      <div className="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
+                        <PhoneCall size={32} className="text-info" />
+                      </div>
+                      <h5 className="fw-bold">Call Us</h5>
+                      <p className="small text-muted">Mon - Fri, 9am - 6pm.</p>
+                      <button className="btn btn-outline-info btn-sm rounded-pill w-100">
+                        +91 9640457670
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="col-md-4">
+                    <div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
+                      <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
+                        <MessageSquare size={32} className="text-success" />
+                      </div>
+                      <h5 className="fw-bold">Give Feedback</h5>
+                      <p className="small text-muted">Write your opinion about our website.</p>
+                      {/* 3. Button opens the isolated child view */}
+                      <button 
+                        onClick={() => setShowFeedback(true)}
+                        className="btn btn-outline-success btn-sm rounded-pill w-100"
+                      >
+                        Submit Feedback
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* FAQ Section */}
+                  <div className="col-12 mt-5">
+                    <div className="card border-0 shadow-lg rounded-4 p-4 p-md-5 backdrop-blur">
+                      <h4 className="fw-bold mb-4">Frequently Asked Questions</h4>
+                      <div className="accordion accordion-flush" id="faqAccordion">
+                        {faqs.map((faq, index) => (
+                          <div className="accordion-item bg-transparent" key={index}>
+                            <h2 className="accordion-header">
+                              <button className="accordion-button collapsed bg-transparent fw-bold py-3 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target={`#faq${index}`}>
+                                {faq.q}
+                              </button>
+                            </h2>
+                            <div id={`faq${index}`} className="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                              <div className="accordion-body text-muted">
+                                {faq.a}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </motion.div>
-            </div>
-          </div>
+            ) : (
+              /* --- 4. RENDER NEW ISOLATED FEEDBACK COMPONENT --- */
+              <FeedbackForm onBack={() => setShowFeedback(false)} />
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

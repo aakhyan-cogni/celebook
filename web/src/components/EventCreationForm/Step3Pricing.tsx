@@ -5,6 +5,7 @@ interface Step3Props {
 	visible: boolean;
 	formData: EventFormData;
 	isFree: boolean;
+	isFreeTier: boolean;
 	setIsFree: (v: boolean) => void;
 	setFormData: React.Dispatch<React.SetStateAction<EventFormData>>;
 	onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
@@ -14,6 +15,7 @@ export default function Step3Pricing({
 	visible,
 	formData,
 	isFree,
+	isFreeTier,
 	setIsFree,
 	setFormData,
 	onChange,
@@ -26,7 +28,9 @@ export default function Step3Pricing({
 			animate={{ x: 0, opacity: 1 }}
 			exit={{ x: -20, opacity: 0 }}
 		>
-			<h4 className="fw-bold mb-4">Step 3: Ticketing &amp; Squad Pay</h4>
+			<h4 className="fw-bold mb-4">Step 3: Ticketing, Visibility &amp; Team Settings</h4>
+
+			{/* ── Ticketing ── */}
 			<div className="mb-4">
 				<label className="form-label fw-semibold d-block">Is this a free event?</label>
 				<div className="btn-group w-100 shadow-sm" role="group">
@@ -50,6 +54,7 @@ export default function Step3Pricing({
 					<label className="btn btn-outline-primary py-2 fw-bold" htmlFor="paid">Paid Event</label>
 				</div>
 			</div>
+
 			<div className="row mb-4">
 				<AnimatePresence>
 					{!isFree && (
@@ -87,14 +92,35 @@ export default function Step3Pricing({
 					/>
 				</div>
 			</div>
-			<div className="p-4 bg-primary bg-opacity-10 rounded-4 border border-primary border-opacity-10 mb-4">
-				<div className="form-check form-switch">
-					<input className="form-check-input" type="checkbox" id="squadPay" defaultChecked />
-					<label className="form-check-label fw-bold" htmlFor="squadPay">
-						Enable Squad Booking &amp; Split Pay{" "}<span className="badge bg-primary ms-2">USP</span>
-					</label>
-					<p className="small text-muted mb-0">Allow friends to split bills automatically.</p>
-				</div>
+
+			<hr className="opacity-10 my-4" />
+
+			{/* ── Visibility ── */}
+			<div className="mb-4">
+				<label className="form-label fw-semibold">Visibility</label>
+				<select
+					name="visibility"
+					className="form-select form-control-lg rounded-3 shadow-sm"
+					value={formData.visibility}
+					onChange={(e) => { if (e.target.value === "PRIVATE" && isFreeTier) return; onChange(e); }}
+				>
+					<option value="PUBLIC">🌍 Public — Listed in search results</option>
+					<option value="UNLISTED">🔗 Unlisted — Only accessible via direct link</option>
+					<option value="PRIVATE" disabled={isFreeTier}>
+						🔒 Private — Only confirmed registrants can view{isFreeTier ? " (PRO only)" : ""}
+					</option>
+				</select>
+				{isFreeTier && (
+					<div className="form-text text-warning mt-1">
+						🔒 Private visibility is a PRO feature.{" "}
+						<a href="/dashboard" className="text-warning fw-bold">Upgrade to PRO</a>
+					</div>
+				)}
+				{formData.visibility === "PRIVATE" && !isFreeTier && (
+					<div className="form-text text-info mt-1">
+						Private events skip admin review and go live immediately.
+					</div>
+				)}
 			</div>
 		</motion.div>
 	);
