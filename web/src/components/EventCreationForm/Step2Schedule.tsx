@@ -19,7 +19,7 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 		>
 			<h4 className="fw-bold mb-4">Step 2: Logistics &amp; Features</h4>
 			<div className="row mb-3">
-				<div className="col-md-6">
+				<div className="col-md-4">
 					<label className="form-label fw-semibold">Date</label>
 					<input
 						type="date"
@@ -30,7 +30,17 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 						className="form-control form-control-lg rounded-3 shadow-sm"
 					/>
 				</div>
-				<div className="col-md-6">
+				<div className="col-md-4">
+					<label className="form-label fw-semibold">Start Time</label>
+					<input
+						type="time"
+						name="time"
+						value={formData.time}
+						onChange={onChange}
+						className="form-control form-control-lg rounded-3 shadow-sm"
+					/>
+				</div>
+				<div className="col-md-4">
 					<label className="form-label fw-semibold">Location</label>
 					<input
 						type="text"
@@ -38,7 +48,7 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 						value={formData.location}
 						onChange={onChange}
 						className="form-control form-control-lg rounded-3 shadow-sm"
-						placeholder="Venue or Link"
+						placeholder="Venue"
 					/>
 				</div>
 			</div>

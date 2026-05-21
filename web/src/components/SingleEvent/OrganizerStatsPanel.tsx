@@ -1,23 +1,8 @@
 import { ScanLine } from "lucide-react";
 
-const STATUS_BADGE_CLASS: Record<string, string> = {
-	APPROVED: "bg-success",
-	PENDING: "bg-warning text-dark",
-	REJECTED: "bg-danger",
-	DRAFT: "bg-secondary",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-	APPROVED: "Approved",
-	PENDING: "Under Review",
-	REJECTED: "Rejected",
-	DRAFT: "Draft",
-};
-
 interface OrganizerStatsPanelProps {
 	event: any;
 	eventStat: any;
-	eventStatus: string;
 	scanLoading: boolean;
 	onScan: () => void;
 }
@@ -25,7 +10,6 @@ interface OrganizerStatsPanelProps {
 export default function OrganizerStatsPanel({
 	event,
 	eventStat,
-	eventStatus,
 	scanLoading,
 	onScan,
 }: OrganizerStatsPanelProps) {
@@ -43,12 +27,6 @@ export default function OrganizerStatsPanel({
 						Only visible to you
 					</div>
 				</div>
-				<span
-					className={`badge rounded-pill px-3 py-2 ${STATUS_BADGE_CLASS[eventStatus] ?? "bg-secondary"}`}
-					style={{ fontSize: "0.72rem" }}
-				>
-					{STATUS_LABEL[eventStatus] ?? eventStatus}
-				</span>
 			</div>
 
 			<div className="p-4">

@@ -74,13 +74,12 @@ export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, pa
 	const skip = (currentPage - 1) * pageSize;
 
 	const [events, total] = await Promise.all([
-		EventModel.find(filter).skip(skip).limit(pageSize).lean(),
+		EventModel.find(filter).sort({ date: -1 }).skip(skip).limit(pageSize).lean(),
 		EventModel.countDocuments(filter),
 	]);
 
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
-	// TODO: Attach avgRating and totalRatings from Feedback collection once Feedback model is available.
 
 	return {
 		events,
@@ -122,7 +121,6 @@ export const getEventById = async (eventId, requestingUser = null) => {
 		return { error: "FORBIDDEN" };
 	}
 
-	// Attach userRegistration so the frontend knows if the viewer is registered
 	if (requestingUser?.userId) {
 		const reg = await RegistrationModel.findOne({
 			eventId: new mongoose.Types.ObjectId(eventId),
@@ -189,8 +187,6 @@ export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
 		return { error: "TIER_LIMIT_EXCEEDED" };
 	}
 
-	// PUBLIC/UNLISTED always need admin review on every publish.
-	// PRIVATE events skip review — they're not listed and only reach invited attendees.
 	const nextStatus = event.visibility === "PRIVATE" ? "APPROVED" : "PENDING";
 	event.status = nextStatus;
 	event.rejectionReason = null;
@@ -213,9 +209,6 @@ export const updateEvent = async (eventId, organizerId, data, isAdmin = false) =
 		return { error: "NOT_EDITABLE" };
 	}
 
-	// Block widening visibility on an APPROVED event: a PRIVATE event was approved without
-	// admin review, so flipping it to PUBLIC/UNLISTED would let it go live unreviewed.
-	// Organizer must unpublish (back to DRAFT) and republish to trigger review.
 	if (
 		event.status === "APPROVED" &&
 		event.visibility === "PRIVATE" &&
@@ -246,8 +239,6 @@ export const deleteEvent = async (eventId, organizerId, isAdmin = false) => {
 		return { error: "FORBIDDEN" };
 	}
 
-	// Block delete if ANY registration exists (PENDING/CONFIRMED/CANCELLED) — even cancelled
-	// registrations are an audit trail we don't want to lose by hard-deleting the parent event.
 	const registrationCount = await RegistrationModel.countDocuments({
 		eventId: new mongoose.Types.ObjectId(eventId),
 	});
@@ -268,6 +259,16 @@ export const cancelEvent = async (eventId, organizerId, reason, isAdmin = false)
 
 	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
 		return { error: "FORBIDDEN" };
+	}
+
+	if (event.price > 0) {
+		const confirmedCount = await RegistrationModel.countDocuments({
+			eventId: event._id,
+			status: "CONFIRMED",
+		});
+		if (confirmedCount > 0) {
+			return { error: "HAS_PAID_REGISTRATIONS" };
+		}
 	}
 
 	event.isCancelled = true;

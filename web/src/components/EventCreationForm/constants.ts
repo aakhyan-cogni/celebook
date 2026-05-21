@@ -12,6 +12,7 @@ export type EventFormData = {
 	category: string;
 	description: string;
 	date: string;
+	time: string;
 	location: string;
 	price: number;
 	capacity: number;
@@ -28,6 +29,7 @@ export const INITIAL_FORM_DATA: EventFormData = {
 	category: "Workshop",
 	description: "",
 	date: "",
+	time: "",
 	location: "",
 	price: 0,
 	capacity: 0,

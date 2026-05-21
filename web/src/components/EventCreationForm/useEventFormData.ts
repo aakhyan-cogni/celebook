@@ -19,11 +19,13 @@ export function useEventFormData(opts: {
 
 	const fillForm = (ev: any) => {
 		setExistingEvent(ev);
+		const existingTime = ev.date ? new Date(ev.date).toTimeString().slice(0, 5) : "";
 		setFormData({
 			title:            ev.title           ?? "",
 			category:         ev.category        ?? "Workshop",
 			description:      ev.description     ?? "",
 			date:             ev.date ? ev.date.slice(0, 10) : "",
+			time:             existingTime,
 			location:         ev.location        ?? "",
 			price:            ev.price           ?? 0,
 			capacity:         ev.capacity        ?? 0,

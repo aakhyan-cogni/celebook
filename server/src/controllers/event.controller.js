@@ -110,7 +110,11 @@ export const cancelEvent = async (req, res) => {
 		const { reason } = req.body;
 		const result = await EventService.cancelEvent(id, req.user.userId, reason, req.user.role === "ADMIN");
 		if (result.error) {
-			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : 400;
+			const status =
+				result.error === "NOT_FOUND"              ? 404
+				: result.error === "FORBIDDEN"             ? 403
+				: result.error === "HAS_PAID_REGISTRATIONS" ? 409
+				: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(200).json(fromDoc(result.event));
@@ -125,7 +129,11 @@ export const duplicateEvent = async (req, res) => {
 		const { id } = req.params;
 		const result = await EventService.duplicateEvent(id, req.user.userId, req.user.role === "ADMIN");
 		if (result.error) {
-			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : 400;
+			const status =
+				result.error === "NOT_FOUND"              ? 404
+				: result.error === "FORBIDDEN"             ? 403
+				: result.error === "HAS_PAID_REGISTRATIONS" ? 409
+				: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(201).json(fromDoc(result.event));
@@ -191,7 +199,6 @@ export const uploadEventImages = async (req, res) => {
 			return res.status(403).json({ message: "Only the organizer or admin can upload images" });
 		}
 
-		// Tier limit check
 		const userTier = req.user.tier ?? "FREE";
 		const limit = TIER_IMAGE_LIMITS[userTier] ?? 1;
 		const currentCount = event.imgUrls?.length ?? 0;
@@ -233,7 +240,7 @@ export const deleteEventImage = async (req, res) => {
 			const filePath = path.join("public", url);
 			if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 		} catch (_) {
-			// ignore fs errors
+
 		}
 
 		res.status(200).json({ imgUrls: event.imgUrls });

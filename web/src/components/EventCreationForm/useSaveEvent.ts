@@ -22,21 +22,26 @@ export function useSaveEvent(opts: {
 		Authorization:  `Bearer ${accessToken}`,
 	});
 
-	const buildPayload = () => ({
-		title:            formData.title,
-		category:         formData.category,
-		description:      formData.description,
-		date:             formData.date,
-		location:         formData.location,
-		price:            isFree ? 0 : Number(formData.price),
-		capacity:         Number(formData.capacity),
-		currency:         formData.currency || "INR",
-		visibility:       formData.visibility,
-		isTeamEvent:      formData.isTeamEvent,
-		minTeamSize:      formData.isTeamEvent && formData.minTeamSize ? Number(formData.minTeamSize) : null,
-		maxTeamSize:      formData.isTeamEvent && formData.maxTeamSize ? Number(formData.maxTeamSize) : null,
-		teamCapacityMode: formData.isTeamEvent ? formData.teamCapacityMode : null,
-	});
+	const buildPayload = () => {
+		const time = formData.time || "00:00";
+		const combinedDate = formData.date ? `${formData.date}T${time}:00` : "";
+
+		return {
+			title:            formData.title,
+			category:         formData.category,
+			description:      formData.description,
+			date:             combinedDate,
+			location:         formData.location,
+			price:            isFree ? 0 : Number(formData.price),
+			capacity:         Number(formData.capacity),
+			currency:         formData.currency || "INR",
+			visibility:       formData.visibility,
+			isTeamEvent:      formData.isTeamEvent,
+			minTeamSize:      formData.isTeamEvent && formData.minTeamSize ? Number(formData.minTeamSize) : null,
+			maxTeamSize:      formData.isTeamEvent && formData.maxTeamSize ? Number(formData.maxTeamSize) : null,
+			teamCapacityMode: formData.isTeamEvent ? formData.teamCapacityMode : null,
+		};
+	};
 
 	const handleSaveDraft = async (e: React.MouseEvent) => {
 		e.preventDefault();
@@ -44,7 +49,7 @@ export function useSaveEvent(opts: {
 		try {
 			const payload = {
 				...buildPayload(),
-				date:     formData.date     || todayStr,
+				date:     formData.date ? `${formData.date}T${formData.time || "00:00"}:00` : todayStr,
 				location: formData.location || "TBD",
 				capacity: Number(formData.capacity) || 1,
 			};
@@ -112,7 +117,6 @@ export function useSaveEvent(opts: {
 				eventId = created.id;
 			}
 
-			// TODO: cancel event image publish if tier limit exceeded at this stage
 			await uploadImages(eventId);
 
 			const pubRes = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
