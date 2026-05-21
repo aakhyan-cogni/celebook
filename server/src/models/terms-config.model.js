@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const termsConfigSchema = new mongoose.Schema(
 	{
 		currentVersion: { type: String, required: true },
+		content: { type: String, default: "" },
 	},
 	{ timestamps: true },
 );

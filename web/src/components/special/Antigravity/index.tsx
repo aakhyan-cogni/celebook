@@ -192,7 +192,7 @@ const Antigravity: React.FC<AntigravityProps> = (props) => {
 	const loc = useLocation();
 	if (loc.pathname !== "/") return null;
 	return (
-		<Canvas className="position-absolute opacity" camera={{ position: [0, 0, 50], fov: 35 }}>
+		<Canvas className="position-absolute opacity" style={{ zIndex: -1 }} camera={{ position: [0, 0, 50], fov: 35 }}>
 			<AntigravityInner {...props} />
 		</Canvas>
 	);

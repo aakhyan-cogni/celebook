@@ -1,4 +1,7 @@
 import * as AdminService from "../services/admin.service.js";
+import * as ConsentService from "../services/consent.service.js";
+import { createNotification } from "../services/notification.service.js";
+import { EventModel } from "../models/index.js";
 
 export async function listUsers(req, res) {
 	try {
@@ -50,12 +53,22 @@ export async function listEvents(req, res) {
 
 export async function approveEvent(req, res) {
 	try {
-		const updated = await AdminService.approveEvent(req.params.id);
+		const { id } = req.params;
+		const updated = await AdminService.approveEvent(id);
 		if (!updated) {
 			res.status(404).json({ message: "Event not found" });
 			return;
 		}
-		// TODO: trigger notification (S2-022)
+
+		const event = await EventModel.findById(id).select("organizerId title").lean();
+		if (event) {
+			createNotification({
+				userId: event.organizerId,
+				type: "EVENT_APPROVED",
+				data: { eventTitle: event.title, eventId: id },
+			}).catch((err) => console.error("[approveEvent] notify failed:", err));
+		}
+
 		res.json({ message: "Event approved" });
 	} catch {
 		res.status(500).json({ message: "Internal server error" });
@@ -64,18 +77,28 @@ export async function approveEvent(req, res) {
 
 export async function rejectEvent(req, res) {
 	try {
+		const { id } = req.params;
 		const { reason } = req.body;
 		if (!reason?.trim()) {
 			res.status(400).json({ message: "Rejection reason is required" });
 			return;
 		}
 
-		const updated = await AdminService.rejectEvent(req.params.id, reason);
+		const updated = await AdminService.rejectEvent(id, reason);
 		if (!updated) {
 			res.status(404).json({ message: "Event not found" });
 			return;
 		}
-		// TODO: trigger notification (S2-022)
+
+		const event = await EventModel.findById(id).select("organizerId title").lean();
+		if (event) {
+			createNotification({
+				userId: event.organizerId,
+				type: "EVENT_REJECTED",
+				data: { eventTitle: event.title, eventId: id, rejectionReason: reason },
+			}).catch((err) => console.error("[rejectEvent] notify failed:", err));
+		}
+
 		res.json({ message: "Event rejected" });
 	} catch {
 		res.status(500).json({ message: "Internal server error" });
@@ -87,6 +110,37 @@ export async function getStats(req, res) {
 		const stats = await AdminService.getStats();
 		res.json(stats);
 	} catch {
+		res.status(500).json({ message: "Internal server error" });
+	}
+}
+
+export async function getTerms(req, res) {
+	try {
+		const terms = await ConsentService.getCurrentTerms();
+		res.json(terms);
+	} catch (error) {
+		console.error("[getTerms] Error in Admin controller:", error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+}
+
+export async function updateTerms(req, res) {
+	try {
+		const { version, content } = req.body ?? {};
+		const updated = await ConsentService.updateTerms({
+			version,
+			content,
+			publisherUserId: req.user?.userId,
+		});
+		res.json(updated);
+	} catch (error) {
+		if (error?.code === "VERSION_INVALID") {
+			return res.status(400).json({ message: "Version is required" });
+		}
+		if (error?.code === "VERSION_UNCHANGED") {
+			return res.status(400).json({ message: "New version must differ from current" });
+		}
+		console.error("[updateTerms] Error in Admin controller:", error);
 		res.status(500).json({ message: "Internal server error" });
 	}
 }

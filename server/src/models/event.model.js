@@ -31,6 +31,7 @@ const eventSchema = new mongoose.Schema(
 		isCancelled: { type: Boolean, default: false },
 		cancelReason: { type: String, default: null },
 		feedbackReminderSentAt: { type: Date, default: null },
+		hostFeedbackSentAt: { type: Date, default: null },
 	},
 	{ timestamps: true },
 );
