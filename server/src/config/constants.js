@@ -1,5 +1,5 @@
 export const PORT = 5000;
-export const DEFAULT_TERMS_VERSION = "v1.0";
+export const DEFAULT_TERMS_VERSION = "1.0";
 
 export const NOTIFICATION_TYPES = [
 	"REGISTRATION_CONFIRMED",

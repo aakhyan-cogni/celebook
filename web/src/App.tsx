@@ -10,7 +10,7 @@ export default function App() {
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 	const navigate = useNavigate();
 	return (
-		<div className="container position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+		<div className="container position-relative w-100 h-100 min-vh-100 d-flex flex-column align-items-center justify-content-center">
 			<div className="container d-flex flex-column flex-md-row z-1 p-2" style={{ backdropFilter: "blur(2px)" }}>
 				<div className="d-flex flex-column justify-content-center w-50">
 					<div className="d-flex flex-column justify-content-start align-items-baseline">

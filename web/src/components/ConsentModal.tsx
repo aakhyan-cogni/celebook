@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
 import { acceptConsent } from "../api/consent.api";
+import { fetchTerms, type TermsDoc } from "../api/terms.api";
+import { apiFetch } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 
 export default function ConsentModal() {
@@ -8,7 +11,11 @@ export default function ConsentModal() {
 	const setConsentRequired = useAuthStore((s) => s.setConsentRequired);
 	const pendingRequest = useAuthStore((s) => s.pendingRequest);
 	const setPendingRequest = useAuthStore((s) => s.setPendingRequest);
+	const updateUser = useAuthStore((s) => s.updateUser);
 
+	const [terms, setTerms] = useState<TermsDoc | null>(null);
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 	const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 	const [isAccepting, setIsAccepting] = useState(false);
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -21,6 +28,29 @@ export default function ConsentModal() {
 		document.addEventListener("keydown", block, true);
 		return () => document.removeEventListener("keydown", block, true);
 	}, [consentRequired]);
+
+	useEffect(() => {
+		if (!consentRequired) {
+			setTerms(null);
+			setHasScrolledToBottom(false);
+			setLoadError(null);
+			return;
+		}
+		loadTerms();
+	}, [consentRequired]);
+
+	async function loadTerms() {
+		setIsLoading(true);
+		setLoadError(null);
+		try {
+			const data = await fetchTerms();
+			setTerms(data);
+		} catch (error: any) {
+			setLoadError(error?.message || "Failed to load Terms & Conditions.");
+		} finally {
+			setIsLoading(false);
+		}
+	}
 
 	if (!consentRequired) return null;
 
@@ -36,6 +66,12 @@ export default function ConsentModal() {
 		setIsAccepting(true);
 		try {
 			await acceptConsent();
+			try {
+				const data = await apiFetch("/auth/me", { method: "GET" });
+				if (data?.user) updateUser({ ...data.user });
+			} catch {
+				// Non-critical — store will reconcile on next hydrate.
+			}
 			setConsentRequired(false);
 			if (pendingRequest) {
 				setPendingRequest(null);
@@ -47,6 +83,10 @@ export default function ConsentModal() {
 			setIsAccepting(false);
 		}
 	}
+
+	const sanitizedContent = terms?.content
+		? DOMPurify.sanitize(terms.content, { USE_PROFILES: { html: true } })
+		: "";
 
 	return (
 		<div
@@ -75,6 +115,7 @@ export default function ConsentModal() {
 					</h4>
 					<p className="mb-0 small opacity-75 mt-1">
 						Please read and accept our updated Terms &amp; Conditions to continue.
+						{terms?.version && <span className="ms-2">Version {terms.version}</span>}
 					</p>
 				</div>
 
@@ -84,84 +125,41 @@ export default function ConsentModal() {
 					className="card-body overflow-auto p-4"
 					style={{ flex: 1 }}
 				>
-					<h6 className="fw-bold">1. Acceptance of Terms</h6>
-					<p className="text-muted small">
-						By accessing and using EMS (Event Management System), you accept and agree to be bound by
-						these Terms and Conditions. If you do not agree to these terms, please discontinue use of
-						the service immediately.
-					</p>
+					{isLoading && (
+						<div className="text-center py-5">
+							<div className="spinner-border text-primary" role="status">
+								<span className="visually-hidden">Loading…</span>
+							</div>
+							<p className="text-muted small mt-3 mb-0">Loading latest terms…</p>
+						</div>
+					)}
 
-					<h6 className="fw-bold">2. Use of the Service</h6>
-					<p className="text-muted small">
-						EMS is provided for lawful event management purposes only. You agree not to use the
-						service for any unlawful activity, to transmit harmful content, or to interfere with other
-						users' access to the platform.
-					</p>
+					{loadError && !isLoading && (
+						<div className="text-center py-5">
+							<p className="text-danger small mb-3">{loadError}</p>
+							<button onClick={loadTerms} className="btn btn-outline-primary btn-sm">
+								Retry
+							</button>
+						</div>
+					)}
 
-					<h6 className="fw-bold">3. Account Responsibility</h6>
-					<p className="text-muted small">
-						You are responsible for maintaining the confidentiality of your account credentials and
-						for all activities that occur under your account. Notify us immediately of any
-						unauthorised use.
-					</p>
-
-					<h6 className="fw-bold">4. Data Privacy</h6>
-					<p className="text-muted small">
-						We collect and process personal data in accordance with our Privacy Policy. By using EMS
-						you consent to our data practices as described therein. We do not sell your personal data
-						to third parties.
-					</p>
-
-					<h6 className="fw-bold">5. Event Content</h6>
-					<p className="text-muted small">
-						You retain ownership of content you submit but grant EMS a non-exclusive, royalty-free
-						licence to display event information on the platform. You must not post misleading,
-						offensive, or illegal content.
-					</p>
-
-					<h6 className="fw-bold">6. Payments &amp; Refunds</h6>
-					<p className="text-muted small">
-						Ticket payments are processed securely. Refund eligibility is determined by the individual
-						event organiser's policy as stated on each event page. EMS is not liable for
-						organiser-issued refund disputes.
-					</p>
-
-					<h6 className="fw-bold">7. Limitation of Liability</h6>
-					<p className="text-muted small">
-						EMS and its affiliates shall not be liable for any indirect, incidental, or consequential
-						damages arising from your use of the service, including but not limited to loss of data,
-						revenue, or goodwill.
-					</p>
-
-					<h6 className="fw-bold">8. Modifications to Terms</h6>
-					<p className="text-muted small">
-						EMS reserves the right to update these Terms at any time. Continued use of the service
-						after changes are published constitutes acceptance of the revised terms. You will be
-						prompted to re-accept whenever a new version is released.
-					</p>
-
-					<h6 className="fw-bold">9. Governing Law</h6>
-					<p className="text-muted small">
-						These Terms are governed by the laws of India. Any disputes shall be subject to the
-						exclusive jurisdiction of the courts of Hyderabad, Telangana.
-					</p>
-
-					<h6 className="fw-bold">10. Contact</h6>
-					<p className="text-muted small">
-						For questions about these Terms, contact us at{" "}
-						<a href="mailto:legal@celebookems.com">legal@celebookems.com</a>.
-					</p>
+					{!isLoading && !loadError && terms && (
+						<div
+							className="consent-content"
+							dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+						/>
+					)}
 				</div>
 
 				<div className="card-footer border-0 bg-body-tertiary rounded-bottom-4 p-4">
-					{!hasScrolledToBottom && (
+					{!hasScrolledToBottom && !loadError && !isLoading && (
 						<p className="text-muted small text-center mb-3">
 							Scroll to the bottom to enable the Accept button.
 						</p>
 					)}
 					<button
 						onClick={handleAccept}
-						disabled={!hasScrolledToBottom || isAccepting}
+						disabled={!hasScrolledToBottom || isAccepting || !terms}
 						className="btn btn-primary w-100 btn-lg rounded-pill shadow"
 					>
 						{isAccepting ? (

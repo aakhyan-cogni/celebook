@@ -11,8 +11,6 @@ const { EventModel } = await import("./models/event.model.js");
 const { getOrCreateTermsConfig } = await import("./services/consent.service.js");
 const { default: bcrypt } = await import("bcryptjs");
 
-const {getCurrentTermsVersion} = await import("./services/consent.service.js")
-
 await connectDB();
 
 async function seed() {

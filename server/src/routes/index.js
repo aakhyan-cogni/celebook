@@ -7,3 +7,4 @@ export * from "./registration.routes.js";
 export * from "./notification.routes.js";
 export * from "./appFeedback.routes.js";
 export * from "./plan.route.js";
+export * from "./terms.routes.js";

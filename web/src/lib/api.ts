@@ -92,9 +92,12 @@ type API_PATH =
 	| `/auth/register`
 	| `/auth/refresh`
 	| `/auth/logout`
+	| `/auth/me`
 	| `/user/profile`
 	| `/events`
 	| `/consent/accept`
+	| `/terms`
+	| `/admin/terms`
 	| `/admin/events`
 	| `/admin/users`
 	| `/events/mine`
@@ -106,4 +109,7 @@ type API_PATH =
 	| `/notifications/${string}`
 	| `/registrations/my-registrations`
 	| `/registrations/${string}/ticket-token`
-	| `/events/${string}/check-in`;
+	| `/events/${string}/check-in`
+	| `/events/${string}/feedback`
+	| `/events/${string}/feedback/host-trigger`
+	| `/events/${string}/feedback/mine`;

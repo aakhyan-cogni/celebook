@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import Overview from "../components/admin/Overview";
 import Events from "../components/admin/Events";
 import Users from "../components/admin/Users";
+import Terms from "../components/admin/Terms";
 
 const Admin = () => {
 	const navigate = useNavigate();
@@ -147,6 +148,39 @@ const Admin = () => {
 							>
 								as
 							</div>
+							<div className="nav-item d-flex">
+								<button
+									className={`btn m-1 ms-2 text-start px-3 py-2 border-none`}
+									onClick={() => setActive("terms")}
+									onMouseOver={() => setHover("terms")}
+									onMouseOut={() => setHover("")}
+								>
+									<span className="me-2">{"📜"}</span>
+									{"Legal"}
+								</button>
+								<div
+									className={`rouded-3 rounded-top rounded-bottom ${active === "terms" ? "bg-primary" : ""} my-2`}
+									style={{
+										marginLeft: "auto",
+										width: "5px",
+										backgroundColor: "transparent",
+										color: "transparent",
+									}}
+								>
+									as
+								</div>
+							</div>
+							<div
+								className={`d-none d-lg-block ${hover === "terms" ? "bg-primary" : ""} overflow-hidden ms-3`}
+								style={{
+									width: "60%",
+									height: "2px",
+									backgroundColor: "transparent",
+									color: "transparent",
+								}}
+							>
+								as
+							</div>
 							<div
 								className={`d-none d-lg-block rounded-lg ${hover === "settings" ? "bg-primary" : ""} overflow-hidden ms-3`}
 								style={{
@@ -168,6 +202,7 @@ const Admin = () => {
 							{active === "overview" && <Overview viewEventsFn={viewEvents} viewUsersFn={viewUsers} />}
 							{active === "users" && <Users />}
 							{active === "events" && <Events />}
+							{active === "terms" && <Terms />}
 						</div>
 					</div>
 				</main>

@@ -1,4 +1,5 @@
 import * as AuthService from "../services/auth.service.js";
+import * as ConsentService from "../services/consent.service.js";
 import { generateTokens, verifyRefreshToken } from "../lib/jwt.js";
 import { excludeFields } from "../lib/util.js";
 
@@ -74,6 +75,10 @@ export async function login(req, res) {
 	}
 }
 
+// Refresh tokens rotate on every call by design. The access token is not persisted
+// to localStorage (XSS hardening), so each page boot hits /auth/refresh once to
+// mint a new access token — that's one rotation per boot, not per request.
+// Do not memoise the rotation: it's the security mechanism, not overhead.
 export async function refresh(req, res) {
 	try {
 		const refreshToken = req.cookies.refreshToken;
@@ -106,6 +111,31 @@ export async function refresh(req, res) {
 		res.status(200).json({ accessToken: tokens.accessToken });
 	} catch (error) {
 		res.status(403).json({ message: "Session Expired" });
+	}
+}
+
+export async function me(req, res) {
+	try {
+		if (!req.user) {
+			return res.status(401).json({ message: "Unauthorized" });
+		}
+
+		const [user, consent] = await Promise.all([
+			AuthService.findUserById(req.user.userId),
+			ConsentService.getConsentStatus(req.user.userId),
+		]);
+
+		if (!user) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		res.status(200).json({
+			user: excludeFields(user, ["password", "refreshToken"]),
+			consent,
+		});
+	} catch (error) {
+		console.error("[me] Error in Auth controller:", error);
+		res.status(500).json({ message: "Error fetching user" });
 	}
 }
 

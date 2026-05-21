@@ -14,3 +14,6 @@ adminRouter.get("/stats", AdminController.getStats);
 adminRouter.patch("/users/:id/role", AdminController.updateUserRole);
 adminRouter.patch("/events/:id/approve", AdminController.approveEvent);
 adminRouter.patch("/events/:id/reject", AdminController.rejectEvent);
+
+adminRouter.get("/terms", AdminController.getTerms);
+adminRouter.put("/terms", AdminController.updateTerms);
