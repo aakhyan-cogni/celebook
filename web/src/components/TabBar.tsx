@@ -23,10 +23,15 @@ export default function ProfileLayout() {
 	const viewEvents = () => setActive("events");
 	const viewBookings = () => setActive("bookings");
 
+	// Override the display label for the payment tab without touching tabs.ts
+	const tabs = TABS.map((tab) =>
+		tab.id === "payment" ? { ...tab, label: "Plan Details" } : tab
+	);
+
 	return (
 		<div className="container-fluid" style={{ overflow: "hidden", height: "100%", width: "100%" }}>
 			<div className="row min-lg-vh-100">
-				<aside className={`sidebar col-12 col-md-3 col-lg-2 border-end bg-body-tertiary px-0 `}>
+				<aside className={`sidebar col-12 col-md-3 col-lg-2 border-end bg-body-tertiary px-0`}>
 					<div className={`d-flex flex-column h-lg-100`}>
 						<div className="p-3 border-bottom">
 							<h6 className="mb-0">Hello {user.name.split(" ")[0]}</h6>
@@ -34,7 +39,7 @@ export default function ProfileLayout() {
 						</div>
 
 						<nav className="nav nav-pills flex-wrap flex-lg-column py-2">
-							{TABS.map((tab, i) => (
+							{tabs.map((tab, i) => (
 								<Fragment key={tab.id}>
 									<SidebarNavItem
 										tab={tab}
