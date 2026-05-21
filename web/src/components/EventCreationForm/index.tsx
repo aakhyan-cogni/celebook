@@ -9,7 +9,6 @@ import { useSaveEvent } from "./useSaveEvent";
 import Step1Basics from "./Step1Basics";
 import Step2Schedule from "./Step2Schedule";
 import Step3Pricing from "./Step3Pricing";
-import Step4Review from "./Step4Review";
 
 const EventCreationForm = () => {
 	const navigate = useNavigate();
@@ -88,7 +87,7 @@ const EventCreationForm = () => {
 
 						{autoPublish && (
 							<div className="alert alert-info rounded-3 small py-2 px-3 mt-2">
-								Review the settings below and click <strong>Publish Event</strong> on step 4.
+								Review the settings below and click <strong>Publish Event</strong> on step 3.
 							</div>
 						)}
 
@@ -113,8 +112,15 @@ const EventCreationForm = () => {
 							<AnimatePresence>
 								<Step1Basics visible={step === 1} formData={formData} onChange={handleChange} imageProps={imageProps} />
 								<Step2Schedule visible={step === 2} formData={formData} todayStr={todayStr} onChange={handleChange} />
-								<Step3Pricing visible={step === 3} formData={formData} isFree={isFree} setIsFree={setIsFree} setFormData={setFormData} onChange={handleChange} />
-								<Step4Review visible={step === 4} formData={formData} isFreeTier={isFreeTier} onChange={handleChange} />
+								<Step3Pricing
+									visible={step === 3}
+									formData={formData}
+									isFree={isFree}
+									isFreeTier={isFreeTier}
+									setIsFree={setIsFree}
+									setFormData={setFormData}
+									onChange={handleChange}
+								/>
 							</AnimatePresence>
 
 							<div className="d-flex justify-content-between mt-5 pt-3 border-top">
@@ -124,7 +130,7 @@ const EventCreationForm = () => {
 								<div className="d-flex gap-2">
 									<button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={handleSaveDraft} disabled={submitting || images.uploading || !isStepValid()}>
 										{submitting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
-										 Save Draft
+										Save Draft
 									</button>
 									{step < TOTAL_STEPS ? (
 										<motion.button whileTap={isStepValid() ? { scale: 0.95 } : {}} type="button" className="btn btn-primary px-5 rounded-pill shadow fw-bold" onClick={nextStep} disabled={!isStepValid()}>
@@ -134,7 +140,7 @@ const EventCreationForm = () => {
 										<motion.button whileTap={isStepValid() ? { scale: 0.95 } : {}} type="submit" className="btn btn-success px-5 rounded-pill shadow fw-bold" disabled={!isStepValid() || submitting || images.uploading}>
 											{submitting || images.uploading
 												? <><span className="spinner-border spinner-border-sm me-2" role="status" />{images.uploading ? "Uploading..." : "Publishing..."}</>
-												: " Publish Event"
+												: "Publish Event"
 											}
 										</motion.button>
 									)}

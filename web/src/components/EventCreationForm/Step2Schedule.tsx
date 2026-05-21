@@ -42,15 +42,7 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 					/>
 				</div>
 			</div>
-			<hr className="my-4 opacity-10" />
-			<div className="form-check form-switch mb-3">
-				<input className="form-check-input" type="checkbox" id="waitingRoom" />
-				<label className="form-check-label fw-bold" htmlFor="waitingRoom">
-					Enable Mega-Event Virtual Waiting Room{" "}
-					<span className="badge bg-info-subtle text-info ms-2">USP</span>
-				</label>
-				<div className="form-text text-muted">Activates real-time queuing for high-traffic ticket sales.</div>
-			</div>
+			
 		</motion.div>
 	);
 }

@@ -9,10 +9,11 @@ import {
 	adminRouter,
 	registrationRouter,
 	notificationRouter,
-	appFeedbackRouter
+	appFeedbackRouter,
+	planUpgradeRouter,
 	termsRouter,
 } from "./routes/index.js";
-
+  
 const app = express();
 
 app.use(cookieParser());
@@ -35,7 +36,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/consent", consentRouter);
 app.use("/api/admin", adminRouter);
-app.use("/api/feedback",appFeedbackRouter);
+app.use("/api/feedback", appFeedbackRouter);
+app.use("/api/plans", planUpgradeRouter);
 app.use("/api/terms", termsRouter);
 
 // Global error handler
