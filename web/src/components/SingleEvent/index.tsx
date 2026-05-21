@@ -492,7 +492,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 						{(isOrganizer || isAdmin) && (
 							<>
-								{/* Edit and Publish — organizer only, not admin */}
+								
 								{isOrganizer && ["DRAFT", "REJECTED"].includes(eventStatus) && (
 									<button
 										className="btn btn-outline-primary rounded-pill px-4 fw-bold"
@@ -511,9 +511,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									</button>
 								)}
 
-								{/* Organizer cancel:
-								   Free event  → always allowed (no money involved)
-								   Paid event  → only if zero registrations */}
 								{isOrganizer &&
 									["APPROVED", "PENDING"].includes(eventStatus) &&
 									!event.isCancelled &&
@@ -527,9 +524,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 										</button>
 									)}
 
-								{/* Admin cancel:
-								   Free event  → always allowed (no money involved)
-								   Paid event  → only if zero registrations */}
 								{isAdmin &&
 									["APPROVED", "PENDING"].includes(eventStatus) &&
 									!event.isCancelled &&
