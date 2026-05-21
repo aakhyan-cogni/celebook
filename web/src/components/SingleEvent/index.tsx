@@ -228,7 +228,13 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	};
 
 	const handleCancel = async () => {
+		// Step 1 — ask for confirmation first, stop immediately if user clicks Cancel
+		const confirmed = window.confirm("Are you sure you want to cancel this event? This cannot be undone.");
+		if (!confirmed) return;
+
+		// Step 2 — only if confirmed, ask for reason
 		const reason = prompt("Reason for cancellation (optional):") ?? "";
+
 		try {
 			const res = await fetch(`${BASE_URL}/events/${event._id || event.id}/cancel`, {
 				method: "POST",
@@ -291,6 +297,8 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 	const statusBadge = () => {
 		if (!isOrganizer && !isAdmin) return null;
+		// If already cancelled, the Cancelled badge covers it — no need for status badge too
+		if (event.isCancelled) return null;
 		return (
 			<span className={`badge ${STATUS_BADGE_CLASS[eventStatus] ?? "bg-secondary"} rounded-pill px-3 py-2 ms-2`}>
 				{STATUS_LABEL[eventStatus] ?? eventStatus}
@@ -480,7 +488,8 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 						{(isOrganizer || isAdmin) && (
 							<>
-								{["DRAFT", "REJECTED"].includes(eventStatus) && (
+								{/* Edit and Publish — organizer only, not admin */}
+								{isOrganizer && ["DRAFT", "REJECTED"].includes(eventStatus) && (
 									<button
 										className="btn btn-outline-primary rounded-pill px-4 fw-bold"
 										onClick={() => navigate(`/create?edit=${event._id || event.id}`)}
@@ -489,7 +498,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									</button>
 								)}
 
-								{["DRAFT", "REJECTED"].includes(eventStatus) && !event.isCancelled && (
+								{isOrganizer && ["DRAFT", "REJECTED"].includes(eventStatus) && !event.isCancelled && (
 									<button
 										className="btn btn-success rounded-pill px-4 fw-bold"
 										onClick={() => navigate(`/create?edit=${event._id || event.id}&publish=1`)}
@@ -498,10 +507,14 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									</button>
 								)}
 
-								{["APPROVED", "PENDING"].includes(eventStatus) &&
+								{/* Organizer cancel:
+								   Free event  → always allowed (no money involved)
+								   Paid event  → only if zero registrations */}
+								{isOrganizer &&
+									["APPROVED", "PENDING"].includes(eventStatus) &&
 									!event.isCancelled &&
 									!isPastEvent &&
-									!eventStat && (
+									(event.price === 0 || !eventStat || eventStat.registeredAttendees?.length === 0) && (
 										<button
 											className="btn btn-outline-danger rounded-pill px-4 fw-bold"
 											onClick={handleCancel}
@@ -510,7 +523,23 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 										</button>
 									)}
 
-								{isAdmin && eventStatus === "PENDING" && (
+								{/* Admin cancel:
+								   Free event  → always allowed (no money involved)
+								   Paid event  → only if zero registrations */}
+								{isAdmin &&
+									["APPROVED", "PENDING"].includes(eventStatus) &&
+									!event.isCancelled &&
+									!isPastEvent &&
+									(event.price === 0 || !eventStat || eventStat.registeredAttendees?.length === 0) && (
+										<button
+											className="btn btn-outline-danger rounded-pill px-4 fw-bold"
+											onClick={handleCancel}
+										>
+											Cancel Event
+										</button>
+									)}
+
+								{isAdmin && eventStatus === "PENDING" && !event.isCancelled && (
 									<>
 										<button
 											className="btn btn-success rounded-pill px-4 fw-bold"
@@ -562,7 +591,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 						<OrganizerStatsPanel
 							event={event}
 							eventStat={eventStat}
-							eventStatus={eventStatus}
 							scanLoading={scanLoading}
 							onScan={() => setShowScanner(true)}
 						/>

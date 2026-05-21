@@ -68,8 +68,13 @@ export default function Step3Pricing({
 									name="price"
 									value={formData.price}
 									onChange={onChange}
+									min={1}
+									step={1}
+									onKeyDown={(e) => {
+										if (e.key === "-" || e.key === "+" || e.key === "e") e.preventDefault();
+									}}
 									className="form-control form-control-lg rounded-end-3 border-start-0 shadow-sm"
-									placeholder="0.00"
+									placeholder="0"
 								/>
 							</div>
 						</motion.div>
@@ -82,6 +87,11 @@ export default function Step3Pricing({
 						name="capacity"
 						value={formData.capacity}
 						onChange={onChange}
+						min={1}
+						step={1}
+						onKeyDown={(e) => {
+							if (e.key === "-" || e.key === "+" || e.key === "e") e.preventDefault();
+						}}
 						className="form-control form-control-lg rounded-3 shadow-sm"
 						placeholder="e.g. 500"
 					/>
