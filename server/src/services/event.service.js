@@ -101,22 +101,6 @@ export const getEventById = async (eventId, requestingUser = null) => {
 	const isAdmin = requestingUser?.role === "ADMIN";
 	const isOrganizer = requestingUser?.userId === event.organizerId?.toString();
 
-	if (event.visibility === "PRIVATE" && !isAdmin && !isOrganizer) {
-		if (!requestingUser) {
-			return { error: "UNAUTHORIZED" };
-		}
-
-		const confirmedCount = await RegistrationModel.countDocuments({
-			eventId: new mongoose.Types.ObjectId(eventId),
-			userId: new mongoose.Types.ObjectId(requestingUser.userId),
-			status: "CONFIRMED",
-		});
-
-		if (confirmedCount === 0) {
-			return { error: "FORBIDDEN" };
-		}
-	}
-
 	if (event.status !== "APPROVED" && !isAdmin && !isOrganizer) {
 		return { error: "FORBIDDEN" };
 	}
@@ -187,8 +171,8 @@ export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
 		return { error: "TIER_LIMIT_EXCEEDED" };
 	}
 
-	const nextStatus = event.visibility === "PRIVATE" ? "APPROVED" : "PENDING";
-	event.status = nextStatus;
+	// PUBLIC/UNLISTED events both require admin review on every publish.
+	event.status = "PENDING";
 	event.rejectionReason = null;
 	await event.save();
 
@@ -207,15 +191,6 @@ export const updateEvent = async (eventId, organizerId, data, isAdmin = false) =
 
 	if (!isAdmin && !["DRAFT", "REJECTED"].includes(event.status)) {
 		return { error: "NOT_EDITABLE" };
-	}
-
-	if (
-		event.status === "APPROVED" &&
-		event.visibility === "PRIVATE" &&
-		data.visibility !== undefined &&
-		data.visibility !== "PRIVATE"
-	) {
-		return { error: "VISIBILITY_CHANGE_REQUIRES_REPUBLISH" };
 	}
 
 	const update = {};

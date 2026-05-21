@@ -116,7 +116,6 @@ const EventCreationForm = () => {
 									visible={step === 3}
 									formData={formData}
 									isFree={isFree}
-									isFreeTier={isFreeTier}
 									setIsFree={setIsFree}
 									setFormData={setFormData}
 									onChange={handleChange}

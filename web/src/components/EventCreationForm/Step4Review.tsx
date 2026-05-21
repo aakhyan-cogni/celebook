@@ -26,14 +26,11 @@ export default function Step4Review({ visible, formData, isFreeTier, onChange }:
 					name="visibility"
 					className="form-select form-control-lg rounded-3 shadow-sm"
 					value={formData.visibility}
-					onChange={(e) => { if (e.target.value === "PRIVATE" && isFreeTier) return; onChange(e); }}
+					onChange={onChange}
 				>
 					<option value="PUBLIC">🌍 Public — Listed in search results</option>
 					<option value="UNLISTED">🔗 Unlisted — Only accessible via direct link</option>
-					<option value="PRIVATE" disabled={isFreeTier}>🔒 Private — Only confirmed registrants can view{isFreeTier ? " (PRO only)" : ""}</option>
 				</select>
-				{isFreeTier && <div className="form-text text-warning mt-1">🔒 Private visibility is a PRO feature. <a href="/pricing" className="text-warning fw-bold">Upgrade to PRO</a></div>}
-				{formData.visibility === "PRIVATE" && !isFreeTier && <div className="form-text text-info mt-1">Private events skip admin review and go live immediately.</div>}
 			</div>
 			<hr className="opacity-10 my-4" />
 			<div className="p-4 bg-body-tertiary rounded-4 border border-primary border-opacity-10">

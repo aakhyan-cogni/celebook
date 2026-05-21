@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 export const EVENT_STATUSES = ["DRAFT", "PENDING", "APPROVED", "REJECTED"];
-export const EVENT_VISIBILITIES = ["PUBLIC", "PRIVATE", "UNLISTED"];
+export const EVENT_VISIBILITIES = ["PUBLIC", "UNLISTED"];
 export const TEAM_CAPACITY_MODES = ["PER_TEAM", "PER_MEMBER"];
 export const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "INR"];
 

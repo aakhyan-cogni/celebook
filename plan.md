@@ -103,17 +103,13 @@ These are architectural decisions that every developer must be aware of before p
 PUBLIC / UNLISTED events:
   DRAFT ──(organizer publishes)──▶ PENDING ──admin reviews──▶ APPROVED
                                                            └─▶ REJECTED ──▶ organizer edits ──▶ PENDING
-
-PRIVATE events:
-  DRAFT ──(organizer publishes)──▶ APPROVED   [no admin review — only the organizer + invited
-                                              attendees can see PRIVATE events anyway]
 ```
 
-Every PUBLIC and UNLISTED event requires admin approval on every publish — there is no "first event only" carve-out. PRIVATE events skip review entirely because they aren't discoverable and only reach an audience the organizer has explicitly invited.
+Every PUBLIC and UNLISTED event requires admin approval on every publish — there is no "first event only" carve-out.
 
 - `DRAFT` — only visible to organizer.
-- `PENDING` — visible to organizer + admin, not listed publicly. Only reachable from PUBLIC/UNLISTED publishes.
-- `APPROVED` — publicly listed (if visibility = PUBLIC), discoverable. PRIVATE events land here directly on publish.
+- `PENDING` — visible to organizer + admin, not listed publicly.
+- `APPROVED` — publicly listed (if visibility = PUBLIC), discoverable.
 - `REJECTED` — visible to organizer only, with rejection reason.
 
 ### Tier Permissions Matrix
@@ -122,7 +118,6 @@ Every PUBLIC and UNLISTED event requires admin approval on every publish — the
 |---------------------------------|------|-----|----------|
 | Active events (published)       | 2    | 10  | Unlimited|
 | Max attendees per event         | 100  | 500 | Unlimited|
-| Private events                  | ✗    | ✓   | ✓        |
 | Custom form builder             | ✗    | ✓   | ✓        |
 | Team participation              | ✗    | ✓   | ✓        |
 | Event image gallery             | ✗    | ✓   | ✓        |
@@ -133,10 +128,7 @@ Every PUBLIC and UNLISTED event requires admin approval on every publish — the
 ### Privacy & Visibility Rules
 
 - `PUBLIC` — discoverable in global search, accessible by anyone.
-- `PRIVATE` — not discoverable; only accessible via direct link and only to registered attendees + organizer + admin. FREE tier cannot create PRIVATE events.
 - `UNLISTED` — not discoverable in search but accessible by direct link to anyone.
-
-Private event access must be validated **on every API call**, not just at registration.
 
 ### Consent Versioning
 
@@ -159,7 +151,7 @@ All "enums" are plain JavaScript string constant arrays declared once in the rel
 export const ROLES               = ["USER", "ADMIN"];
 export const TIERS               = ["FREE", "PRO", "ULTIMATE"];
 export const EVENT_STATUSES      = ["DRAFT", "PENDING", "APPROVED", "REJECTED"];
-export const EVENT_VISIBILITIES  = ["PUBLIC", "PRIVATE", "UNLISTED"];
+export const EVENT_VISIBILITIES  = ["PUBLIC", "UNLISTED"];
 export const TEAM_CAPACITY_MODES = ["PER_TEAM", "PER_MEMBER"];
 export const REGISTRATION_STATUSES = ["CONFIRMED", "CANCELLED"];
 export const TEAM_MEMBER_STATUSES  = ["INVITED", "ACCEPTED", "DECLINED"];
@@ -316,7 +308,7 @@ Declare the following constant arrays in `server/src/models/event.model.js` (add
 
 ```js
 export const EVENT_STATUSES      = ["DRAFT", "PENDING", "APPROVED", "REJECTED"];
-export const EVENT_VISIBILITIES  = ["PUBLIC", "PRIVATE", "UNLISTED"];
+export const EVENT_VISIBILITIES  = ["PUBLIC", "UNLISTED"];
 export const TEAM_CAPACITY_MODES = ["PER_TEAM", "PER_MEMBER"];
 ```
 
@@ -357,16 +349,15 @@ eventSchema.index({ date: 1 });
 
 Endpoints:
 - `POST /api/events` (auth + consentCheck + tierCheck) — Create event via `EventModel.create(...)`. Initial status always `"DRAFT"`. Returns created event (use the `fromDoc` mapper so `id` is a string).
-- `PATCH /api/events/:id` (auth) — Update event via `EventModel.findByIdAndUpdate(id, update, { new: true })`. Only organizer or admin can update. Only `"DRAFT"` or `"REJECTED"` events can be edited by the organizer. Admin can edit any. **Visibility-widening guard:** if the event is currently `APPROVED` with `visibility === "PRIVATE"`, reject any change of `visibility` to `"PUBLIC"` or `"UNLISTED"` with `400 VISIBILITY_CHANGE_REQUIRES_REPUBLISH`. PRIVATE events skip admin review on publish, so flipping them public after the fact would bypass review — organizer must unpublish back to DRAFT and republish.
+- `PATCH /api/events/:id` (auth) — Update event via `EventModel.findByIdAndUpdate(id, update, { new: true })`. Only organizer or admin can update. Only `"DRAFT"` or `"REJECTED"` events can be edited by the organizer. Admin can edit any.
 - `DELETE /api/events/:id` (auth) — Hard-delete via `EventModel.findByIdAndDelete(id)`. Only allowed if no registrations exist: pre-check with `RegistrationModel.countDocuments({ eventId: id })` (return `409` if > 0). Only organizer or admin.
-- `POST /api/events/:id/publish` (auth + consentCheck + tierCheck) — Transition from `"DRAFT"` (or `"REJECTED"`). For `visibility` of `"PUBLIC"` or `"UNLISTED"`, status goes to `"PENDING"` and waits for admin approval on every publish. For `visibility === "PRIVATE"`, status goes directly to `"APPROVED"` (private events aren't listed and only reach invited attendees, so admin review adds no value). **Tier check:** `EventModel.countDocuments({ organizerId, status: { $in: ["PENDING", "APPROVED"] } })` must be below tier limit. DRAFTs are not counted (they're private to the organizer; tier gates only active/published events).
+- `POST /api/events/:id/publish` (auth + consentCheck + tierCheck) — Transition from `"DRAFT"` (or `"REJECTED"`). Status goes to `"PENDING"` and waits for admin approval on every publish. **Tier check:** `EventModel.countDocuments({ organizerId, status: { $in: ["PENDING", "APPROVED"] } })` must be below tier limit. DRAFTs are not counted (they're not yet active; tier gates only active/published events).
 - `GET /api/events/mine` (auth) — Current user's events (all statuses). Use `EventModel.aggregate(...)` with a `$lookup` on `Registration` to attach registration count per event.
-- `GET /api/events/:id` — Single event. If `"PRIVATE"`, validate requester is organizer, admin, or registered attendee. If status is not `"APPROVED"`, only organizer/admin can view.
+- `GET /api/events/:id` — Single event. If status is not `"APPROVED"`, only organizer/admin can view.
 
 **Acceptance criteria:**
 - Events created via API are stored in MongoDB.
-- Publishing a PUBLIC or UNLISTED event always sets status to `PENDING` (admin approval required every time).
-- Publishing a PRIVATE event sets status directly to `APPROVED` (no admin review).
+- Publishing any event always sets status to `PENDING` (admin approval required every time).
 - FREE tier user cannot publish a third active event (receives `403 TIER_LIMIT_EXCEEDED`).
 - Organizer cannot delete an event that has registrations.
 
@@ -379,17 +370,14 @@ Endpoints:
 **Status:** ✅ Done  
 
 **What to build:**
-- `GET /api/events` — Public listing. Build a Mongoose filter that always includes `{ status: "APPROVED", visibility: { $in: ["PUBLIC", "UNLISTED"] } }`. Never return `"PRIVATE"` events in the listing. Support query params: `?q=` (text search on title + description), `?category=`, `?location=`, `?dateFrom=`, `?dateTo=`, `?page=1`, `?limit=20`. Use `EventModel.find(filter).skip().limit().lean()` + `EventModel.countDocuments()` for pagination.
+- `GET /api/events` — Public listing. Build a Mongoose filter that always includes `{ status: "APPROVED", visibility: { $in: ["PUBLIC", "UNLISTED"] } }`. Support query params: `?q=` (text search on title + description), `?category=`, `?location=`, `?dateFrom=`, `?dateTo=`, `?page=1`, `?limit=20`. Use `EventModel.find(filter).skip().limit().lean()` + `EventModel.countDocuments()` for pagination.
 - Create a MongoDB text index on `title` and `description` by adding `eventSchema.index({ title: "text", description: "text" })` in `event.model.js` — Mongoose creates it on first connection. For `?q=`, use `{ $text: { $search: q } }` in the filter.
-- `GET /api/events/:id` (update from S2-005) — For `visibility === "PRIVATE"` events, check the requester is either the organizer, an admin, or has a `Registration` doc with `{ eventId, userId, status: "CONFIRMED" }` for this event.
 - Remove the existing mock event data from `event.service.js` (the current `getAllEvents` returning a hardcoded list). All data now comes from the `Event` collection.
 
 **Acceptance criteria:**
-- `GET /api/events` never returns private or unapproved events.
+- `GET /api/events` never returns unapproved events.
 - `GET /api/events?q=hackathon` returns events with "hackathon" in title or description.
 - Unauthenticated user can list and view public events.
-- Unauthenticated user gets `401` on a private event endpoint.
-- Authenticated user without registration gets `403` on a private event they didn't register for.
 
 ---
 
@@ -572,7 +560,7 @@ export const FORM_SCHEMA_COLLECTION = "FormSchema";
 
 Endpoints:
 - `POST /api/events/:id/form` (auth + tierCheck: PRO+ only) — Create or replace via `FormSchemaModel.findOneAndUpdate({ eventId }, doc, { upsert: true, new: true })`. After upsert, update `EventModel.findByIdAndUpdate(eventId, { $set: { formSchemaId: result._id } })`. Only organizer or admin.
-- `GET /api/events/:id/form` — Return form schema via `FormSchemaModel.findOne({ eventId }).lean()`. Public if event is public; private follows event visibility rules.
+- `GET /api/events/:id/form` — Return form schema via `FormSchemaModel.findOne({ eventId }).lean()`. Visibility follows the parent event's visibility rules.
 - `DELETE /api/events/:id/form` (auth) — `FormSchemaModel.deleteOne({ eventId })` and `EventModel.findByIdAndUpdate(eventId, { $unset: { formSchemaId: "" } })`. Only organizer or admin.
 
 Form submission validation (used in S2-009's register endpoint):
@@ -863,7 +851,7 @@ Endpoints:
   - Admin routes: 100 requests / 15 min per IP.
 - **Environment validation:** On app startup, check that `ACCESS_TOKEN_SECRET`, `REFRESH_TOKEN_SECRET`, and `DATABASE_URL` are set and not equal to `"abc"` or `"def"` (dev defaults). Throw a startup error if in `NODE_ENV=production` with default secrets.
 - **Ownership checks:** Audit all `PATCH` and `DELETE` event/form/team endpoints to verify `event.organizerId.toString() === req.user.userId` before allowing the operation. Admin bypasses this check.
-- **Query privacy guard:** Add a shared `eventVisibilityFilter(userId, role)` utility that returns a plain Mongoose filter object ensuring private/unapproved events are never leaked. Every `EventModel.find(...)` call must spread this filter into the query.
+- **Query visibility guard:** Add a shared `eventVisibilityFilter(userId, role)` utility that returns a plain Mongoose filter object ensuring unapproved events are never leaked. Every `EventModel.find(...)` call must spread this filter into the query.
 - **File upload security:** Verify MIME type by reading file buffer magic bytes (not just `Content-Type` header) in Multer's `fileFilter`.
 
 **Acceptance criteria:**
@@ -1083,7 +1071,7 @@ Pick up tasks in this order to minimize blocking dependencies. Waves map directl
 
 These decisions were made to keep planning unblocked. Confirm or override as needed:
 
-1. **Every PUBLIC/UNLISTED event needs admin review on every publish.** PRIVATE events skip review and go straight to `APPROVED` since they're only visible to the organizer and explicitly invited attendees.
+1. **Every event needs admin review on every publish.** All publishes transition through `PENDING` before reaching `APPROVED`.
 2. **Team counts as one registration slot** — Assumed the team occupies 1 slot by default. The `teamCapacityMode` field supports switching to "per_member" if needed.
 3. **No payment integration in Sprint 2** — Tier is currently a field on the User document. Upgrading requires direct DB edit or an admin action until Stripe is integrated (Sprint 3).
 4. **Unlisted events are accessible by direct link without login** — If you want unlisted events to require login, the `GET /api/events/:id` guard in S2-006 needs a small change.

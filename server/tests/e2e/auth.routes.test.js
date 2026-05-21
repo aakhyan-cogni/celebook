@@ -20,6 +20,28 @@ function stubChainSelectLean(model, method, resolvedValue) {
 	});
 }
 
+// TermsConfigModel.findOne is awaited directly (no .lean()), and the returned
+// doc has .toObject() called on it. Set `content` so the backfill branch in
+// consent.service.getOrCreateTermsConfig won't try to call .save().
+function stubTermsConfigFindOne(currentVersion = "v1") {
+	const doc = {
+		_id: new mongoose.Types.ObjectId(),
+		currentVersion,
+		content: "<p>seed</p>",
+		updatedAt: new Date(),
+		toObject() {
+			return {
+				_id: this._id,
+				currentVersion: this.currentVersion,
+				content: this.content,
+				updatedAt: this.updatedAt,
+			};
+		},
+		save: sinon.stub().resolvesThis(),
+	};
+	return sinon.stub(TermsConfigModel, "findOne").resolves(doc);
+}
+
 function findRefreshCookie(cookies) {
 	if (!cookies) return null;
 	return cookies.find((c) => c.startsWith("refreshToken="));
@@ -29,10 +51,7 @@ describe("E2E: /api/auth routes", () => {
 	describe("POST /api/auth/register", () => {
 		it("201, returns accessToken and sets refreshToken cookie on success", async () => {
 			stubChainLean(UserModel, "findOne", null); // user does not exist
-			stubChainLean(TermsConfigModel, "findOne", {
-				_id: new mongoose.Types.ObjectId(),
-				currentVersion: "v1",
-			});
+			stubTermsConfigFindOne("v1");
 			const oid = new mongoose.Types.ObjectId();
 			sinon.stub(UserModel, "create").callsFake(async (doc) => ({ _id: oid, ...doc }));
 			stubChainLean(UserModel, "findByIdAndUpdate", { _id: oid, refreshToken: "rt" });

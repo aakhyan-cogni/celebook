@@ -27,6 +27,28 @@ function stubChainSelectLean(model, method, resolvedValue) {
 	});
 }
 
+// Helper: stub TermsConfigModel.findOne (no chain — code awaits the query directly
+// and then calls .toObject() / .save() on the returned doc).
+// `content` is pre-set so the backfill branch in consent.service won't call .save().
+function stubTermsConfigFindOne(currentVersion = "v1") {
+	const doc = {
+		_id: new mongoose.Types.ObjectId(),
+		currentVersion,
+		content: "<p>seed</p>",
+		updatedAt: new Date(),
+		toObject() {
+			return {
+				_id: this._id,
+				currentVersion: this.currentVersion,
+				content: this.content,
+				updatedAt: this.updatedAt,
+			};
+		},
+		save: sinon.stub().resolvesThis(),
+	};
+	return sinon.stub(TermsConfigModel, "findOne").resolves(doc);
+}
+
 describe("services/auth.service", () => {
 	describe("hashPassword / comparePassword", () => {
 		it("hashPassword returns a bcrypt hash that comparePassword matches", async () => {
@@ -59,10 +81,7 @@ describe("services/auth.service", () => {
 	describe("createUser", () => {
 		it("creates a user with consent fields when termsAccepted=true", async () => {
 			const oid = new mongoose.Types.ObjectId();
-			stubChainLean(TermsConfigModel, "findOne", {
-				_id: new mongoose.Types.ObjectId(),
-				currentVersion: "v1",
-			});
+			stubTermsConfigFindOne("v1");
 			sinon.stub(UserModel, "create").callsFake(async (doc) => ({
 				_id: oid,
 				...doc,
@@ -93,10 +112,7 @@ describe("services/auth.service", () => {
 
 		it("does not fetch terms version when termsAccepted=false", async () => {
 			const oid = new mongoose.Types.ObjectId();
-			const termsStub = stubChainLean(TermsConfigModel, "findOne", {
-				_id: new mongoose.Types.ObjectId(),
-				currentVersion: "v1",
-			});
+			const termsStub = stubTermsConfigFindOne("v1");
 			sinon.stub(UserModel, "create").callsFake(async (doc) => ({ _id: oid, ...doc }));
 
 			const result = await createUser({
