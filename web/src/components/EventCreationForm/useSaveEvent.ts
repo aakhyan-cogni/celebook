@@ -56,6 +56,7 @@ export function useSaveEvent(opts: {
 			let savedId: string;
 
 			if (editId && existingEvent) {
+				console.log("Patching event with payload:", payload);
 				const res = await fetch(`${BASE_URL}/events/${editId}`, {
 					method: "PATCH", headers: authHeaders(), credentials: "include",
 					body: JSON.stringify(payload),

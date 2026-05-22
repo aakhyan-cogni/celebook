@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ScanLine } from "lucide-react";
+import PresentAttendeesModal from "./PresentAttendeesModal";
 
 interface OrganizerStatsPanelProps {
 	event: any;
@@ -13,6 +15,8 @@ export default function OrganizerStatsPanel({
 	scanLoading,
 	onScan,
 }: OrganizerStatsPanelProps) {
+	const [showPresentList, setShowPresentList] = useState(false);
+	const presentCount = eventStat?.presentAttendees?.length ?? 0;
 	return (
 		<div className="card border-0 bg-body-tertiary rounded-4 overflow-hidden mt-4">
 			<div
@@ -51,8 +55,16 @@ export default function OrganizerStatsPanel({
 						<div className="small text-body-secondary">Registered</div>
 					</div>
 					<div className="col-4 text-center border-start border-end border-secondary border-opacity-25">
-						<div className="fw-bold fs-5 text-success">{eventStat?.presentAttendees?.length ?? 0}</div>
-						<div className="small text-body-secondary">Present</div>
+						<button
+							type="button"
+							className="btn btn-link p-0 border-0 text-decoration-none"
+							onClick={() => setShowPresentList(true)}
+							disabled={presentCount === 0}
+							title={presentCount === 0 ? "No attendees checked in yet" : "View present attendees"}
+						>
+							<div className="fw-bold fs-5 text-success">{presentCount}</div>
+							<div className="small text-body-secondary text-decoration-underline">Present</div>
+						</button>
 					</div>
 					<div className="col-4 text-center">
 						<div className="fw-bold fs-5 text-body">{event.price === 0 ? "FREE" : `₹${event.price}`}</div>
@@ -77,6 +89,10 @@ export default function OrganizerStatsPanel({
 					</button>
 				</div>
 			</div>
+
+			{showPresentList && (
+				<PresentAttendeesModal eventId={event._id ?? event.id} onClose={() => setShowPresentList(false)} />
+			)}
 		</div>
 	);
 }

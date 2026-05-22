@@ -15,8 +15,26 @@ export interface CheckInResult {
 	};
 }
 
+export interface EventRegistration {
+	_id: string;
+	attendanceStatus: "PENDING" | "PRESENT";
+	checkedInAt: string | null;
+	registeredAt: string;
+	userId: {
+		_id: string;
+		name: string;
+		email: string;
+		avatar?: string;
+	};
+}
+
 export async function fetchTicketToken(registrationId: string): Promise<{ token: string }> {
 	const res = await apiFetch(`/registrations/${registrationId}/ticket-token`, { method: "GET" });
+	return res.data;
+}
+
+export async function getEventRegistrations(eventId: string): Promise<EventRegistration[]> {
+	const res = await apiFetch(`/events/${eventId}/registrations`, { method: "GET" });
 	return res.data;
 }
 
