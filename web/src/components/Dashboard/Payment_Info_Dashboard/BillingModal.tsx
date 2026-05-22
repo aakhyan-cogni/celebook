@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { apiFetch } from "../../../lib/api";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 interface BillingModalProps {
 	plan: { title: string; price: string; features: string[] };
@@ -13,6 +14,8 @@ type Stage = "billing" | "processing" | "success";
 const BillingModal: React.FC<BillingModalProps> = ({ plan, isDowngrade, onClose, onSuccess }) => {
 	const [stage, setStage] = useState<Stage>("billing");
 	const [error, setError]   = useState<string | null>(null);
+	const setAccessToken = useAuthStore((s) => s.setAccessToken);
+	const updateUser     = useAuthStore((s) => s.updateUser);
 
 	const actionLabel = isDowngrade ? "Switch" : "Upgrade";
 
@@ -27,6 +30,15 @@ const BillingModal: React.FC<BillingModalProps> = ({ plan, isDowngrade, onClose,
 				body: JSON.stringify({ planTitle: plan.title }),
 			});
 			if (res.success) {
+				// Store the fresh access token (now includes tier) so subsequent
+				// API calls — including image uploads — use the correct plan limits.
+				if (res.data?.accessToken) {
+					setAccessToken(res.data.accessToken);
+				}
+				// Also sync the tier into the Zustand user object immediately.
+				if (res.data?.tier) {
+					updateUser({ tier: res.data.tier as "FREE" | "PRO" | "ULTIMATE" });
+				}
 				setStage("success");
 				setTimeout(() => { onSuccess(res.data.tier); onClose(); }, 2000);
 			} else {
@@ -130,7 +142,7 @@ const BillingModal: React.FC<BillingModalProps> = ({ plan, isDowngrade, onClose,
 							</button>
 
 							<p className="text-center text-body-secondary mt-3 mb-0" style={{ fontSize: "0.67rem" }}>
-								🔒 Secured · Cancel anytime · No hidden fees
+								 Secured · Cancel anytime · No hidden fees
 							</p>
 						</div>
 					)}

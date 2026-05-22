@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import type { NavigateFunction } from "react-router";
 import { BASE_URL } from "../../lib/api";
@@ -16,6 +16,8 @@ export function useSaveEvent(opts: {
 	const { formData, isFree, editId, existingEvent, accessToken, uploadImages, navigate } = opts;
 	const [submitting, setSubmitting] = useState(false);
 	const todayStr = new Date().toISOString().slice(0, 10);
+
+	const createdEventIdRef = useRef<string | null>(null);
 
 	const authHeaders = () => ({
 		"Content-Type": "application/json",
@@ -43,6 +45,35 @@ export function useSaveEvent(opts: {
 		};
 	};
 
+	const resolveEventId = async (payload: object): Promise<string> => {
+		if (editId && existingEvent) {
+			const res = await fetch(`${BASE_URL}/events/${editId}`, {
+				method: "PATCH", headers: authHeaders(), credentials: "include",
+				body: JSON.stringify(payload),
+			});
+			if (!res.ok) throw new Error((await res.json()).message);
+			return editId;
+		}
+
+		if (createdEventIdRef.current) {
+			const res = await fetch(`${BASE_URL}/events/${createdEventIdRef.current}`, {
+				method: "PATCH", headers: authHeaders(), credentials: "include",
+				body: JSON.stringify(payload),
+			});
+			if (!res.ok) throw new Error((await res.json()).message);
+			return createdEventIdRef.current;
+		}
+
+		const res = await fetch(`${BASE_URL}/events`, {
+			method: "POST", headers: authHeaders(), credentials: "include",
+			body: JSON.stringify(payload),
+		});
+		if (!res.ok) throw new Error((await res.json()).message);
+		const created = await res.json();
+		createdEventIdRef.current = created.id;
+		return created.id;
+	};
+
 	const handleSaveDraft = async (e: React.MouseEvent) => {
 		e.preventDefault();
 		setSubmitting(true);
@@ -53,26 +84,8 @@ export function useSaveEvent(opts: {
 				location: formData.location || "TBD",
 				capacity: Number(formData.capacity) || 1,
 			};
-			let savedId: string;
 
-			if (editId && existingEvent) {
-				console.log("Patching event with payload:", payload);
-				const res = await fetch(`${BASE_URL}/events/${editId}`, {
-					method: "PATCH", headers: authHeaders(), credentials: "include",
-					body: JSON.stringify(payload),
-				});
-				if (!res.ok) throw new Error((await res.json()).message);
-				savedId = editId;
-			} else {
-				const res = await fetch(`${BASE_URL}/events`, {
-					method: "POST", headers: authHeaders(), credentials: "include",
-					body: JSON.stringify(payload),
-				});
-				if (!res.ok) throw new Error((await res.json()).message);
-				const created = await res.json();
-				savedId = created.id;
-			}
-
+			const savedId = await resolveEventId(payload);
 			await uploadImages(savedId);
 			toast.success("Draft saved.");
 			navigate("/dashboard");
@@ -88,16 +101,9 @@ export function useSaveEvent(opts: {
 		setSubmitting(true);
 		try {
 			const payload = buildPayload();
-			let eventId: string;
 
-			if (editId && existingEvent) {
-				const res = await fetch(`${BASE_URL}/events/${editId}`, {
-					method: "PATCH", headers: authHeaders(), credentials: "include",
-					body: JSON.stringify(payload),
-				});
-				if (!res.ok) throw new Error((await res.json()).message);
-				eventId = editId;
-			} else {
+			const isNewEvent = !editId && !existingEvent && !createdEventIdRef.current;
+			if (isNewEvent) {
 				const eligRes = await fetch(`${BASE_URL}/events/can-publish`, {
 					headers: authHeaders(), credentials: "include",
 				});
@@ -108,16 +114,9 @@ export function useSaveEvent(opts: {
 						return;
 					}
 				}
-
-				const res = await fetch(`${BASE_URL}/events`, {
-					method: "POST", headers: authHeaders(), credentials: "include",
-					body: JSON.stringify(payload),
-				});
-				if (!res.ok) throw new Error((await res.json()).message);
-				const created = await res.json();
-				eventId = created.id;
 			}
 
+			const eventId = await resolveEventId(payload);
 			await uploadImages(eventId);
 
 			const pubRes = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
