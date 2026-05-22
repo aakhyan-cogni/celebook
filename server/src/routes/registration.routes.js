@@ -9,5 +9,8 @@ export const registrationRouter = Router();
 // I changed path from /mine to /my-registrations
 registrationRouter.get("/my-registrations", authenticate, RegistrationController.getMyRegistrations);
 
+// GET /api/registrations/history/myBookings — Get current user's booking history
+registrationRouter.get("/history/myBookings", authenticate, RegistrationController.getMyBookingsHistory);
+
 // GET /api/registrations/:registrationId/ticket-token — Get signed QR token for a registration
 registrationRouter.get("/:registrationId/ticket-token", authenticate, RegistrationController.getTicketToken);

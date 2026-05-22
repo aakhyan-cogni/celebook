@@ -29,6 +29,13 @@ export const TABS: TabConfig[] = [
 		buttonClass: "btn m-1 ms-2 text-start px-3 py-2 border-none",
 	},
 	{
+		id: "history",
+		label: "Booking History",
+		icon: "🧾",
+		hoverWidth: "80%",
+		buttonClass: "btn m-1 ms-2 text-start px-3 py-2 border-none",
+	},
+	{
 		id: "personal",
 		label: "Personal Details",
 		icon: "👤",

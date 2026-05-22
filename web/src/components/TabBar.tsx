@@ -1,15 +1,37 @@
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
+import { useSearchParams } from "react-router";
 import { useAuthStore } from "../store/useAuthStore";
 import Dashboard from "./Dashboard/Dashboard";
 import PersonalContent from "./Dashboard/Personal_Info_Dashboard/PersonalConent";
 import PaymentContent from "./Dashboard/Payment_Info_Dashboard/PaymentContent";
 import Events from "./Dashboard/Events";
 import Bookings from "./Dashboard/Bookings";
+import BookingHistory from "./Dashboard/BookingHistory";
 import { TABS } from "./TabBar/tabs";
 import { SidebarNavItem } from "./TabBar/SidebarNav";
 
+const VALID_TABS = new Set(TABS.map((t) => t.id));
+
 export default function ProfileLayout() {
-	const [active, setActive] = useState("dashboard");
+	const [searchParams, setSearchParams] = useSearchParams();
+	const tabParam = searchParams.get("tab");
+	const active = tabParam && VALID_TABS.has(tabParam) ? tabParam : "dashboard";
+
+	const setActive = useCallback(
+		(id: string) => {
+			setSearchParams(
+				(prev) => {
+					const next = new URLSearchParams(prev);
+					if (id === "dashboard") next.delete("tab");
+					else next.set("tab", id);
+					return next;
+				},
+				{ replace: false },
+			);
+		},
+		[setSearchParams],
+	);
+
 	const [hover, setHover] = useState("");
 
 	const user = useAuthStore((s) => s.user)!;
@@ -75,6 +97,7 @@ export default function ProfileLayout() {
 							{active === "payment" && <PaymentContent />}
 							{active === "bookings" && <Bookings />}
 							{active === "events" && <Events />}
+							{active === "history" && <BookingHistory />}
 						</div>
 					</div>
 				</main>
