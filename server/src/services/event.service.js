@@ -43,7 +43,7 @@ export const createEvent = async (organizerId, organizerEmail, data) => {
 export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, page = 1, limit = 20 }) => {
 	const filter = {
 		status: "APPROVED",
-		visibility: { $in: ["PUBLIC", "UNLISTED"] },
+		visibility: "PUBLIC", // UNLISTED events are hidden from explore — accessible by direct link only
 		isCancelled: false,
 	};
 
@@ -74,7 +74,20 @@ export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, pa
 	const skip = (currentPage - 1) * pageSize;
 
 	const [events, total] = await Promise.all([
-		EventModel.find(filter).sort({ date: -1 }).skip(skip).limit(pageSize).lean(),
+		EventModel.aggregate([
+		{ $match: filter },
+		{
+			$addFields: {
+				_isPast: { $lt: ["$date", new Date()] },
+				_dateVal: "$date",
+			},
+		},
+		// upcoming events first (soonest date first), then past events (most recent first)
+		{ $sort: { _isPast: 1, _dateVal: 1 } },
+		{ $skip: skip },
+		{ $limit: pageSize },
+		{ $unset: ["_isPast", "_dateVal"] },
+	]),
 		EventModel.countDocuments(filter),
 	]);
 

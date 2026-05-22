@@ -35,7 +35,6 @@ export const generateTokens = (user) => {
 		userId: user.id,
 		email: user.email,
 		role: user.role || "USER",
-		tier: user.tier || "FREE", 
 	};
 
 	return {
