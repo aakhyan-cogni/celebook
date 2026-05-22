@@ -35,6 +35,7 @@ export default function FeedbackPage() {
 	const [areasOfImprovement, setAreasOfImprovement] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
 	useEffect(() => {
 		if (!id) return;
@@ -173,7 +174,6 @@ export default function FeedbackPage() {
 	}
 
 	const userRatedFields = FEEDBACK_RATING_FIELDS.filter((f) => f !== "overallRating");
-	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
 	const onSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
