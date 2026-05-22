@@ -4,6 +4,9 @@ import { AnimatePresence, motion } from "motion/react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { AVATARS } from "../../../config/constants";
+import { basicProfileSchema } from "../../../lib/validation/schemas";
+import { useFormErrors } from "../../../lib/validation/useFormErrors";
+import FieldError from "../../../lib/validation/FieldError";
 
 interface OrganizationalInfoProps {
 	registerSave: (callback: () => void) => void;
@@ -34,15 +37,23 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 	};
 
 	const [state, dispatch] = useReducer(reducer, user);
+	const { errors, validate, clear } = useFormErrors(basicProfileSchema);
 
 	useEffect(() => {
 		registerSave(() => {
-			const [fname, _] = state.name.split(" ");
-			if (fname.length === 0) {
-				return alert("First Name cannot be empty....");
-			}
-			if (state.email.length === 0) {
-				return alert("Email cannot be empty...");
+			const [firstName = "", lastName = ""] = state.name.split(" ");
+			const payload = {
+				firstName,
+				lastName,
+				email: state.email ?? "",
+				phone: state.phoneNumber ?? "",
+				dob: state.dob ?? "",
+				gender: state.gender ?? "",
+			};
+			const result = validate(payload);
+			if (!result.ok) {
+				toast.error("Please fix the highlighted fields");
+				return;
 			}
 			if (!isUpdated) return;
 			syncUser({
@@ -54,7 +65,7 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 			});
 			setUpdate(false);
 		});
-	}, [state]);
+	}, [state, isUpdated, validate, syncUser, registerSave]);
 
 	function handleProfilePicChange(e: React.MouseEvent<HTMLImageElement>) {
 		e.preventDefault();
@@ -147,16 +158,20 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("firstName");
+									const lastName = state.name.split(" ")[1] || "";
 									dispatch({
 										type: "name",
-										value: `${e.target.value} ${state.name.split(" ")[1].length ? state.name.split(" ")[1] : ""}`,
+										value: `${e.target.value} ${lastName}`.trim(),
 									});
 								}}
 								value={state.name.split(" ")[0]}
 								type="text"
-								className="form-control"
+								className={`form-control${errors.firstName ? " is-invalid" : ""}`}
 								placeholder="First Name"
+								aria-invalid={!!errors.firstName}
 							/>
+							<FieldError message={errors.firstName} />
 						</div>
 
 						<div className="col-12 col-lg-6">
@@ -164,13 +179,16 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("lastName");
 									dispatch({ type: "name", value: state.name.split(" ")[0] + " " + e.target.value });
 								}}
 								value={state.name.split(" ")[1] || ""}
 								type="text"
-								className={`form-control `}
+								className={`form-control${errors.lastName ? " is-invalid" : ""}`}
 								title={!isUpdated ? "" : "Don't forget to save"}
+								aria-invalid={!!errors.lastName}
 							/>
+							<FieldError message={errors.lastName} />
 						</div>
 
 						<div className="col-12">
@@ -185,30 +203,37 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("email");
 									dispatch({ type: "email", value: e.target.value });
 								}}
 								value={state.email}
 								type="email"
-								className={`form-control `}
+								className={`form-control${errors.email ? " is-invalid" : ""}`}
 								title={!isUpdated ? "" : "Don't forget to save"}
 								placeholder="e.g. email@email.com"
+								aria-invalid={!!errors.email}
 							/>
+							<FieldError message={errors.email} />
 						</div>
 
 						<div className="col-12 col-lg-6">
 							<label className="form-label">Phone Number</label>
 							<input
 								onChange={(e) => {
-									if (isNaN(+e.target.value)) return;
+									const v = e.target.value;
+									if (v && !/^[+0-9\s-]*$/.test(v)) return;
 									setUpdate(true);
-									dispatch({ type: "phoneNumber", value: e.target.value });
+									clear("phone");
+									dispatch({ type: "phoneNumber", value: v });
 								}}
 								value={state.phoneNumber || ""}
 								type="tel"
-								className={`form-control `}
+								className={`form-control${errors.phone ? " is-invalid" : ""}`}
 								title={!isUpdated ? "" : "Don't forget to save"}
 								placeholder="Enter your number"
+								aria-invalid={!!errors.phone}
 							/>
+							<FieldError message={errors.phone} />
 						</div>
 
 						<div className="col-12 col-lg-6">
@@ -216,13 +241,17 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("dob");
 									dispatch({ type: "dob", value: e.target.value });
 								}}
 								value={state.dob?.split("T")[0] ?? ""}
 								type="date"
-								className={`form-control`}
+								max={new Date().toISOString().split("T")[0]}
+								className={`form-control${errors.dob ? " is-invalid" : ""}`}
 								title={!isUpdated ? "" : "Don't forget to save"}
+								aria-invalid={!!errors.dob}
 							/>
+							<FieldError message={errors.dob} />
 						</div>
 
 						<div className="col-12 col-lg-6">

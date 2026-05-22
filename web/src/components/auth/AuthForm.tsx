@@ -1,13 +1,20 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router";
+import FieldError from "../../lib/validation/FieldError";
+import type { FieldErrors } from "../../lib/validation/useFormErrors";
 
 interface AuthFormProps {
 	isLogin: boolean;
 	onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 	onToggle: () => void;
+	errors?: FieldErrors;
+	onFieldChange?: (name: string, value: string | boolean) => void;
 }
 
-export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps) {
+export default function AuthForm({ isLogin, onSubmit, onToggle, errors = {}, onFieldChange }: AuthFormProps) {
+	const cls = (name: string, base = "form-control rounded-pill border-primary border-opacity-25") =>
+		`${base}${errors[name] ? " is-invalid" : ""}`;
+
 	return (
 		<div className="card shadow-lg border-0 rounded-4 mt-4 bg-body-tertiary backdrop-blur p-4 p-md-5">
 			<div className="text-center mb-4">
@@ -26,7 +33,7 @@ export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps)
 				</p>
 			</div>
 
-			<form onSubmit={onSubmit}>
+			<form onSubmit={onSubmit} noValidate>
 				<AnimatePresence mode="popLayout">
 					{!isLogin && (
 						<motion.div
@@ -39,10 +46,13 @@ export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps)
 							<input
 								name="name"
 								type="text"
-								className="form-control rounded-pill border-primary border-opacity-25"
+								className={cls("name")}
 								placeholder="John Doe"
-								required={!isLogin}
+								onChange={(e) => onFieldChange?.("name", e.target.value)}
+								aria-invalid={!!errors.name}
+								aria-describedby={errors.name ? "auth-name-error" : undefined}
 							/>
+							<FieldError id="auth-name-error" message={errors.name} />
 						</motion.div>
 					)}
 				</AnimatePresence>
@@ -52,10 +62,13 @@ export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps)
 					<input
 						name="email"
 						type="email"
-						className="form-control rounded-pill border-primary border-opacity-25"
+						className={cls("email")}
 						placeholder="name@example.com"
-						required
+						onChange={(e) => onFieldChange?.("email", e.target.value)}
+						aria-invalid={!!errors.email}
+						aria-describedby={errors.email ? "auth-email-error" : undefined}
 					/>
+					<FieldError id="auth-email-error" message={errors.email} />
 				</div>
 
 				<div className="mb-4">
@@ -63,10 +76,16 @@ export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps)
 					<input
 						name="password"
 						type="password"
-						className="form-control rounded-pill border-primary border-opacity-25"
+						className={cls("password")}
 						placeholder="••••••••"
-						required
+						onChange={(e) => onFieldChange?.("password", e.target.value)}
+						aria-invalid={!!errors.password}
+						aria-describedby={errors.password ? "auth-password-error" : undefined}
 					/>
+					<FieldError id="auth-password-error" message={errors.password} />
+					{!isLogin && !errors.password && (
+						<div className="form-text small">At least 8 characters, with letters and a number.</div>
+					)}
 				</div>
 
 				<AnimatePresence mode="popLayout">
@@ -80,10 +99,11 @@ export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps)
 							<div className="form-check">
 								<input
 									type="checkbox"
-									className="form-check-input"
+									className={`form-check-input${errors.termsAccepted ? " is-invalid" : ""}`}
 									id="termsAccepted"
 									name="termsAccepted"
-									required={!isLogin}
+									onChange={(e) => onFieldChange?.("termsAccepted", e.target.checked)}
+									aria-invalid={!!errors.termsAccepted}
 								/>
 								<label className="form-check-label small" htmlFor="termsAccepted">
 									I agree to the{" "}
@@ -97,6 +117,7 @@ export default function AuthForm({ isLogin, onSubmit, onToggle }: AuthFormProps)
 									</Link>
 								</label>
 							</div>
+							<FieldError message={errors.termsAccepted} />
 						</motion.div>
 					)}
 				</AnimatePresence>

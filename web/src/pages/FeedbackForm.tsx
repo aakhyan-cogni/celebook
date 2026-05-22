@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { ArrowLeft, Star, Send, CheckCircle, Loader2 } from "lucide-react";
 // TODO: Adjust this path to the actual location of your apiFetch utility function
-import { apiFetch } from "../lib/api.ts"; 
+import { apiFetch } from "../lib/api.ts";
+import { feedbackFormSchema } from "../lib/validation/schemas";
+import { useFormErrors } from "../lib/validation/useFormErrors";
+import FieldError from "../lib/validation/FieldError";
 
 interface FeedbackFormProps {
   onBack: () => void;
@@ -17,10 +21,15 @@ export default function FeedbackForm({ onBack }: FeedbackFormProps) {
   // States for managing network communication
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { errors, validate, clear } = useFormErrors(feedbackFormSchema);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) return;
+    const result = validate({ rating, message });
+    if (!result.ok) {
+      toast.error("Please fix the highlighted fields");
+      return;
+    }
 
     setIsLoading(true);
     setErrorMessage(null);
@@ -104,7 +113,7 @@ export default function FeedbackForm({ onBack }: FeedbackFormProps) {
                 whileTap={isLoading ? {} : { scale: 0.9 }}
                 onMouseEnter={() => !isLoading && setHover(star)}
                 onMouseLeave={() => !isLoading && setHover(0)}
-                onClick={() => !isLoading && setRating(star)}
+                onClick={() => { if (!isLoading) { setRating(star); clear("rating"); } }}
                 style={{ cursor: isLoading ? 'not-allowed' : 'pointer' }}
                 className="transition-all"
               >
@@ -122,27 +131,30 @@ export default function FeedbackForm({ onBack }: FeedbackFormProps) {
               </span>
             )}
           </div>
+          <FieldError message={errors.rating} />
         </div>
 
         {/* Message Input */}
         <div className="mb-4">
           <label className="form-label fw-bold small text-uppercase text-info">Your Message</label>
-          <textarea 
-            className="form-control rounded-3 border-light-subtle shadow-sm p-3" 
-            rows={4} 
+          <textarea
+            className={`form-control rounded-3 border-light-subtle shadow-sm p-3${errors.message ? " is-invalid" : ""}`}
+            rows={4}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => { setMessage(e.target.value); clear("message"); }}
             placeholder="Tell us what you think or report an experience..."
             disabled={isLoading}
-            required
+            aria-invalid={!!errors.message}
           ></textarea>
+          <FieldError message={errors.message} />
+          <div className="form-text small text-end">{message.length}/2000</div>
         </div>
 
         {/* Action Button */}
-        <button 
+        <button
           type="submit"
           className="btn btn-success w-100 rounded-pill py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
-          disabled={rating === 0 || isLoading}
+          disabled={isLoading}
         >
           {isLoading ? (
             <>

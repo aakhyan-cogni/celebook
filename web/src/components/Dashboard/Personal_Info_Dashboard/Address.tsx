@@ -1,5 +1,9 @@
 import React, { useEffect, useReducer, useState } from "react";
+import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { addressSchema } from "../../../lib/validation/schemas";
+import { useFormErrors } from "../../../lib/validation/useFormErrors";
+import FieldError from "../../../lib/validation/FieldError";
 
 interface OrganizationalInfoProps {
 	registerSave: (callback: () => void) => void;
@@ -19,19 +23,26 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 	};
 
 	const [state, dispatch] = useReducer(reducer, user);
+	const { errors, validate, clear } = useFormErrors(addressSchema);
 
 	useEffect(() => {
 		registerSave(() => {
 			if (!isUpdated) return;
-			syncUser({
-				country: state.country,
-				state: state.state,
-				city: state.city,
-				zipcode: state.zipcode,
-			});
+			const payload = {
+				country: state.country ?? "",
+				state: state.state ?? "",
+				city: state.city ?? "",
+				zipcode: state.zipcode ?? "",
+			};
+			const result = validate(payload);
+			if (!result.ok) {
+				toast.error("Please fix the highlighted address fields");
+				return;
+			}
+			syncUser(payload);
 			setUpdate(false);
 		});
-	}, [state]);
+	}, [state, isUpdated, validate, syncUser, registerSave]);
 
 	return (
 		<div>
@@ -52,13 +63,16 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 								<input
 									onChange={(e) => {
 										setUpdate(true);
+										clear("country");
 										dispatch({ type: "country", value: e.target.value });
 									}}
 									value={state.country || ""}
 									type="text"
-									className="form-control"
+									className={`form-control${errors.country ? " is-invalid" : ""}`}
 									placeholder="Country"
+									aria-invalid={!!errors.country}
 								/>
+								<FieldError message={errors.country} />
 							</div>
 
 							<div className="col-12 col-lg-6">
@@ -66,13 +80,16 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 								<input
 									onChange={(e) => {
 										setUpdate(true);
+										clear("state");
 										dispatch({ type: "state", value: e.target.value });
 									}}
 									value={state.state || ""}
 									type="text"
-									className="form-control"
+									className={`form-control${errors.state ? " is-invalid" : ""}`}
 									placeholder="State"
+									aria-invalid={!!errors.state}
 								/>
+								<FieldError message={errors.state} />
 							</div>
 
 							<div className="col-12 col-lg-6">
@@ -80,13 +97,16 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 								<input
 									onChange={(e) => {
 										setUpdate(true);
+										clear("city");
 										dispatch({ type: "city", value: e.target.value });
 									}}
 									value={state.city || ""}
 									type="text"
-									className="form-control"
+									className={`form-control${errors.city ? " is-invalid" : ""}`}
 									placeholder="City"
+									aria-invalid={!!errors.city}
 								/>
+								<FieldError message={errors.city} />
 							</div>
 
 							<div className="col-12 col-lg-6">
@@ -94,13 +114,17 @@ const Address: React.FC<OrganizationalInfoProps> = ({ registerSave }) => {
 								<input
 									onChange={(e) => {
 										setUpdate(true);
+										clear("zipcode");
 										dispatch({ type: "zipcode", value: e.target.value });
 									}}
 									value={state.zipcode || ""}
-									type="number"
-									className="form-control"
+									type="text"
+									inputMode="text"
+									className={`form-control${errors.zipcode ? " is-invalid" : ""}`}
 									placeholder="Zipcode"
+									aria-invalid={!!errors.zipcode}
 								/>
+								<FieldError message={errors.zipcode} />
 							</div>
 
 							<div className="col-12">

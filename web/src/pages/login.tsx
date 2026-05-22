@@ -7,6 +7,8 @@ import { apiFetch } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import AuthForm from "../components/auth/AuthForm";
 import AuthBackground from "../components/auth/AuthBackground";
+import { loginSchema, registerSchema } from "../lib/validation/schemas";
+import { useFormErrors } from "../lib/validation/useFormErrors";
 
 const fadeInUp = {
 	hidden: { opacity: 0, y: 20 },
@@ -21,26 +23,44 @@ export default function Login() {
 	const setConsentRequired = useAuthStore((s) => s.setConsentRequired);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+	const schema = isLogin ? loginSchema : registerSchema;
+	const { errors, validate, clear, setErrors } = useFormErrors(schema as any);
+
 	useEffect(() => {
 		if (isAuthenticated) navigate("/dashboard");
 	});
 
+	useEffect(() => {
+		setErrors({});
+	}, [isLogin, setErrors]);
+
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
-		const { name, email, password } = Object.fromEntries(formData) as Record<string, string>;
-		const termsAccepted = formData.get("termsAccepted") === "on";
+		const raw = Object.fromEntries(formData) as Record<string, string>;
+		const payload = isLogin
+			? { email: raw.email ?? "", password: raw.password ?? "" }
+			: {
+				name: raw.name ?? "",
+				email: raw.email ?? "",
+				password: raw.password ?? "",
+				termsAccepted: formData.get("termsAccepted") === "on",
+			};
+
+		const result = validate(payload);
+		if (!result.ok) {
+			toast.error("Please fix the errors highlighted below");
+			return;
+		}
 
 		try {
+			const data = result.data as any;
 			const response = isLogin
-				? await loginUser(email, password)
-				: await registerUser(name, email, password, termsAccepted, true);
+				? await loginUser(data.email, data.password)
+				: await registerUser(data.name, data.email, data.password, data.termsAccepted, true);
 
 			setAuth(response.user, response.accessToken);
 
-			// Probe /auth/me right after login so a stale consent version pops the
-			// modal immediately (Hydrate's mount-time effect already ran with
-			// isAuthenticated=false and won't re-fire).
 			try {
 				const me = await apiFetch("/auth/me", { method: "GET" });
 				if (me?.user) updateUser({ ...me.user });
@@ -66,7 +86,13 @@ export default function Login() {
 				className="container position-relative"
 				style={{ zIndex: 1, maxWidth: "450px" }}
 			>
-				<AuthForm isLogin={isLogin} onSubmit={handleSubmit} onToggle={() => setIsLogin(!isLogin)} />
+				<AuthForm
+					isLogin={isLogin}
+					onSubmit={handleSubmit}
+					onToggle={() => setIsLogin(!isLogin)}
+					errors={errors}
+					onFieldChange={(name) => clear(name)}
+				/>
 			</motion.div>
 		</div>
 	);

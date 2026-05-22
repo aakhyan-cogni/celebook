@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams, useLocation } from "react-router";
+import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { fadeInUp, TOTAL_STEPS, TIER_IMAGE_LIMITS } from "./constants";
 import { useEventFormData } from "./useEventFormData";
@@ -9,6 +10,8 @@ import { useSaveEvent } from "./useSaveEvent";
 import Step1Basics from "./Step1Basics";
 import Step2Schedule from "./Step2Schedule";
 import Step3Pricing from "./Step3Pricing";
+import { eventStep1Schema, eventStep2Schema, eventStep3Schema } from "../../lib/validation/schemas";
+import { useFormErrors, type FieldErrors } from "../../lib/validation/useFormErrors";
 
 const EventCreationForm = () => {
 	const navigate = useNavigate();
@@ -16,7 +19,6 @@ const EventCreationForm = () => {
 	const [searchParams] = useSearchParams();
 	const accessToken = useAuthStore((s) => s.accessToken);
 	const userTier = useAuthStore((s) => s.user?.tier) ?? "FREE";
-	const isFreeTier = userTier === "FREE";
 	const imageLimit = TIER_IMAGE_LIMITS[userTier] ?? 1;
 
 	const editId = searchParams.get("edit");
@@ -39,14 +41,59 @@ const EventCreationForm = () => {
 		uploadImages: images.uploadImages, navigate,
 	});
 
-	const nextStep = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setStep((p) => Math.min(p + 1, TOTAL_STEPS)); };
-	const prevStep = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); setStep((p) => Math.max(p - 1, 1)); };
+	const step1Errors = useFormErrors(eventStep1Schema);
+	const step2Errors = useFormErrors(eventStep2Schema);
+	const step3Errors = useFormErrors(eventStep3Schema);
 
-	const isStepValid = () => {
-		if (step === 1) return formData.title.trim() !== "" && formData.description.trim() !== "";
-		if (step === 2) return formData.date !== "" && formData.location.trim() !== "";
-		if (step === 3) return (isFree || Number(formData.price) > 0) && Number(formData.capacity) > 0;
-		return true;
+	const stepPayloads = useMemo(() => ({
+		1: {
+			title: formData.title,
+			category: formData.category,
+			description: formData.description,
+			imagesCount: images.totalImageCount,
+		},
+		2: { date: formData.date, time: formData.time, location: formData.location },
+		3: { price: isFree ? 0 : formData.price, capacity: formData.capacity },
+	}), [formData, isFree, images.totalImageCount]);
+
+	const validateStep = (s: number): { ok: boolean; errors: FieldErrors } => {
+		if (s === 1) {
+			const r = step1Errors.validate(stepPayloads[1]);
+			return { ok: r.ok, errors: r.ok ? {} : r.errors };
+		}
+		if (s === 2) {
+			const r = step2Errors.validate(stepPayloads[2]);
+			return { ok: r.ok, errors: r.ok ? {} : r.errors };
+		}
+		if (s === 3) {
+			// In free-tier mode price is auto-zero; in paid mode require >=1.
+			const payload = { ...stepPayloads[3], price: isFree ? 0 : Math.max(1, formData.price) };
+			// Adjust min price for paid events.
+			if (!isFree && (!formData.price || formData.price < 1)) {
+				step3Errors.setError("price", "Ticket price must be at least 1");
+				return { ok: false, errors: { price: "Ticket price must be at least 1" } };
+			}
+			const r = step3Errors.validate(payload);
+			return { ok: r.ok, errors: r.ok ? {} : r.errors };
+		}
+		return { ok: true, errors: {} };
+	};
+
+	const nextStep = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const { ok } = validateStep(step);
+		if (!ok) {
+			toast.error("Please fix the highlighted fields");
+			return;
+		}
+		setStep((p) => Math.min(p + 1, TOTAL_STEPS));
+	};
+
+	const prevStep = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setStep((p) => Math.max(p - 1, 1));
 	};
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -56,6 +103,31 @@ const EventCreationForm = () => {
 			...prev,
 			[name]: type === "checkbox" ? checked : type === "number" ? parseFloat(value) || 0 : value,
 		}));
+		if (step === 1) step1Errors.clear(name);
+		else if (step === 2) step2Errors.clear(name);
+		else if (step === 3) step3Errors.clear(name);
+	};
+
+	const onPublishGuarded = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const r1 = step1Errors.validate(stepPayloads[1]);
+		const r2 = step2Errors.validate(stepPayloads[2]);
+		const r3 = validateStep(3);
+		if (!r1.ok) { setStep(1); toast.error("Please fix Step 1 errors"); return; }
+		if (!r2.ok) { setStep(2); toast.error("Please fix Step 2 errors"); return; }
+		if (!r3.ok) { setStep(3); toast.error("Please fix Step 3 errors"); return; }
+		handlePublish(e);
+	};
+
+	const onSaveDraftGuarded = (e: React.MouseEvent) => {
+		// Drafts require only a non-empty title; everything else is optional.
+		if (!formData.title.trim()) {
+			step1Errors.setError("title", "Title is required to save a draft");
+			setStep(1);
+			toast.error("Add a title before saving a draft");
+			return;
+		}
+		handleSaveDraft(e);
 	};
 
 	const imageProps = {
@@ -108,10 +180,10 @@ const EventCreationForm = () => {
 					</div>
 
 					<motion.div initial="hidden" animate="visible" variants={fadeInUp} className="card border-0 shadow-lg p-4 p-md-5 backdrop-blur rounded-4">
-						<form onSubmit={handlePublish}>
+						<form onSubmit={onPublishGuarded} noValidate>
 							<AnimatePresence>
-								<Step1Basics visible={step === 1} formData={formData} onChange={handleChange} imageProps={imageProps} />
-								<Step2Schedule visible={step === 2} formData={formData} todayStr={todayStr} onChange={handleChange} />
+								<Step1Basics visible={step === 1} formData={formData} onChange={handleChange} imageProps={imageProps} errors={step1Errors.errors} />
+								<Step2Schedule visible={step === 2} formData={formData} todayStr={todayStr} onChange={handleChange} errors={step2Errors.errors} />
 								<Step3Pricing
 									visible={step === 3}
 									formData={formData}
@@ -119,6 +191,7 @@ const EventCreationForm = () => {
 									setIsFree={setIsFree}
 									setFormData={setFormData}
 									onChange={handleChange}
+									errors={step3Errors.errors}
 								/>
 							</AnimatePresence>
 
@@ -127,16 +200,16 @@ const EventCreationForm = () => {
 									← Back
 								</button>
 								<div className="d-flex gap-2">
-									<button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={handleSaveDraft} disabled={submitting || images.uploading || !isStepValid()}>
+									<button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={onSaveDraftGuarded} disabled={submitting || images.uploading}>
 										{submitting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
 										Save Draft
 									</button>
 									{step < TOTAL_STEPS ? (
-										<motion.button whileTap={isStepValid() ? { scale: 0.95 } : {}} type="button" className="btn btn-primary px-5 rounded-pill shadow fw-bold" onClick={nextStep} disabled={!isStepValid()}>
+										<motion.button whileTap={{ scale: 0.95 }} type="button" className="btn btn-primary px-5 rounded-pill shadow fw-bold" onClick={nextStep}>
 											Continue
 										</motion.button>
 									) : (
-										<motion.button whileTap={isStepValid() ? { scale: 0.95 } : {}} type="submit" className="btn btn-success px-5 rounded-pill shadow fw-bold" disabled={!isStepValid() || submitting || images.uploading}>
+										<motion.button whileTap={{ scale: 0.95 }} type="submit" className="btn btn-success px-5 rounded-pill shadow fw-bold" disabled={submitting || images.uploading}>
 											{submitting || images.uploading
 												? <><span className="spinner-border spinner-border-sm me-2" role="status" />{images.uploading ? "Uploading..." : "Publishing..."}</>
 												: "Publish Event"

@@ -1,5 +1,9 @@
 import React, { useEffect, useReducer, useState } from "react";
+import toast from "react-hot-toast";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { orgInfoSchema } from "../../../lib/validation/schemas";
+import { useFormErrors } from "../../../lib/validation/useFormErrors";
+import FieldError from "../../../lib/validation/FieldError";
 
 interface OrganizationalInfoProps {
 	registerSave: (callback: () => void) => void;
@@ -19,10 +23,22 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 	};
 
 	const [state, dispatch] = useReducer(reducer, user);
+	const { errors, validate, clear } = useFormErrors(orgInfoSchema);
 
 	useEffect(() => {
 		registerSave(() => {
 			if (!isUpdated) return;
+			const payload = {
+				organizationName: state.orgName ?? "",
+				designation: state.designation ?? "",
+				companyWebsite: state.companyWebsite ?? "",
+				bio: state.bio ?? "",
+			};
+			const result = validate(payload);
+			if (!result.ok) {
+				toast.error("Please fix the highlighted fields");
+				return;
+			}
 			syncUser({
 				orgName: state.orgName,
 				designation: state.designation,
@@ -31,7 +47,7 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 			});
 			setUpdate(false);
 		});
-	}, [state]);
+	}, [state, isUpdated, validate, syncUser, registerSave]);
 
 	return (
 		<div className="container-fluid h-auto d-flex flex-column personal-wrapper">
@@ -50,13 +66,16 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("organizationName");
 									dispatch({ type: "orgName", value: e.target.value });
 								}}
 								value={state.orgName || ""}
 								type="text"
-								className="form-control"
+								className={`form-control${errors.organizationName ? " is-invalid" : ""}`}
 								placeholder="Organization name"
+								aria-invalid={!!errors.organizationName}
 							/>
+							<FieldError message={errors.organizationName} />
 						</div>
 
 						<div className="col-12 col-lg-6">
@@ -64,13 +83,16 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("designation");
 									dispatch({ type: "designation", value: e.target.value });
 								}}
 								value={state.designation || ""}
 								type="text"
-								className="form-control"
+								className={`form-control${errors.designation ? " is-invalid" : ""}`}
 								placeholder="Role"
+								aria-invalid={!!errors.designation}
 							/>
+							<FieldError message={errors.designation} />
 						</div>
 
 						<div className="col-12 col-lg-6">
@@ -78,13 +100,16 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 							<input
 								onChange={(e) => {
 									setUpdate(true);
+									clear("companyWebsite");
 									dispatch({ type: "companyWebsite", value: e.target.value });
 								}}
 								value={state.companyWebsite || ""}
 								type="url"
-								className="form-control"
-								placeholder="Company website"
+								className={`form-control${errors.companyWebsite ? " is-invalid" : ""}`}
+								placeholder="https://example.com"
+								aria-invalid={!!errors.companyWebsite}
 							/>
+							<FieldError message={errors.companyWebsite} />
 						</div>
 
 						<div className="col-12 col-lg-6">
@@ -93,12 +118,16 @@ const OrganizationalInfo: React.FC<OrganizationalInfoProps> = ({ registerSave })
 								rows={3}
 								onChange={(e) => {
 									setUpdate(true);
+									clear("bio");
 									dispatch({ type: "bio", value: e.target.value });
 								}}
 								value={state.bio || ""}
-								className="form-control"
+								className={`form-control${errors.bio ? " is-invalid" : ""}`}
 								placeholder="Bio"
+								aria-invalid={!!errors.bio}
 							/>
+							<FieldError message={errors.bio} />
+							<div className="form-text small text-end">{(state.bio || "").length}/1000</div>
 						</div>
 					</div>
 				</form>

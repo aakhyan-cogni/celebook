@@ -12,7 +12,8 @@
 		"dev": "concurrently \"npm run web\" \"npm run server\"",
 		"web": "npm run dev --prefix web",
 		"server": "npm run dev --prefix server",
-		"db:up": "npm run db:up --prefix server"
+		"db:up": "npm run db:up --prefix server",
+		"install": "concurrently \"npm i --prefix web\" \"npm i --prefix server\""
 	},
 	"devDependencies": {
 		"concurrently": "^9.2.1"

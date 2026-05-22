@@ -173,12 +173,25 @@ export default function FeedbackPage() {
 	}
 
 	const userRatedFields = FEEDBACK_RATING_FIELDS.filter((f) => f !== "overallRating");
-	const allRated = userRatedFields.every((f) => ratings[f] >= 0.5);
-	const canSubmit = allRated && wouldAttendAgain !== null && !submitting;
+	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
 	const onSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!id || !canSubmit) return;
+		if (!id) return;
+
+		const nextErrors: Record<string, string> = {};
+		for (const f of userRatedFields) {
+			if (!(ratings[f] >= 0.5)) nextErrors[f] = "Please rate this category";
+		}
+		if (wouldAttendAgain === null) nextErrors.wouldAttendAgain = "Please choose Yes or No";
+		if (areasOfImprovement.length > 1000) nextErrors.areasOfImprovement = "Must be 1000 characters or less";
+
+		if (Object.keys(nextErrors).length > 0) {
+			setFormErrors(nextErrors);
+			toast.error("Please complete all required fields");
+			return;
+		}
+		setFormErrors({});
 
 		setSubmitting(true);
 		try {
@@ -243,19 +256,27 @@ export default function FeedbackPage() {
 							{userRatedFields.map((field) => (
 								<div
 									key={field}
-									className="d-flex justify-content-between align-items-center py-3 border-bottom"
+									className="py-3 border-bottom"
 								>
-									<div>
-										<div className="fw-semibold text-body">{FEEDBACK_FIELD_LABELS[field]}</div>
-										<div className="text-body-secondary small">
-											{ratings[field] > 0 ? `${ratings[field]} / 5` : "Tap a star to rate"}
+									<div className="d-flex justify-content-between align-items-center">
+										<div>
+											<div className="fw-semibold text-body">{FEEDBACK_FIELD_LABELS[field]}</div>
+											<div className="text-body-secondary small">
+												{ratings[field] > 0 ? `${ratings[field]} / 5` : "Tap a star to rate"}
+											</div>
 										</div>
+										<StarRating
+											value={ratings[field]}
+											onChange={(v) => {
+												setRatings((prev) => ({ ...prev, [field]: v }));
+												if (formErrors[field]) setFormErrors((p) => { const { [field]: _, ...rest } = p; return rest; });
+											}}
+											size={28}
+										/>
 									</div>
-									<StarRating
-										value={ratings[field]}
-										onChange={(v) => setRatings((prev) => ({ ...prev, [field]: v }))}
-										size={28}
-									/>
+									{formErrors[field] && (
+										<div className="text-danger small mt-1" role="alert">{formErrors[field]}</div>
+									)}
 								</div>
 							))}
 
@@ -265,18 +286,21 @@ export default function FeedbackPage() {
 									<button
 										type="button"
 										className={`btn rounded-pill px-4 fw-bold ${wouldAttendAgain === true ? "btn-success" : "btn-outline-success"}`}
-										onClick={() => setWouldAttendAgain(true)}
+										onClick={() => { setWouldAttendAgain(true); setFormErrors((p) => { const { wouldAttendAgain: _, ...rest } = p; return rest; }); }}
 									>
 										Yes
 									</button>
 									<button
 										type="button"
 										className={`btn rounded-pill px-4 fw-bold ${wouldAttendAgain === false ? "btn-danger" : "btn-outline-danger"}`}
-										onClick={() => setWouldAttendAgain(false)}
+										onClick={() => { setWouldAttendAgain(false); setFormErrors((p) => { const { wouldAttendAgain: _, ...rest } = p; return rest; }); }}
 									>
 										No
 									</button>
 								</div>
+								{formErrors.wouldAttendAgain && (
+									<div className="text-danger small mt-2" role="alert">{formErrors.wouldAttendAgain}</div>
+								)}
 							</div>
 
 							<div className="py-3">
@@ -285,13 +309,16 @@ export default function FeedbackPage() {
 								</label>
 								<textarea
 									id="areasOfImprovement"
-									className="form-control rounded-3"
+									className={`form-control rounded-3${formErrors.areasOfImprovement ? " is-invalid" : ""}`}
 									rows={4}
 									maxLength={1000}
 									placeholder="What could have been better?"
 									value={areasOfImprovement}
-									onChange={(e) => setAreasOfImprovement(e.target.value)}
+									onChange={(e) => { setAreasOfImprovement(e.target.value); if (formErrors.areasOfImprovement) setFormErrors((p) => { const { areasOfImprovement: _, ...rest } = p; return rest; }); }}
 								/>
+								{formErrors.areasOfImprovement && (
+									<div className="invalid-feedback d-block">{formErrors.areasOfImprovement}</div>
+								)}
 								<div className="text-end small text-body-secondary mt-1">
 									{areasOfImprovement.length} / 1000
 								</div>
@@ -301,7 +328,7 @@ export default function FeedbackPage() {
 								<button
 									type="submit"
 									className="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
-									disabled={!canSubmit}
+									disabled={submitting}
 								>
 									{submitting ? (
 										<>

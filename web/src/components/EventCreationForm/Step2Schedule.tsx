@@ -1,14 +1,18 @@
 import { motion } from "framer-motion";
 import type { EventFormData } from "./constants";
+import FieldError from "../../lib/validation/FieldError";
+import type { FieldErrors } from "../../lib/validation/useFormErrors";
 
 interface Step2Props {
 	visible: boolean;
 	formData: EventFormData;
 	todayStr: string;
 	onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+	errors?: FieldErrors;
 }
 
-export default function Step2Schedule({ visible, formData, todayStr, onChange }: Step2Props) {
+export default function Step2Schedule({ visible, formData, todayStr, onChange, errors = {} }: Step2Props) {
+	const cls = (name: string) => `form-control form-control-lg rounded-3 shadow-sm${errors[name] ? " is-invalid" : ""}`;
 	return (
 		<motion.div
 			key="step2"
@@ -27,8 +31,10 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 						value={formData.date}
 						onChange={onChange}
 						min={todayStr}
-						className="form-control form-control-lg rounded-3 shadow-sm"
+						className={cls("date")}
+						aria-invalid={!!errors.date}
 					/>
+					<FieldError message={errors.date} />
 				</div>
 				<div className="col-md-4">
 					<label className="form-label fw-semibold">Start Time</label>
@@ -37,8 +43,10 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 						name="time"
 						value={formData.time}
 						onChange={onChange}
-						className="form-control form-control-lg rounded-3 shadow-sm"
+						className={cls("time")}
+						aria-invalid={!!errors.time}
 					/>
+					<FieldError message={errors.time} />
 				</div>
 				<div className="col-md-4">
 					<label className="form-label fw-semibold">Location</label>
@@ -47,12 +55,13 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange }:
 						name="location"
 						value={formData.location}
 						onChange={onChange}
-						className="form-control form-control-lg rounded-3 shadow-sm"
+						className={cls("location")}
 						placeholder="Venue"
+						aria-invalid={!!errors.location}
 					/>
+					<FieldError message={errors.location} />
 				</div>
 			</div>
-			
 		</motion.div>
 	);
 }

@@ -5,6 +5,9 @@ import Link from "@tiptap/extension-link";
 import toast from "react-hot-toast";
 import { Modal } from "react-bootstrap";
 import { fetchTerms, updateTerms } from "../../api/terms.api";
+import { termsSchema } from "../../lib/validation/schemas";
+import { useFormErrors } from "../../lib/validation/useFormErrors";
+import FieldError from "../../lib/validation/FieldError";
 
 const TOOLBAR_BTN = "btn btn-sm btn-outline-secondary me-1 mb-1";
 
@@ -40,12 +43,34 @@ export default function Terms() {
 	}, [editor]);
 
 	const trimmedVersion = version.trim();
-	const isVersionInvalid = trimmedVersion === "" || trimmedVersion === originalVersion;
-	const hasContent = (editor?.getText() ?? "").trim().length > 0;
-	const canSave = !isVersionInvalid && hasContent && !saving;
+	const { errors, validate, setError, clear } = useFormErrors(termsSchema);
+
+	function runValidation(): boolean {
+		const editorText = (editor?.getText() ?? "").trim();
+		const result = validate({ version: trimmedVersion, content: editorText });
+		if (!result.ok) return false;
+		if (trimmedVersion === originalVersion) {
+			setError("version", `New version must differ from current (${originalVersion})`);
+			return false;
+		}
+		return true;
+	}
+
+	function openConfirm() {
+		if (!runValidation()) {
+			toast.error("Please fix the highlighted fields");
+			return;
+		}
+		setShowConfirm(true);
+	}
 
 	async function onConfirmSave() {
 		if (!editor) return;
+		if (!runValidation()) {
+			setShowConfirm(false);
+			toast.error("Please fix the highlighted fields");
+			return;
+		}
 		setSaving(true);
 		try {
 			const updated = await updateTerms({
@@ -85,8 +110,8 @@ export default function Terms() {
 				</div>
 				<button
 					className="btn btn-primary"
-					disabled={!canSave}
-					onClick={() => setShowConfirm(true)}
+					disabled={saving}
+					onClick={openConfirm}
 				>
 					Publish new version
 				</button>
@@ -99,22 +124,20 @@ export default function Terms() {
 				<input
 					id="terms-version"
 					type="text"
-					className={`form-control ${trimmedVersion && trimmedVersion === originalVersion ? "is-invalid" : ""}`}
+					className={`form-control${errors.version ? " is-invalid" : ""}`}
 					value={version}
-					onChange={(e) => setVersion(e.target.value)}
-					placeholder="e.g. v1.1"
+					onChange={(e) => { setVersion(e.target.value); clear("version"); }}
+					placeholder="e.g. 1.1"
+					aria-invalid={!!errors.version}
 				/>
-				{trimmedVersion && trimmedVersion === originalVersion && (
-					<div className="invalid-feedback d-block">
-						New version must differ from current ({originalVersion}).
-					</div>
-				)}
+				<FieldError message={errors.version} />
 				<div className="form-text">
 					Publishing forces every user to re-accept on their next mutating action.
 				</div>
 			</div>
 
 			<label className="form-label fw-semibold">Content</label>
+			<FieldError message={errors.content} />
 			<div className="border rounded-3 p-2 mb-2 bg-body-tertiary d-flex flex-wrap">
 				<button
 					type="button"

@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import type { EventFormData } from "./constants";
+import FieldError from "../../lib/validation/FieldError";
+import type { FieldErrors } from "../../lib/validation/useFormErrors";
 
 interface Step3Props {
 	visible: boolean;
@@ -8,6 +10,7 @@ interface Step3Props {
 	setIsFree: (v: boolean) => void;
 	setFormData: React.Dispatch<React.SetStateAction<EventFormData>>;
 	onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+	errors?: FieldErrors;
 }
 
 export default function Step3Pricing({
@@ -17,6 +20,7 @@ export default function Step3Pricing({
 	setIsFree,
 	setFormData,
 	onChange,
+	errors = {},
 }: Step3Props) {
 	return (
 		<motion.div
@@ -28,7 +32,6 @@ export default function Step3Pricing({
 		>
 			<h4 className="fw-bold mb-4">Step 3: Ticketing, Visibility &amp; Team Settings</h4>
 
-			{/* ── Ticketing ── */}
 			<div className="mb-4">
 				<label className="form-label fw-semibold d-block">Is this a free event?</label>
 				<div className="btn-group w-100 shadow-sm" role="group">
@@ -63,7 +66,7 @@ export default function Step3Pricing({
 							className="col-md-6 mb-3 overflow-hidden"
 						>
 							<label className="form-label fw-semibold" htmlFor="price">Ticket Price (INR)</label>
-							<div className="input-group">
+							<div className={`input-group${errors.price ? " has-validation" : ""}`}>
 								<span className="input-group-text border-end-0">₹</span>
 								<input
 									type="number"
@@ -76,10 +79,12 @@ export default function Step3Pricing({
 									onKeyDown={(e) => {
 										if (e.key === "-" || e.key === "+" || e.key === "e") e.preventDefault();
 									}}
-									className="form-control form-control-lg rounded-end-3 border-start-0 shadow-sm"
+									className={`form-control form-control-lg rounded-end-3 border-start-0 shadow-sm${errors.price ? " is-invalid" : ""}`}
 									placeholder="0"
+									aria-invalid={!!errors.price}
 								/>
 							</div>
+							<FieldError message={errors.price} />
 						</motion.div>
 					)}
 				</AnimatePresence>
@@ -95,15 +100,16 @@ export default function Step3Pricing({
 						onKeyDown={(e) => {
 							if (e.key === "-" || e.key === "+" || e.key === "e") e.preventDefault();
 						}}
-						className="form-control form-control-lg rounded-3 shadow-sm"
+						className={`form-control form-control-lg rounded-3 shadow-sm${errors.capacity ? " is-invalid" : ""}`}
 						placeholder="e.g. 500"
+						aria-invalid={!!errors.capacity}
 					/>
+					<FieldError message={errors.capacity} />
 				</div>
 			</div>
 
 			<hr className="opacity-10 my-4" />
 
-			{/* ── Visibility ── */}
 			<div className="mb-4">
 				<label className="form-label fw-semibold">Visibility</label>
 				<select

@@ -38,11 +38,17 @@ export default function CancelEventModal({
 						<div className="mb-2">
 							<label className="form-label fw-semibold small">Reason (optional)</label>
 							<textarea
-								className="form-control rounded-3" rows={3}
+								className={`form-control rounded-3${reason.length > 500 ? " is-invalid" : ""}`} rows={3}
 								placeholder="e.g. Venue unavailable, rescheduled..."
 								value={reason}
 								onChange={(e) => onReasonChange(e.target.value)}
+								maxLength={500}
+								aria-invalid={reason.length > 500}
 							/>
+							{reason.length > 500 && (
+								<div className="invalid-feedback d-block">Reason must be 500 characters or less.</div>
+							)}
+							<div className="text-end small text-body-secondary mt-1">{reason.length}/500</div>
 						</div>
 					</div>
 					<div className="modal-footer border-0 pt-0">

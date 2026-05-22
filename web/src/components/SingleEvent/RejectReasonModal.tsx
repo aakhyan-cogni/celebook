@@ -1,3 +1,8 @@
+import { useState } from "react";
+import { rejectReasonSchema } from "../../lib/validation/schemas";
+import { useFormErrors } from "../../lib/validation/useFormErrors";
+import FieldError from "../../lib/validation/FieldError";
+
 interface RejectReasonModalProps {
 	value: string;
 	adminActing: boolean;
@@ -13,6 +18,16 @@ export default function RejectReasonModal({
 	onClose,
 	onConfirm,
 }: RejectReasonModalProps) {
+	const { errors, validate, clear } = useFormErrors(rejectReasonSchema);
+	const [touched, setTouched] = useState(false);
+
+	const handleConfirm = () => {
+		setTouched(true);
+		const result = validate({ reason: value });
+		if (!result.ok) return;
+		onConfirm();
+	};
+
 	return (
 		<div
 			className="modal d-block"
@@ -30,13 +45,17 @@ export default function RejectReasonModal({
 							Provide a reason so the organiser knows what to fix before resubmitting.
 						</p>
 						<textarea
-							className="form-control rounded-3"
+							className={`form-control rounded-3${touched && errors.reason ? " is-invalid" : ""}`}
 							rows={3}
 							placeholder="e.g. Missing venue details, inappropriate content..."
 							value={value}
-							onChange={(e) => onChange(e.target.value)}
+							onChange={(e) => { onChange(e.target.value); if (touched) clear("reason"); }}
 							autoFocus
+							maxLength={500}
+							aria-invalid={touched && !!errors.reason}
 						/>
+						<FieldError message={touched ? errors.reason : undefined} />
+						<div className="text-end small text-body-secondary mt-1">{value.length}/500</div>
 					</div>
 					<div className="modal-footer border-0 pt-0">
 						<button
@@ -47,8 +66,8 @@ export default function RejectReasonModal({
 						</button>
 						<button
 							className="btn btn-danger rounded-pill px-4"
-							onClick={onConfirm}
-							disabled={adminActing || !value.trim()}
+							onClick={handleConfirm}
+							disabled={adminActing}
 						>
 							{adminActing ? (
 								<span className="spinner-border spinner-border-sm me-2" role="status" />

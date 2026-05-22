@@ -101,7 +101,7 @@ export default function Navbar() {
 								rootClose
 								overlay={
 									<Popover id="user-popover" className="shadow border-0">
-										<Popover.Header as="h3" className="text-white border-0">
+										<Popover.Header as="h3" className="text-white border-0 bg-info">
 											Hi, {user!.name.split(" ")[0]}!
 										</Popover.Header>
 										<Popover.Body className="p-0">
