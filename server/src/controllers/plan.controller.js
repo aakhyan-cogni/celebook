@@ -1,4 +1,5 @@
 import { UserModel } from "../models/user.model.js";
+import { generateAccessToken } from "../lib/jwt.js";
 
 const SYSTEM_PRICING_PLANS = {
 	Basic: {
@@ -56,7 +57,6 @@ const REVERSE_TIER_MAPPING = {
 
 export const getSubscriptionPlans = async (req, res) => {
 	try {
-		// ✅ Fixed: JWT payload uses `id`, not `_id`
 		const userId = req.user?.id || req.user?.userId;
 		const user = await UserModel.findById(userId);
 
@@ -98,7 +98,6 @@ export const upgradeUserTier = async (req, res) => {
 
 		const targetDbTier = TIER_MAPPING[planTitle];
 
-		// ✅ Fixed: JWT payload uses `id`, not `_id`
 		const userId = req.user?.id || req.user?.userId;
 		const updatedUser = await UserModel.findByIdAndUpdate(
 			userId,
@@ -113,12 +112,20 @@ export const upgradeUserTier = async (req, res) => {
 			});
 		}
 
+		const newAccessToken = generateAccessToken({
+			userId: updatedUser._id.toString(),
+			email:  updatedUser.email,
+			role:   updatedUser.role  || "USER",
+			tier:   updatedUser.tier  || "FREE",
+		});
+
 		return res.status(200).json({
 			success: true,
 			message: `Account upgraded successfully to the ${planTitle} tier!`,
 			data: {
-				tier: updatedUser.tier,
-				tierTitle: REVERSE_TIER_MAPPING[updatedUser.tier],
+				tier:         updatedUser.tier,
+				tierTitle:    REVERSE_TIER_MAPPING[updatedUser.tier],
+				accessToken:  newAccessToken,
 			},
 		});
 	} catch (error) {

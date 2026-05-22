@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import PlanCard from "./PlanCard";
 import { apiFetch } from "../../../lib/api.ts";
 import { Loader2 } from "lucide-react";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 interface PlanMetadata {
 	title: string;
@@ -16,6 +17,7 @@ export default function SubscriptionPlans() {
 	const [currentTierTitle, setCurrentTierTitle] = useState<string>("Basic");
 	const [loading, setLoading]         = useState<boolean>(true);
 	const [error, setError]             = useState<string | null>(null);
+	const updateUser = useAuthStore((s) => s.updateUser);
 
 	const fetchPlanDetails = async () => {
 		try {
@@ -24,8 +26,9 @@ export default function SubscriptionPlans() {
 			const res = await apiFetch("/plans", { method: "GET" });
 			if (res.success) {
 				setPlans(res.plans);
-				setCurrentTier(res.currentTier);           // "FREE" | "PRO" | "ULTIMATE"
-				setCurrentTierTitle(res.currentTierTitle); // "Basic" | "Pro" | "Ultimate"
+				setCurrentTier(res.currentTier);           
+				setCurrentTierTitle(res.currentTierTitle);
+				updateUser({ tier: res.currentTier as "FREE" | "PRO" | "ULTIMATE" });
 			} else {
 				setError(res.message || "Failed to load subscription details.");
 			}
@@ -40,6 +43,7 @@ export default function SubscriptionPlans() {
 
 	const handleUpgradeSuccess = (newTier: string) => {
 		setCurrentTier(newTier);
+		updateUser({ tier: newTier as "FREE" | "PRO" | "ULTIMATE" });
 		fetchPlanDetails();
 	};
 

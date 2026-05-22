@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Ticket } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { BASE_URL, getImageUrl, EVENT_FALLBACK_IMG } from "../../lib/api";
@@ -353,21 +353,150 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		);
 	};
 
+	// ── Image slider state ──────────────────────────────────────────────────
+	const sliderImages: string[] =
+		event.imgUrls && event.imgUrls.length > 0
+			? event.imgUrls.map((u: string) => getImageUrl(u))
+			: [EVENT_FALLBACK_IMG];
+	const hasMultipleImages = sliderImages.length > 1;
+	const [sliderIdx, setSliderIdx] = useState(0);
+	const sliderDragRef = useRef<number | null>(null);
+
+	const sliderPrev = () => setSliderIdx((i) => Math.max(0, i - 1));
+	const sliderNext = () => setSliderIdx((i) => Math.min(sliderImages.length - 1, i + 1));
+
+	const onSliderPointerDown = (clientX: number) => { sliderDragRef.current = clientX; };
+	const onSliderPointerUp   = (clientX: number) => {
+		if (sliderDragRef.current === null) return;
+		const delta = sliderDragRef.current - clientX;
+		if (delta > 40)  sliderNext();
+		if (delta < -40) sliderPrev();
+		sliderDragRef.current = null;
+	};
+
 	return (
 		<div className="row g-4 align-items-start">
 			<div className="col-md-5 col-lg-4">
-				<motion.img
+				{/* ── Image slider ── */}
+				<motion.div
 					layoutId={`${event._id || event.id}`}
-					src={event.imgUrls?.[0] ? getImageUrl(event.imgUrls[0]) : EVENT_FALLBACK_IMG}
-					className="img-fluid rounded-4 shadow-sm w-100 object-fit-cover"
+					className="position-relative rounded-4 overflow-hidden shadow-sm"
 					style={{
-						maxHeight: "320px",
-						minHeight: "280px",
+						width: "100%",
+						maxHeight: "340px",
+						background: "var(--bs-secondary-bg)",
 						opacity: isPastEvent || event.isCancelled ? 0.6 : 1,
 						filter: isPastEvent || event.isCancelled ? "grayscale(1)" : "none",
+						userSelect: "none",
 					}}
-					alt={event.title}
-				/>
+					onMouseDown={(e) => onSliderPointerDown(e.clientX)}
+					onMouseUp={(e)   => onSliderPointerUp(e.clientX)}
+					onMouseLeave={()  => { sliderDragRef.current = null; }}
+					onTouchStart={(e) => onSliderPointerDown(e.touches[0].clientX)}
+					onTouchEnd={(e)   => onSliderPointerUp(e.changedTouches[0].clientX)}
+				>
+					{/* Slide strip */}
+					<div
+						style={{
+							display: "flex",
+							width: `${sliderImages.length * 100}%`,
+							transform: `translateX(-${(sliderIdx * 100) / sliderImages.length}%)`,
+							transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
+						}}
+					>
+						{sliderImages.map((src, i) => (
+							<img
+								key={i}
+								src={src}
+								alt={`${event.title}-${i}`}
+								draggable={false}
+								style={{
+									width: `${100 / sliderImages.length}%`,
+									maxHeight: "340px",
+									objectFit: "contain",
+									flexShrink: 0,
+									pointerEvents: "none",
+									display: "block",
+								}}
+							/>
+						))}
+					</div>
+
+					{/* Prev / Next arrows */}
+					{hasMultipleImages && (
+						<>
+							<button
+								type="button"
+								className="btn btn-dark btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 rounded-circle p-0"
+								style={{ width: 32, height: 32, fontSize: 16, opacity: sliderIdx === 0 ? 0.3 : 0.8, zIndex: 4 }}
+								onClick={(e) => { e.stopPropagation(); sliderPrev(); }}
+								disabled={sliderIdx === 0}
+							>‹</button>
+							<button
+								type="button"
+								className="btn btn-dark btn-sm position-absolute top-50 end-0 translate-middle-y me-2 rounded-circle p-0"
+								style={{ width: 32, height: 32, fontSize: 16, opacity: sliderIdx === sliderImages.length - 1 ? 0.3 : 0.8, zIndex: 4 }}
+								onClick={(e) => { e.stopPropagation(); sliderNext(); }}
+								disabled={sliderIdx === sliderImages.length - 1}
+							>›</button>
+
+							{/* Dot indicators */}
+							<div
+								className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1"
+								style={{ zIndex: 4 }}
+							>
+								{sliderImages.map((_, i) => (
+									<span
+										key={i}
+										onClick={() => setSliderIdx(i)}
+										style={{
+											width: i === sliderIdx ? 18 : 7,
+											height: 7,
+											borderRadius: 4,
+											background: i === sliderIdx ? "#fff" : "rgba(255,255,255,0.5)",
+											transition: "all 0.25s",
+											cursor: "pointer",
+											display: "inline-block",
+										}}
+									/>
+								))}
+							</div>
+
+							{/* Counter */}
+							<span
+								className="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill"
+								style={{ fontSize: 11, zIndex: 4 }}
+							>
+								{sliderIdx + 1} / {sliderImages.length}
+							</span>
+						</>
+					)}
+				</motion.div>
+
+				{/* Thumbnail strip — shown below the main image when >1 image */}
+				{hasMultipleImages && (
+					<div
+						className="d-flex gap-2 mt-2 pb-1"
+						style={{ overflowX: "auto", scrollbarWidth: "thin" }}
+					>
+						{sliderImages.map((src, i) => (
+							<div
+								key={i}
+								onClick={() => setSliderIdx(i)}
+								className="flex-shrink-0 rounded-3 overflow-hidden"
+								style={{
+									width: 56, height: 56, cursor: "pointer",
+									outline: i === sliderIdx ? "2.5px solid var(--bs-primary)" : "2px solid transparent",
+									transition: "outline 0.15s",
+								}}
+							>
+								<img src={src} alt={`thumb-${i}`} draggable={false}
+									style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+							</div>
+						))}
+					</div>
+				)}
+
 				{isAdmin && !isOrganizer && event.organizer && (
 					<OrganizerDetailsPanel organizer={event.organizer} eventStatus={eventStatus} />
 				)}

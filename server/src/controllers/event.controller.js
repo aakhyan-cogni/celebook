@@ -1,7 +1,7 @@
 import * as EventService from "../services/event.service.js";
 import { notifyAdminsEventSubmitted } from "../services/notification.service.js";
 import { fromDoc } from "../models/util.js";
-import { EventModel, EventStatModel } from "../models/index.js";
+import { EventModel, EventStatModel, UserModel } from "../models/index.js";
 import fs from "fs";
 import path from "path";
 
@@ -199,10 +199,17 @@ export const uploadEventImages = async (req, res) => {
 			return res.status(403).json({ message: "Only the organizer or admin can upload images" });
 		}
 
-		const userTier = req.user.tier ?? "FREE";
+		// Always fetch tier from DB — the JWT may not carry tier if it was
+		// issued before jwt.js was updated, or if the user upgraded their plan
+		// without re-logging in. DB is the single source of truth for tier.
+		const dbUser = await UserModel.findById(req.user.userId).select("tier").lean();
+		const userTier = dbUser?.tier ?? req.user.tier ?? "FREE";
+
 		const limit = TIER_IMAGE_LIMITS[userTier] ?? 1;
 		const currentCount = event.imgUrls?.length ?? 0;
 		if (currentCount + req.files.length > limit) {
+			// Clean up files multer already wrote before returning the error
+			req.files.forEach((f) => { try { fs.unlinkSync(f.path); } catch (_) {} });
 			return res.status(403).json({
 				message: `Your ${userTier} plan allows at most ${limit} image(s). You already have ${currentCount}.`,
 			});
