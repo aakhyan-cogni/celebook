@@ -1,5 +1,4 @@
 import { UserModel } from "../models/user.model.js";
-import { generateAccessToken } from "../lib/jwt.js";
 
 const SYSTEM_PRICING_PLANS = {
 	Basic: {
@@ -22,7 +21,7 @@ const SYSTEM_PRICING_PLANS = {
 		features: [
 			"Up to 10 active events",
 			"Everything in Basic",
-			"Image gallery (up to 10 images per event)",
+			"Image gallery (up to 5 images per event)",
 			"Export attendee list to Excel (coming soon)",
 			"Team events with flexible capacity modes",
 		],
@@ -112,20 +111,12 @@ export const upgradeUserTier = async (req, res) => {
 			});
 		}
 
-		const newAccessToken = generateAccessToken({
-			userId: updatedUser._id.toString(),
-			email:  updatedUser.email,
-			role:   updatedUser.role  || "USER",
-			tier:   updatedUser.tier  || "FREE",
-		});
-
 		return res.status(200).json({
 			success: true,
 			message: `Account upgraded successfully to the ${planTitle} tier!`,
 			data: {
-				tier:         updatedUser.tier,
-				tierTitle:    REVERSE_TIER_MAPPING[updatedUser.tier],
-				accessToken:  newAccessToken,
+				tier: updatedUser.tier,
+				tierTitle: REVERSE_TIER_MAPPING[updatedUser.tier],
 			},
 		});
 	} catch (error) {

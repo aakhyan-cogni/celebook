@@ -1,7 +1,6 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
-
 interface EventCardProps {
 	event: any;
 	onClick: (event: any) => void;
@@ -16,9 +15,10 @@ const fadeInUp = {
 export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	const [timeLeft, setTimeLeft] = useState("");
 	const eventTime = new Date(event.date).getTime();
-	const isPast = eventTime < Date.now();
+	const isDraft = event.status === "DRAFT";
+	const isPast = !isDraft && eventTime < Date.now();
 
-	// Image slider state
+	// Image slider
 	const images: string[] =
 		event.imgUrls && event.imgUrls.length > 0
 			? event.imgUrls.map((u: string) => getImageUrl(u))
@@ -27,21 +27,14 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	const [activeIdx, setActiveIdx] = useState(0);
 	const dragStartX = useRef<number | null>(null);
 
-	const prevImg = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		setActiveIdx((i) => (i - 1 + images.length) % images.length);
-	};
-	const nextImg = (e: React.MouseEvent) => {
-		e.stopPropagation();
-		setActiveIdx((i) => (i + 1) % images.length);
-	};
-
-	const onPointerDown = (clientX: number) => { dragStartX.current = clientX; };
-	const onPointerUp = (clientX: number) => {
+	const prevImg = (e: React.MouseEvent) => { e.stopPropagation(); setActiveIdx((i) => Math.max(0, i - 1)); };
+	const nextImg = (e: React.MouseEvent) => { e.stopPropagation(); setActiveIdx((i) => Math.min(images.length - 1, i + 1)); };
+	const onPtrDown = (clientX: number) => { dragStartX.current = clientX; };
+	const onPtrUp   = (clientX: number) => {
 		if (dragStartX.current === null) return;
 		const delta = dragStartX.current - clientX;
-		if (delta > 40) setActiveIdx((i) => (i + 1) % images.length);
-		else if (delta < -40) setActiveIdx((i) => (i - 1 + images.length) % images.length);
+		if (delta > 40)  setActiveIdx((i) => Math.min(images.length - 1, i + 1));
+		if (delta < -40) setActiveIdx((i) => Math.max(0, i - 1));
 		dragStartX.current = null;
 	};
 
@@ -64,13 +57,20 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	}, [eventTime, isPast]);
 
 	const getStatusBadge = () => {
+		// Drafts show no date/time/live badge — only the Draft label shown separately
+		if (isDraft) return null;
+
 		const now = Date.now();
 		const diff = eventTime - now;
 
-		if (event.isCancelled)
+		if (event.isCancelled) {
 			return <span className="badge bg-danger px-3 py-2">Cancelled</span>;
-		if (isPast)
+		}
+
+		if (isPast) {
 			return <span className="badge bg-secondary-subtle text-secondary px-3 py-2">Past Event</span>;
+		}
+
 		if (diff < 1800000 && diff > -3600000) {
 			return (
 				<span className="badge bg-danger px-3 py-2 d-flex align-items-center gap-2 shadow-sm">
@@ -79,44 +79,49 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 				</span>
 			);
 		}
-		if (diff < 86400000)
-			return <span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Starts in {timeLeft || "24h"}</span>;
+
+		if (diff < 86400000) {
+			return (
+				<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Starts in {timeLeft || "24h"}</span>
+			);
+		}
 
 		return (
 			<span className="badge bg-primary px-3 py-2 shadow-sm">
-				{new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+				{new Date(event.date).toLocaleDateString("en-US", {
+					month: "short",
+					day: "numeric",
+				})}
 			</span>
 		);
 	};
 
 	return (
 		<motion.div
-			variants={fadeInUp}
-			initial="hidden"
-			animate="visible"
+			{...({ variants: fadeInUp, initial: "hidden", animate: "visible" } as any)}
 			onClick={() => onClick(event)}
-			className={`card h-100 border-0 shadow-sm overflow-hidden rounded-4 bg-body-tertiary ${isPast || event.isCancelled ? "opacity-60 grayscale" : ""}`}
+			className={`card h-100 border-0 shadow-sm overflow-hidden rounded-4 bg-body-tertiary ${!isDraft && (isPast || event.isCancelled) ? "opacity-60 grayscale" : ""}`}
 			style={{
 				transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
 				cursor: "pointer",
 				border: "1px solid var(--bs-border-color-translucent)",
 			}}
 		>
-			{/* ── Image area with slider ── */}
+			{/* Image slider area */}
 			<div
 				className="position-relative overflow-hidden"
-				style={{ width: "100%", maxHeight: "220px", background: "var(--bs-secondary-bg)" }}
-				onMouseDown={(e) => onPointerDown(e.clientX)}
-				onMouseUp={(e) => onPointerUp(e.clientX)}
-				onMouseLeave={() => { dragStartX.current = null; }}
-				onTouchStart={(e) => onPointerDown(e.touches[0].clientX)}
-				onTouchEnd={(e) => onPointerUp(e.changedTouches[0].clientX)}
+				style={{ aspectRatio: "16/9", width: "100%", background: "var(--bs-secondary-bg)", userSelect: "none" }}
+				onMouseDown={(e) => onPtrDown(e.clientX)}
+				onMouseUp={(e)   => onPtrUp(e.clientX)}
+				onMouseLeave={()  => { dragStartX.current = null; }}
+				onTouchStart={(e) => onPtrDown(e.touches[0].clientX)}
+				onTouchEnd={(e)   => onPtrUp(e.changedTouches[0].clientX)}
 			>
-				{/* Slides */}
+				{/* Slide strip */}
 				<div
-					className="d-flex h-100"
 					style={{
 						display: "flex",
+						height: "100%",
 						width: `${images.length * 100}%`,
 						transform: `translateX(-${(activeIdx * 100) / images.length}%)`,
 						transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
@@ -130,8 +135,8 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 							draggable={false}
 							style={{
 								width: `${100 / images.length}%`,
-								maxHeight: "220px",
-								objectFit: "contain",
+								height: "100%",
+								objectFit: "cover",
 								flexShrink: 0,
 								pointerEvents: "none",
 								display: "block",
@@ -140,40 +145,28 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 					))}
 				</div>
 
-				{/* Prev / Next buttons */}
+				{/* Prev / Next arrows */}
 				{hasMultiple && (
 					<>
-						<button
-							type="button"
-							onClick={prevImg}
+						<button type="button" onClick={prevImg}
 							className="btn btn-dark btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 rounded-circle p-0"
-							style={{ width: 28, height: 28, fontSize: 14, opacity: 0.75, zIndex: 4 }}
+							style={{ width: 28, height: 28, fontSize: 14, opacity: activeIdx === 0 ? 0.3 : 0.8, zIndex: 4 }}
+							disabled={activeIdx === 0}
 						>‹</button>
-						<button
-							type="button"
-							onClick={nextImg}
+						<button type="button" onClick={nextImg}
 							className="btn btn-dark btn-sm position-absolute top-50 end-0 translate-middle-y me-2 rounded-circle p-0"
-							style={{ width: 28, height: 28, fontSize: 14, opacity: 0.75, zIndex: 4 }}
+							style={{ width: 28, height: 28, fontSize: 14, opacity: activeIdx === images.length - 1 ? 0.3 : 0.8, zIndex: 4 }}
+							disabled={activeIdx === images.length - 1}
 						>›</button>
-
 						{/* Dot indicators */}
-						<div
-							className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1"
-							style={{ zIndex: 4 }}
-							onClick={(e) => e.stopPropagation()}
-						>
+						<div className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1" style={{ zIndex: 4 }}
+							onClick={(e) => e.stopPropagation()}>
 							{images.map((_, i) => (
-								<span
-									key={i}
-									onClick={(e) => { e.stopPropagation(); setActiveIdx(i); }}
+								<span key={i} onClick={(e) => { e.stopPropagation(); setActiveIdx(i); }}
 									style={{
-										width: i === activeIdx ? 16 : 6,
-										height: 6,
-										borderRadius: 3,
+										width: i === activeIdx ? 16 : 6, height: 6, borderRadius: 3,
 										background: i === activeIdx ? "#fff" : "rgba(255,255,255,0.5)",
-										transition: "all 0.25s",
-										cursor: "pointer",
-										display: "inline-block",
+										transition: "all 0.25s", cursor: "pointer", display: "inline-block",
 									}}
 								/>
 							))}
@@ -181,30 +174,31 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 					</>
 				)}
 
-				{/* Status badge bottom-left */}
-				<div className="position-absolute bottom-0 start-0 m-3" style={{ zIndex: 3 }}>
-					{getStatusBadge()}
-				</div>
-
-				{/* Category badge top-right */}
+				<div className="position-absolute bottom-0 start-0 m-3" style={{ zIndex: 3 }}>{getStatusBadge()}</div>
 				<div className="position-absolute top-0 end-0 m-3" style={{ zIndex: 3 }}>
 					<span className="badge bg-dark bg-opacity-75 text-white border border-white border-opacity-10 shadow-sm">
 						{event.category}
 					</span>
 				</div>
 
-				{/* Event status badge top-left */}
 				{!event.isCancelled && event.status && (eventStatus || event.status !== "APPROVED") && (
 					<div className="position-absolute top-0 start-0 m-3" style={{ zIndex: 3 }}>
-						{event.status === "PENDING"  && <span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Pending Review</span>}
-						{event.status === "REJECTED" && <span className="badge bg-danger px-3 py-2 shadow-sm">Rejected</span>}
-						{event.status === "DRAFT"    && <span className="badge bg-secondary px-3 py-2 shadow-sm">Draft</span>}
-						{event.status === "APPROVED" && <span className="badge bg-success px-3 py-2 shadow-sm">Approved</span>}
+						{event.status === "PENDING" && (
+							<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Pending Review</span>
+						)}
+						{event.status === "REJECTED" && (
+							<span className="badge bg-danger px-3 py-2 shadow-sm">Rejected</span>
+						)}
+						{event.status === "DRAFT" && (
+							<span className="badge bg-secondary px-3 py-2 shadow-sm">Draft</span>
+						)}
+						{event.status === "APPROVED" && (
+							<span className="badge bg-success px-3 py-2 shadow-sm">Approved</span>
+						)}
 					</div>
 				)}
 			</div>
 
-			{/* ── Card body ── */}
 			<div className="card-body p-4">
 				<div className="d-flex justify-content-between align-items-start mb-2">
 					<h5
@@ -215,6 +209,7 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 					</h5>
 					<span className="text-success fw-bold">{event.price === 0 ? "FREE" : `₹${event.price}`}</span>
 				</div>
+
 				<div className="d-flex align-items-center gap-2 mb-2">
 					<p className="text-body-secondary small mb-0">📍 {event.location}</p>
 				</div>
