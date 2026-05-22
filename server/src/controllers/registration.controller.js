@@ -1,4 +1,4 @@
-import { EventModel } from "../models/index.js";
+import { EventModel, RegistrationModel } from "../models/index.js";
 import * as RegistrationService from "../services/registration.service.js";
 
 export async function registerForEvent(req, res) {
@@ -228,6 +228,29 @@ export async function getMyRegistrations(req, res) {
 		return res.status(500).json({
 			success: false,
 			message: "Error fetching registrations",
+		});
+	}
+}
+
+export async function getMyBookingsHistory(req, res) {
+	try {
+		if (!req.user) {
+			return res.status(401).json({ message: "User not authenticated" });
+		}
+
+		const bookings = await RegistrationModel.find({ userId: req.user.userId })
+			.populate({ path: "eventId", select: "title date price category" })
+			.sort({ registeredAt: -1 })
+			.lean();
+
+		const filtered = bookings.filter((b) => b.eventId);
+
+		return res.json(filtered);
+	} catch (error) {
+		console.error("[getMyBookingsHistory] Error:", error);
+		return res.status(500).json({
+			success: false,
+			message: "Error fetching booking history",
 		});
 	}
 }

@@ -23,6 +23,7 @@ import Terms from "./pages/Terms.tsx";
 import Admin from "./pages/Admin.tsx";
 import UserProfilePage from "./pages/UserProfilePage.tsx";
 import FeedbackPage from "./pages/Feedback.tsx";
+import BookingHistoryPage from "./pages/BookingHistoryPage.tsx";
 
 createRoot(document.getElementById("root")!).render(<Root />);
 
@@ -61,6 +62,8 @@ function Root() {
 					<Route path="/events/:id/feedback" element={<FeedbackPage />} />
 
 					<Route path="/dashboard" element={<Dashboard />} />
+					<Route path="/dashboard/bookings" element={<BookingHistoryPage />} />
+					<Route path="/history/myBookings" element={<BookingHistoryPage />} />
 					<Route path="/create" element={<EventCreationForm />} />
 					<Route path="/pricing" element={<Pricing />} />
 					<Route path="/support" element={<SupportPage />} />
