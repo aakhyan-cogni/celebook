@@ -143,7 +143,17 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 				<div className="d-flex align-items-center gap-2 mb-2">
 					<p className="text-body-secondary small mb-0">📍 {event.location}</p>
 				</div>
-				<p className="card-text text-body-secondary mb-3 line-clamp-2 small">{event.description}</p>
+				<p
+					className="card-text text-body-secondary mb-3 small"
+					style={{
+						display: "-webkit-box",
+						WebkitLineClamp: 2,
+						WebkitBoxOrient: "vertical",
+						overflow: "hidden",
+					}}
+				>
+					{event.description}
+				</p>
 			</div>
 		</motion.div>
 	);
