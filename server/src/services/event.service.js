@@ -7,6 +7,7 @@ import {
 	RegistrationModel,
 	UserModel,
 } from "../models/index.js";
+import { eventSortPipeline } from "../lib/eventTime.js";
 
 const TIER_LIMITS = {
 	FREE: 2,
@@ -79,17 +80,9 @@ export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, pa
 	const [events, total] = await Promise.all([
 		EventModel.aggregate([
 			{ $match: filter },
-			{
-				$addFields: {
-					_isPast: { $lt: ["$date", new Date()] },
-					_dateVal: "$date",
-				},
-			},
-
-			{ $sort: { _isPast: 1, _dateVal: 1 } },
+			...eventSortPipeline(),
 			{ $skip: skip },
 			{ $limit: pageSize },
-			{ $unset: ["_isPast", "_dateVal"] },
 		]),
 		EventModel.countDocuments(filter),
 	]);
@@ -344,7 +337,6 @@ export const duplicateEvent = async (eventId, organizerId, isAdmin = false) => {
 export const getMyEvents = async (organizerId) => {
 	return EventModel.aggregate([
 		{ $match: { organizerId: new mongoose.Types.ObjectId(organizerId) } },
-		{ $sort: { createdAt: -1 } },
 		{
 			$lookup: {
 				from: RegistrationModel.collection.name,
@@ -355,5 +347,6 @@ export const getMyEvents = async (organizerId) => {
 		},
 		{ $addFields: { registrationCount: { $size: "$registrations" } } },
 		{ $project: { registrations: 0 } },
+		...eventSortPipeline(),
 	]).exec();
 };

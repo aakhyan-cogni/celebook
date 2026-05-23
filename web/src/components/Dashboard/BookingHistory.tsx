@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuthStore } from "../../store/useAuthStore";
 import { apiFetch } from "../../lib/api";
 import type { Booking } from "../../store";
-import { computeEventTimeState } from "../../lib/eventTime";
+import { computeEventTimeState, sortByEventTimeState } from "../../lib/eventTime";
 
 function formatDateTime(value: string | undefined | null): string {
 	if (!value) return "—";
@@ -66,7 +66,7 @@ export default function BookingHistory() {
 				if (cancelled) return;
 				const list: Booking[] = Array.isArray(res) ? res : (res?.data ?? []);
 				const valid = list.filter((b) => b && b.eventId && typeof b.eventId === "object");
-				setBookings(valid);
+				setBookings(sortByEventTimeState(valid, (b) => b.eventId as any));
 			} catch (err) {
 				if (cancelled) return;
 				console.error("Failed to load booking history:", err);

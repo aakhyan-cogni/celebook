@@ -1,6 +1,7 @@
 import { UserModel } from "../models/user.model.js";
 import { EventModel } from "../models/event.model.js";
 import { fromDoc } from "../models/util.js";
+import { eventSortPipeline } from "../lib/eventTime.js";
 
 export async function getPaginatedUsers(page, limit, role) {
 	const filter = role ? { role } : {};
@@ -30,13 +31,15 @@ export async function updateUserRole(userId, role) {
 export async function getPaginatedEvents(page, limit, status) {
 	const filter = status ? { status } : { status: { $ne: "DRAFT" } };
 
-	const docs = await EventModel.find(filter)
-		.skip((page - 1) * limit)
-		.limit(limit)
-		.sort({ updatedAt: -1 })
-		.lean();
-
-	const total = await EventModel.countDocuments(filter);
+	const [docs, total] = await Promise.all([
+		EventModel.aggregate([
+			{ $match: filter },
+			...eventSortPipeline(),
+			{ $skip: (page - 1) * limit },
+			{ $limit: limit },
+		]),
+		EventModel.countDocuments(filter),
+	]);
 
 	return {
 		events: docs.map(fromDoc),

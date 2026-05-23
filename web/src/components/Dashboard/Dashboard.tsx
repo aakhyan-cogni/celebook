@@ -4,6 +4,7 @@ import { EventCard } from "../EventCard";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/useAuthStore";
 import { apiFetch } from "../../lib/api";
+import { sortByEventTimeState, sortEventsByTimeState } from "../../lib/eventTime";
 
 interface DashboardProps {
 	viewEventsFn: () => void;
@@ -40,8 +41,10 @@ export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardPro
 				if (cancelled) return;
 				const events = Array.isArray(eventsRes) ? eventsRes : (eventsRes.events ?? []);
 				const bookings = bookingsRes?.data ?? bookingsRes ?? [];
-				setMyEvents(events.slice(0, OVERVIEW_LIMIT));
-				setMyBookings(bookings.slice(0, OVERVIEW_LIMIT));
+				const sortedEvents = sortEventsByTimeState(events);
+				const sortedBookings = sortByEventTimeState(bookings, (b: any) => b.eventId);
+				setMyEvents(sortedEvents.slice(0, OVERVIEW_LIMIT));
+				setMyBookings(sortedBookings.slice(0, OVERVIEW_LIMIT));
 			} catch (err) {
 				console.error("Failed to load dashboard overview:", err);
 			} finally {
