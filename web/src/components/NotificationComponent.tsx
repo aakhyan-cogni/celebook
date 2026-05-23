@@ -1,7 +1,9 @@
 import { MailOpen, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router";
 
 interface NotificationDetails {
 	id: string | number;
+	eventId?: string;
 	type: string;
 	text: string;
 	time: number;
@@ -15,6 +17,17 @@ interface Props {
 }
 
 const NotificationComponent: React.FC<Props> = ({ details, onMarkRead, deleteNotification }) => {
+	const navigate = useNavigate();
+
+	const handleClick = () => {
+		onMarkRead();
+		if (details.type === "EVENT_SUBMITTED") {
+			navigate("/admin");
+		} else {
+			navigate(`/events/${details.eventId}`);
+		}
+	};
+
 	const date = new Date(details.time)
 		.toLocaleString("en-GB", {
 			day: "2-digit",
@@ -28,7 +41,11 @@ const NotificationComponent: React.FC<Props> = ({ details, onMarkRead, deleteNot
 		.replace(",", "");
 
 	return (
-		<div className={`card mb-3 border-0 shadow-sm ${details.isRead ? "opacity-75" : ""}`}>
+		<div
+			className={`card mb-3 border-0 shadow-sm ${details.isRead ? "opacity-75" : ""}`}
+			onClick={handleClick}
+			style={{ cursor: "pointer" }}
+		>
 			<div className="card-body d-flex flex-column">
 				<div className="d-flex align-items-start flex-column">
 					<div className="d-flex justify-content-between w-100">

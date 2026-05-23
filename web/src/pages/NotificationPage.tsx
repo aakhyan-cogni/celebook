@@ -156,6 +156,7 @@ const NotificationPage: React.FC = () => {
 										key={note.id}
 										details={{
 											id: note.id,
+											eventId: note.data?.eventId as string | undefined,
 											type: note.type,
 											text: `${note.title} — ${note.message}`,
 											time: new Date(note.createdAt).getTime(),
