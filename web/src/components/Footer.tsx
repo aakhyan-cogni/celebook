@@ -28,7 +28,7 @@ export default function Footer() {
 								</Link>
 							</li>
 							<li className="mb-2">
-								<Link to="/create-event" className="text-muted text-decoration-none">
+								<Link to="/create" className="text-muted text-decoration-none">
 									Create Event
 								</Link>
 							</li>
@@ -107,7 +107,7 @@ export default function Footer() {
 				<div className="d-flex flex-column flex-md-row justify-content-between align-items-center small text-muted">
 					<div>&copy; {year} CeleBook EMS. All rights reserved.</div>
 					<div className="mt-2 mt-md-0">
-						Made with care in Hyderabad
+						Made with care in Cognizant
 					</div>
 				</div>
 			</div>
