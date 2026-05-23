@@ -23,9 +23,12 @@ export function useQRScanner(opts: { showScanner: boolean; eventId: string; onCl
 	useEffect(() => {
 		if (!showScanner) return;
 
-		let scanner: any;
+		let scanner: any = null;
+		let isComponentMounted = true;
 
 		import("html5-qrcode").then(({ Html5Qrcode }) => {
+			if (!isComponentMounted) return;
+
 			scanner = new Html5Qrcode("qr-reader-se");
 			scannerRef.current = scanner;
 
@@ -37,10 +40,14 @@ export function useQRScanner(opts: { showScanner: boolean; eventId: string; onCl
 						if (scanLoadingRef.current) return;
 						scanLoadingRef.current = true;
 						setScanLoading(true);
+
 						try {
-							await scanner.stop();
+							if (scannerRef.current && scannerRef.current.isScanning) {
+								await scannerRef.current.stop();
+							}
 							scannerRef.current = null;
 							onCloseRef.current();
+
 							const result = await checkInAttendee(eventIdRef.current, decodedText, false);
 							setLastScannedToken(decodedText);
 							setScanResult(result);
@@ -55,15 +62,20 @@ export function useQRScanner(opts: { showScanner: boolean; eventId: string; onCl
 					},
 					() => {},
 				)
-				.catch(() => {
-					toast.error("Could not access camera. Please allow camera permissions.");
-					onCloseRef.current();
+				.catch((_: unknown) => {
+					if (isComponentMounted) {
+						toast.error("Could not access camera. Please allow camera permissions.");
+						onCloseRef.current();
+					}
 				});
 		});
 
 		return () => {
+			isComponentMounted = false;
 			if (scannerRef.current) {
-				scannerRef.current.stop().catch(() => {});
+				if (scannerRef.current.isScanning) {
+					scannerRef.current.stop().catch((e: any) => console.debug("Ignored stop error:", e));
+				}
 				scannerRef.current = null;
 			}
 		};
