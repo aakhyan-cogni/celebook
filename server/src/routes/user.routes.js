@@ -7,7 +7,7 @@ export const userRouter = Router();
 
 userRouter.get("/profile", authenticate, UserController.getUserProfile);
 userRouter.patch("/profile", authenticate, UserController.updateUser);
-userRouter.get("/profile/:id", UserController.getUserProfileById);
+userRouter.get("/profile/:id", authenticate, UserController.getUserProfileById);
 userRouter.post(
     "/avatar",
     authenticate,

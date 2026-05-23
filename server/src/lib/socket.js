@@ -8,9 +8,14 @@ function userRoom(userId) {
 }
 
 export function initSocket(httpServer) {
+	const allowedOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173")
+		.split(",")
+		.map((o) => o.trim())
+		.filter(Boolean);
+
 	io = new Server(httpServer, {
 		cors: {
-			origin: "http://localhost:5173",
+			origin: allowedOrigins,
 			credentials: true,
 			methods: ["GET", "POST"],
 		},

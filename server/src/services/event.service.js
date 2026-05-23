@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
-import { EventModel, RegistrationModel, UserModel } from "../models/index.js";
+import {
+	EventModel,
+	EventStatModel,
+	FeedbackModel,
+	NotificationModel,
+	RegistrationModel,
+	UserModel,
+} from "../models/index.js";
 
 const TIER_LIMITS = {
 	FREE: 2,
@@ -110,6 +117,10 @@ export const getEventById = async (eventId, requestingUser = null) => {
 	if (!event) {
 		return { error: "NOT_FOUND" };
 	}
+
+	event.registrationCount = await RegistrationModel.countDocuments({
+		eventId: new mongoose.Types.ObjectId(eventId),
+	});
 
 	const isAdmin = requestingUser?.role === "ADMIN";
 	const isOrganizer = requestingUser?.userId === event.organizerId?.toString();
@@ -236,6 +247,20 @@ export const deleteEvent = async (eventId, organizerId, isAdmin = false) => {
 	}
 
 	await EventModel.findByIdAndDelete(eventId);
+
+	// Cascade-clean orphans. The event row is already gone, so cleanup failures
+	// shouldn't reverse the delete — log and move on.
+	try {
+		const eventObjectId = new mongoose.Types.ObjectId(eventId);
+		await Promise.all([
+			EventStatModel.deleteOne({ eventId: eventObjectId }),
+			FeedbackModel.deleteMany({ eventId: eventObjectId }),
+			NotificationModel.deleteMany({ "data.eventId": eventId.toString() }),
+		]);
+	} catch (cleanupErr) {
+		console.error("[deleteEvent] cascade cleanup failed:", cleanupErr);
+	}
+
 	return { event };
 };
 

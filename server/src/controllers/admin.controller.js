@@ -5,8 +5,8 @@ import { EventModel } from "../models/index.js";
 
 export async function listUsers(req, res) {
 	try {
-		const page = parseInt(req.query.page) || 1;
-		const limit = parseInt(req.query.limit) || 20;
+		const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+		const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 20));
 		const roleParam = req.query.role;
 		const role = roleParam === "USER" || roleParam === "ADMIN" ? roleParam : undefined;
 
@@ -40,8 +40,8 @@ export async function updateUserRole(req, res) {
 
 export async function listEvents(req, res) {
 	try {
-		const page = parseInt(req.query.page) || 1;
-		const limit = parseInt(req.query.limit) || 20;
+		const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+		const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 20));
 		const status = req.query.status;
 
 		const result = await AdminService.getPaginatedEvents(page, limit, status);

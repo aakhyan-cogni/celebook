@@ -244,8 +244,9 @@ export async function getMyBookingsHistory(req, res) {
 			.lean();
 
 		const filtered = bookings.filter((b) => b.eventId);
+		const droppedCancelledCount = bookings.length - filtered.length;
 
-		return res.json(filtered);
+		return res.json({ success: true, data: filtered, droppedCancelledCount });
 	} catch (error) {
 		console.error("[getMyBookingsHistory] Error:", error);
 		return res.status(500).json({

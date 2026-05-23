@@ -26,6 +26,13 @@ export async function registerForEvent(eventId, userId) {
 		throw error;
 	}
 
+	// Check event hasn't already happened
+	if (new Date(event.date).getTime() < Date.now()) {
+		const error = new Error("Event has already taken place");
+		error.code = "EVENT_PAST";
+		throw error;
+	}
+
 	// Check event is not team event
 	if (event.isTeamEvent) {
 		const error = new Error("Cannot register directly for team events");

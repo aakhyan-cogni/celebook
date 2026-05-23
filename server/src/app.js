@@ -17,9 +17,15 @@ import {
 const app = express();
 
 app.use(cookieParser());
+
+const allowedOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173")
+	.split(",")
+	.map((o) => o.trim())
+	.filter(Boolean);
+
 app.use(
 	cors({
-		origin: "http://localhost:5173",
+		origin: allowedOrigins,
 		credentials: true,
 		methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],

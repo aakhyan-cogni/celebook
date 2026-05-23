@@ -13,7 +13,8 @@ export async function comparePassword(password, hash) {
 }
 
 export async function findUserByEmail(email) {
-	const doc = await UserModel.findOne({ email }).lean();
+	const normalized = (email ?? "").trim().toLowerCase();
+	const doc = await UserModel.findOne({ email: normalized }).lean();
 	return fromDoc(doc);
 }
 
@@ -35,7 +36,7 @@ export async function validateRefreshToken(userId, refreshToken) {
 export async function createUser(data) {
 	const currentVersion = data.termsAccepted ? await getCurrentTermsVersion() : null;
 	const created = await UserModel.create({
-		email: data.email,
+		email: (data.email ?? "").trim().toLowerCase(),
 		password: data.password,
 		name: data.name,
 		role: "USER",

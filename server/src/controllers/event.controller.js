@@ -1,7 +1,7 @@
 import * as EventService from "../services/event.service.js";
 import { notifyAdminsEventSubmitted } from "../services/notification.service.js";
 import { fromDoc } from "../models/util.js";
-import { EventModel, EventStatModel, UserModel } from "../models/index.js";
+import { EventModel, EventStatModel, RegistrationModel, UserModel } from "../models/index.js";
 import fs from "fs";
 import path from "path";
 
@@ -174,7 +174,9 @@ export const getEventStats = async (req, res) => {
 		}
 
 		const stat = await EventStatModel.findOne({ eventId: event._id });
-		res.status(200).json(stat ?? null);
+		const registrationCount = await RegistrationModel.countDocuments({ eventId: event._id });
+		const base = stat ? stat.toObject() : {};
+		res.status(200).json({ ...base, registrationCount });
 	} catch (error) {
 		console.error("[getEventStats] Error:", error);
 		res.status(500).json({ message: "Error fetching event stats" });
