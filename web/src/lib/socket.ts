@@ -7,8 +7,7 @@ let socket: Socket | null = null;
 let currentToken: string | null = null;
 
 export function connectSocket(token: string): Socket {
-	// Refresh path: if we already have a socket but the JWT has rotated,
-	// tear down the stale connection so it re-handshakes with the new token.
+
 	if (socket && currentToken !== token) {
 		socket.removeAllListeners();
 		socket.disconnect();

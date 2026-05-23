@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { EventCard } from "../components/EventCard";
 import { apiFetch } from "../lib/api";
+import { EVENT_CATEGORIES } from "../components/EventCreationForm/constants";
 
 const fadeInUp = {
 	hidden: { opacity: 0, y: 30 },
@@ -14,16 +15,7 @@ const staggerContainer = {
 	visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
-const CATEGORIES = [
-	"All",
-	"Workshop",
-	"Conference",
-	"Social",
-	"Entertainment",
-	"Health & Wellness",
-	"Education",
-	"Other",
-];
+const CATEGORIES = ["All", ...EVENT_CATEGORIES];
 
 export default function GlobalEventPage() {
 	const navigate = useNavigate();

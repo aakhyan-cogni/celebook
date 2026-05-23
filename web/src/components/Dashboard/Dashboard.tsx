@@ -22,8 +22,7 @@ export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardPro
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		// Wait for hydration: on page refresh accessToken is briefly null while
-		// /auth/refresh runs. Firing apiFetch before then sends "Bearer null".
+
 		if (isAuthenticated && !accessToken) {
 			setLoading(true);
 			return;

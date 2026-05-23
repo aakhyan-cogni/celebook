@@ -13,11 +13,13 @@ import { useQRScanner } from "./useQRScanner";
 import ConfirmRegisterModal from "./ConfirmRegisterModal";
 import OrganizerStatsPanel from "./OrganizerStatsPanel";
 import OrganizerDetailsPanel from "./OrganizerDetailsPanel";
+import OrganizerCard from "./OrganizerCard";
 import ScannerOverlay from "./ScannerOverlay";
 import RejectReasonModal from "./RejectReasonModal";
 import CancelReasonModal from "./CancelReasonModal";
 import FeedbackSummary from "./FeedbackSummary";
 import { triggerHostFeedback, getMyFeedback } from "../../api/feedback.api";
+import { computeEventTimeState } from "../../lib/eventTime";
 
 interface SingleEventProps {
 	event: any;
@@ -77,10 +79,21 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	);
 
 	const isDraftEvent = event.status === "DRAFT";
-	const isPastEvent = !isDraftEvent && new Date(event.date).getTime() < Date.now();
 	const isOrganizer = isAuthenticated && user?.id === event.organizerId;
 	const isAdmin = isAuthenticated && user?.role === "ADMIN";
 	const eid = eventId || event._id || event.id;
+
+	const [endedAt, setEndedAt] = useState<string | null>(event.endedAt ?? null);
+	const [endingEvent, setEndingEvent] = useState(false);
+	useEffect(() => setEndedAt(event.endedAt ?? null), [event.endedAt]);
+
+	const timeState = computeEventTimeState({
+		date: event.date,
+		endDate: event.endDate,
+		endedAt,
+	});
+	const isPastEvent = !isDraftEvent && timeState === "FINISHED";
+	const isOngoing = !isDraftEvent && timeState === "ONGOING";
 
 	const [eventStat, , refetchStats] = useEventStats(eid, isOrganizer || isAdmin);
 	const { scanResult, scanLoading, lastScannedToken, clearScan } = useQRScanner({
@@ -245,6 +258,27 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		setShowCancelModal(true);
 	};
 
+	const handleEndEvent = async () => {
+		if (endingEvent || endedAt) return;
+		if (!window.confirm("End this event now? Feedback will open and registrations close.")) return;
+		setEndingEvent(true);
+		try {
+			const res = await fetch(`${BASE_URL}/events/${eid}/end`, {
+				method: "POST",
+				headers: authHeaders(),
+				credentials: "include",
+			});
+			if (!res.ok) throw new Error((await res.json()).message || "Could not end event.");
+			const updated = await res.json();
+			setEndedAt(updated.endedAt ?? new Date().toISOString());
+			toast.success("Event ended. Feedback is now open.");
+		} catch (err: any) {
+			toast.error(err?.message || "Could not end event.");
+		} finally {
+			setEndingEvent(false);
+		}
+	};
+
 	const handleConfirmCancel = async () => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${event._id || event.id}/cancel`, {
@@ -310,7 +344,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 	const statusBadge = () => {
 		if (!isOrganizer && !isAdmin) return null;
-		// If already cancelled, the Cancelled badge covers it — no need for status badge too
+
 		if (event.isCancelled) return null;
 		return (
 			<span className={`badge ${STATUS_BADGE_CLASS[eventStatus] ?? "bg-secondary"} rounded-pill px-3 py-2 ms-2`}>
@@ -364,7 +398,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 		);
 	};
 
-	// ── Image slider ──────────────────────────────────────────────────────
 	const sliderImages: string[] =
 		event.imgUrls && event.imgUrls.length > 0
 			? event.imgUrls.map((u: string) => getImageUrl(u))
@@ -529,6 +562,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				{isAdmin && !isOrganizer && event.organizer && (
 					<OrganizerDetailsPanel organizer={event.organizer} eventStatus={eventStatus} />
 				)}
+				{!isAdmin && !isOrganizer && event.organizer && (
+					<OrganizerCard organizer={event.organizer} />
+				)}
 			</div>
 
 			<div className="col-md-7 col-lg-8">
@@ -536,9 +572,18 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 					<div className="d-flex align-items-center mb-2 flex-wrap gap-2">
 						<span className="badge bg-primary-subtle text-primary rounded-pill px-3">{event.category}</span>
 						{statusBadge()}
-						{event.isCancelled && (
+						{event.isCancelled ? (
 							<span className="badge bg-danger-subtle text-danger rounded-pill px-3">Cancelled</span>
-						)}
+						) : isOngoing ? (
+							<span className="badge bg-danger rounded-pill px-3 d-inline-flex align-items-center gap-2">
+								<span className="spinner-grow spinner-grow-sm" role="status" />
+								Live now
+							</span>
+						) : isPastEvent ? (
+							<span className="badge bg-secondary-subtle text-secondary rounded-pill px-3">
+								Past event
+							</span>
+						) : null}
 					</div>
 
 					<h2 className="fw-bold mb-1 text-body">{event.title}</h2>
@@ -663,10 +708,11 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									</button>
 								)}
 
-								{isOrganizer &&
+								{(isOrganizer || isAdmin) &&
 									["APPROVED", "PENDING"].includes(eventStatus) &&
 									!event.isCancelled &&
 									!isPastEvent &&
+									!isOngoing &&
 									(event.price === 0 ||
 										!eventStat ||
 										eventStat.registeredAttendees?.length === 0) && (
@@ -678,20 +724,23 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 										</button>
 									)}
 
-								{isAdmin &&
-									["APPROVED", "PENDING"].includes(eventStatus) &&
-									!event.isCancelled &&
-									!isPastEvent &&
-									(event.price === 0 ||
-										!eventStat ||
-										eventStat.registeredAttendees?.length === 0) && (
-										<button
-											className="btn btn-outline-danger rounded-pill px-4 fw-bold"
-											onClick={handleCancel}
-										>
-											Cancel Event
-										</button>
-									)}
+								{isOrganizer && isOngoing && !event.isCancelled && (
+									<button
+										className="btn btn-danger rounded-pill px-4 fw-bold"
+										onClick={handleEndEvent}
+										disabled={endingEvent}
+										title="Marks the event finished and opens feedback for attendees"
+									>
+										{endingEvent ? (
+											<>
+												<span className="spinner-border spinner-border-sm me-2" role="status" />
+												Ending...
+											</>
+										) : (
+											"End Event Now"
+										)}
+									</button>
+								)}
 
 								{isAdmin && eventStatus === "PENDING" && !event.isCancelled && (
 									<>

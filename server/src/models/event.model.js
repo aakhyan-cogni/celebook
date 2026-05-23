@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 export const EVENT_STATUSES = ["DRAFT", "PENDING", "APPROVED", "REJECTED"];
 export const EVENT_VISIBILITIES = ["PUBLIC", "UNLISTED"];
-export const TEAM_CAPACITY_MODES = ["PER_TEAM", "PER_MEMBER"];
 export const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "INR"];
 
 const eventSchema = new mongoose.Schema(
@@ -23,18 +22,23 @@ const eventSchema = new mongoose.Schema(
 		status: { type: String, enum: EVENT_STATUSES, default: "DRAFT" },
 		rejectionReason: { type: String, default: null },
 		visibility: { type: String, enum: EVENT_VISIBILITIES, default: "PUBLIC" },
-		isTeamEvent: { type: Boolean, default: false },
-		minTeamSize: { type: Number, default: null },
-		maxTeamSize: { type: Number, default: null },
-		teamCapacityMode: { type: String, enum: TEAM_CAPACITY_MODES, default: null },
 		formSchemaId: { type: mongoose.Schema.Types.ObjectId, ref: "FormSchema", default: null },
 		isCancelled: { type: Boolean, default: false },
 		cancelReason: { type: String, default: null },
 		feedbackReminderSentAt: { type: Date, default: null },
 		hostFeedbackSentAt: { type: Date, default: null },
+
+		endedAt: { type: Date, default: null },
 	},
 	{ timestamps: true },
 );
+
+eventSchema.pre("validate", function (next) {
+	if (this.endDate && this.date && this.endDate.getTime() <= this.date.getTime()) {
+		this.invalidate("endDate", "endDate must be after start date");
+	}
+	next();
+});
 
 eventSchema.index({ organizerId: 1 });
 eventSchema.index({ status: 1, visibility: 1 });

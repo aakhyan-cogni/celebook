@@ -8,6 +8,7 @@ import {
 	publishEvent,
 	updateEvent,
 	cancelEvent,
+	endEvent,
 	duplicateEvent,
 	uploadEventImages,
 	deleteEventImage,
@@ -36,6 +37,7 @@ eventRouter.post("/", authenticate, consentCheck, createEvent);
 eventRouter.post("/:id/publish", authenticate, consentCheck, publishEvent);
 eventRouter.patch("/:id", authenticate, consentCheck, updateEvent);
 eventRouter.post("/:id/cancel", authenticate, consentCheck, cancelEvent);
+eventRouter.post("/:id/end", authenticate, consentCheck, endEvent);
 eventRouter.post("/:id/duplicate", authenticate, consentCheck, duplicateEvent);
 eventRouter.post("/:id/register", authenticate, consentCheck, registerForEvent);
 eventRouter.post("/:id/check-in", authenticate, consentCheck, checkIn);

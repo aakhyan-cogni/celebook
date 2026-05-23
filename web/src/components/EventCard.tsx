@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { getImageUrl, EVENT_FALLBACK_IMG } from "../lib/api";
+import { computeEventTimeState } from "../lib/eventTime";
 interface EventCardProps {
 	event: any;
 	onClick: (event: any) => void;
@@ -16,7 +17,9 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	const [timeLeft, setTimeLeft] = useState("");
 	const eventTime = new Date(event.date).getTime();
 	const isDraft = event.status === "DRAFT";
-	const isPast = !isDraft && eventTime < Date.now();
+	const timeState = computeEventTimeState(event);
+	const isPast = !isDraft && timeState === "FINISHED";
+	const isLive = !isDraft && timeState === "ONGOING";
 
 	// Image slider
 	const images: string[] =
@@ -68,18 +71,11 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 		// Drafts show no date/time/live badge — only the Draft label shown separately
 		if (isDraft) return null;
 
-		const now = Date.now();
-		const diff = eventTime - now;
-
 		if (event.isCancelled) {
 			return <span className="badge bg-danger px-3 py-2">Cancelled</span>;
 		}
 
-		if (isPast) {
-			return <span className="badge bg-secondary-subtle text-secondary px-3 py-2">Past Event</span>;
-		}
-
-		if (diff < 1800000 && diff > -3600000) {
+		if (isLive) {
 			return (
 				<span className="badge bg-danger px-3 py-2 d-flex align-items-center gap-2 shadow-sm">
 					<span className="spinner-grow spinner-grow-sm" role="status"></span>
@@ -88,6 +84,11 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 			);
 		}
 
+		if (isPast) {
+			return <span className="badge bg-secondary-subtle text-secondary px-3 py-2">Past Event</span>;
+		}
+
+		const diff = eventTime - Date.now();
 		if (diff < 86400000) {
 			return (
 				<span className="badge bg-warning text-dark px-3 py-2 shadow-sm">Starts in {timeLeft || "24h"}</span>

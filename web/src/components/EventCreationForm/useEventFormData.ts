@@ -17,24 +17,34 @@ export function useEventFormData(opts: {
 	const [existingUrls, setExistingUrls] = useState<string[]>([]);
 	const [step, setStep] = useState(1);
 
+	const splitLocalDateTime = (iso: string | Date | null | undefined): { date: string; time: string } => {
+		if (!iso) return { date: "", time: "" };
+		const d = new Date(iso);
+		if (Number.isNaN(d.getTime())) return { date: "", time: "" };
+		const pad = (n: number) => String(n).padStart(2, "0");
+		return {
+			date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+			time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+		};
+	};
+
 	const fillForm = (ev: any) => {
 		setExistingEvent(ev);
-		const existingTime = ev.date ? new Date(ev.date).toTimeString().slice(0, 5) : "";
+		const start = splitLocalDateTime(ev.date);
+		const end = splitLocalDateTime(ev.endDate);
 		setFormData({
 			title: ev.title ?? "",
 			category: ev.category ?? "Workshop",
 			description: ev.description ?? "",
-			date: ev.date ? ev.date.slice(0, 10) : "",
-			time: existingTime,
+			date: start.date,
+			time: start.time,
+			endDate: end.date,
+			endTime: end.time,
 			location: ev.location ?? "",
 			price: ev.price ?? 0,
 			capacity: ev.capacity ?? 0,
 			currency: ev.currency ?? "INR",
 			visibility: ev.visibility ?? "PUBLIC",
-			isTeamEvent: ev.isTeamEvent ?? false,
-			minTeamSize: ev.minTeamSize ?? "",
-			maxTeamSize: ev.maxTeamSize ?? "",
-			teamCapacityMode: ev.teamCapacityMode ?? "PER_MEMBER",
 		});
 		setIsFree(ev.price === 0);
 		if (ev.imgUrls?.length) setExistingUrls(ev.imgUrls);

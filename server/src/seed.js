@@ -29,7 +29,6 @@ const hoursFromNow = (hours) => {
 async function upsertUser({ email, password, name, role = "USER", tier = "FREE", profile = {} }, termsVersion) {
 	const existing = await UserModel.findOne({ email });
 	if (existing) {
-		// Backfill profile fields on re-seed so the demo data stays rich without resetting passwords.
 		let changed = false;
 		for (const [k, v] of Object.entries(profile)) {
 			if (existing[k] == null && v != null) {
@@ -93,7 +92,6 @@ async function seed() {
 	const terms = await getOrCreateTermsConfig();
 	const termsVersion = terms.currentVersion;
 
-	// Users
 	const adminEmail = process.env.ADMIN_EMAIL;
 	const adminPassword = process.env.ADMIN_PASSWORD;
 	const userEmail = process.env.USER_EMAIL;
@@ -167,7 +165,6 @@ async function seed() {
 	);
 	console.log(`✓ Organizer: ${organizer.email}`);
 
-	// Extra attendees so organizer panels show realistic counts.
 	const attendees = [];
 	const attendeeSpecs = [
 		{ email: "rahul@ems.com", name: "Rahul Verma", avatar: "Male_2.jpeg", city: "Delhi" },
@@ -195,11 +192,7 @@ async function seed() {
 	}
 	console.log(`✓ ${attendees.length} extra attendees`);
 
-	// Events
-	if (await EventModel.findOne({ organizerId: organizer._id })) {
-		console.log("Events for organizer already seeded — skipping event/registration/notification creation.");
-		process.exit(0);
-	}
+	const existingForOrganizer = await EventModel.findOne({ organizerId: organizer._id });
 
 	const baseEvent = {
 		currency: "INR",
@@ -210,6 +203,32 @@ async function seed() {
 		isCancelled: false,
 	};
 
+	const IMG = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=80&w=1200`;
+	const eventImages = {
+		music: [IMG("1501386761578-eac5c94b800a"), IMG("1470229722913-7c0e2dbbafd3"), IMG("1493225457124-a3eb161ffa5f")],
+		tech: [IMG("1517245386807-bb43f82c33c4"), IMG("1498050108023-c5249f4df085"), IMG("1461749280684-dccba630e2f6")],
+		trail: [IMG("1571019613454-1cb2f99b2d8b"), IMG("1502784444187-359ac186c5bb")],
+		pitch: [IMG("1556761175-5973dc0f32e7"), IMG("1505373877841-8d25f7d46678")],
+		roundtable: [IMG("1517048676732-d65bc937f952")],
+		hackathon: [IMG("1522071820081-009f0129c71c"), IMG("1515378791036-0648a3ef77b2")],
+		photoWalk: [IMG("1524492412937-b28074a5d7da"), IMG("1514222709107-a180c68d72b4")],
+		crypto: [IMG("1611974789855-9c2a0a7236a3"), IMG("1639762681485-074b7f938ba0")],
+		comedy: [IMG("1527224538127-2104bb71c51b"), IMG("1531058020387-3be344556be6")],
+	};
+
+	const addHours = (date, hours) => new Date(new Date(date).getTime() + hours * 3600 * 1000);
+
+	const draftStart = daysFromNow(21);
+	const pendingStart = daysFromNow(10);
+	const freeStart = daysFromNow(7);
+	const paidStart = daysFromNow(14);
+	const unlistedStart = daysFromNow(28);
+	const hackathonStart = daysFromNow(35);
+	const pastStart = daysFromNow(-5);
+	const rejectedStart = daysFromNow(18);
+	const cancelledStart = daysFromNow(4);
+	const ongoingStart = hoursFromNow(-1);
+
 	const eventSpecs = [
 		{
 			key: "draft",
@@ -217,12 +236,14 @@ async function seed() {
 			description: "An intimate evening of indie artists. Still being finalized — will be published soon.",
 			category: "Music",
 			tags: ["music", "indie", "live"],
-			date: daysFromNow(21),
+			date: draftStart,
+			endDate: addHours(draftStart, 3),
 			location: "Mumbai, Maharashtra",
 			price: 499,
 			capacity: 150,
 			status: "DRAFT",
 			visibility: "PUBLIC",
+			imgUrls: eventImages.music,
 		},
 		{
 			key: "pending",
@@ -231,12 +252,30 @@ async function seed() {
 				"Half-day workshop covering practical LLM tooling for product engineers. Talks, demos, and networking.",
 			category: "Technology",
 			tags: ["ai", "workshop", "developers"],
-			date: daysFromNow(10),
+			date: pendingStart,
+			endDate: addHours(pendingStart, 4),
 			location: "Bengaluru, Karnataka",
 			price: 0,
 			capacity: 80,
 			status: "PENDING",
 			visibility: "PUBLIC",
+			imgUrls: eventImages.tech,
+		},
+		{
+			key: "ongoing",
+			title: "Live Workshop — Design Systems in Practice",
+			description:
+				"Happening right now: a hands-on session on building a multi-brand design system. Drop-in friendly.",
+			category: "Workshop",
+			tags: ["design", "ongoing", "live"],
+			date: ongoingStart,
+			endDate: hoursFromNow(2),
+			location: "Bengaluru, Karnataka",
+			price: 0,
+			capacity: 50,
+			status: "APPROVED",
+			visibility: "PUBLIC",
+			imgUrls: eventImages.tech,
 		},
 		{
 			key: "approved_free",
@@ -245,12 +284,14 @@ async function seed() {
 				"Group trail run through the Sahyadri ranges. Open to all fitness levels. Snacks and transport provided.",
 			category: "Sports",
 			tags: ["running", "outdoors", "weekend"],
-			date: daysFromNow(7),
+			date: freeStart,
+			endDate: addHours(freeStart, 5),
 			location: "Lonavala, Maharashtra",
 			price: 0,
 			capacity: 60,
 			status: "APPROVED",
 			visibility: "PUBLIC",
+			imgUrls: eventImages.trail,
 		},
 		{
 			key: "approved_paid",
@@ -258,12 +299,14 @@ async function seed() {
 			description: "Six pre-seed startups pitch to a panel of angel investors. Catered dinner included.",
 			category: "Business",
 			tags: ["startup", "pitch", "networking"],
-			date: daysFromNow(14),
+			date: paidStart,
+			endDate: addHours(paidStart, 4),
 			location: "Mumbai, Maharashtra",
 			price: 999,
 			capacity: 120,
 			status: "APPROVED",
 			visibility: "PUBLIC",
+			imgUrls: eventImages.pitch,
 		},
 		{
 			key: "approved_unlisted",
@@ -271,30 +314,29 @@ async function seed() {
 			description: "Invite-only roundtable. Accessible by direct link only — hidden from Explore.",
 			category: "Business",
 			tags: ["invite-only"],
-			date: daysFromNow(28),
+			date: unlistedStart,
+			endDate: addHours(unlistedStart, 2),
 			location: "Mumbai, Maharashtra",
 			price: 0,
 			capacity: 20,
 			status: "APPROVED",
 			visibility: "UNLISTED",
+			imgUrls: eventImages.roundtable,
 		},
 		{
-			key: "team",
+			key: "hackathon",
 			title: "InterCollege Hackathon 2026",
-			description: "48-hour team hackathon. Teams of 2-4, single track, prizes for top three.",
+			description: "48-hour hackathon. Solo or grab teammates on-site. Single track, prizes for top three.",
 			category: "Technology",
-			tags: ["hackathon", "team", "students"],
-			date: daysFromNow(35),
+			tags: ["hackathon", "students"],
+			date: hackathonStart,
 			endDate: daysFromNow(37),
 			location: "Pune, Maharashtra",
 			price: 0,
 			capacity: 200,
 			status: "APPROVED",
 			visibility: "PUBLIC",
-			isTeamEvent: true,
-			minTeamSize: 2,
-			maxTeamSize: 4,
-			teamCapacityMode: "PER_TEAM",
+			imgUrls: eventImages.hackathon,
 		},
 		{
 			key: "past",
@@ -302,21 +344,24 @@ async function seed() {
 			description: "A guided photo walk through Chandni Chowk and Jama Masjid. Cameras and phones welcome.",
 			category: "Arts",
 			tags: ["photography", "walk", "heritage"],
-			date: daysFromNow(-5),
+			date: pastStart,
+			endDate: addHours(pastStart, 4),
 			location: "Delhi",
 			price: 299,
 			capacity: 40,
 			status: "APPROVED",
 			visibility: "PUBLIC",
 			hostFeedbackSentAt: daysFromNow(-4),
+			imgUrls: eventImages.photoWalk,
 		},
 		{
 			key: "rejected",
 			title: "Crypto Pump Day [Rejected]",
-			description: "Rejected by admin — see rejection reason.",
+			description: "Rejected by admin, see rejection reason.",
 			category: "Business",
 			tags: [],
-			date: daysFromNow(18),
+			date: rejectedStart,
+			endDate: addHours(rejectedStart, 6),
 			location: "Bengaluru, Karnataka",
 			price: 2999,
 			capacity: 500,
@@ -324,6 +369,7 @@ async function seed() {
 			visibility: "PUBLIC",
 			rejectionReason:
 				"Content violates community guidelines — speculative financial product promotion is not allowed.",
+			imgUrls: eventImages.crypto,
 		},
 		{
 			key: "cancelled",
@@ -331,7 +377,8 @@ async function seed() {
 			description: "Stand-up open mic. Cancelled due to venue maintenance.",
 			category: "Entertainment",
 			tags: ["comedy", "open-mic"],
-			date: daysFromNow(4),
+			date: cancelledStart,
+			endDate: addHours(cancelledStart, 3),
 			location: "Mumbai, Maharashtra",
 			price: 0,
 			capacity: 80,
@@ -339,8 +386,49 @@ async function seed() {
 			visibility: "PUBLIC",
 			isCancelled: true,
 			cancelReason: "Venue closed for emergency maintenance. Refunds processed automatically.",
+			imgUrls: eventImages.comedy,
 		},
 	];
+
+	if (existingForOrganizer) {
+		let updated = 0;
+		for (const spec of eventSpecs) {
+			const $set = {};
+			if (spec.imgUrls?.length) $set.imgUrls = spec.imgUrls;
+			if (spec.endDate) $set.endDate = spec.endDate;
+			if (spec.category) $set.category = spec.category;
+			if (Object.keys($set).length === 0) continue;
+			const res = await EventModel.updateOne(
+				{ organizerId: organizer._id, title: spec.title },
+				{ $set },
+			);
+			if (res.modifiedCount) updated += res.modifiedCount;
+		}
+		const ongoingSpec = eventSpecs.find((s) => s.key === "ongoing");
+		if (ongoingSpec) {
+			const alreadyHave = await EventModel.findOne({
+				organizerId: organizer._id,
+				title: ongoingSpec.title,
+			});
+			if (!alreadyHave) {
+				const { key, ...rest } = ongoingSpec;
+				void key;
+				await EventModel.create({ ...baseEvent, ...rest });
+				updated += 1;
+			} else {
+				alreadyHave.date = ongoingSpec.date;
+				alreadyHave.endDate = ongoingSpec.endDate;
+				await alreadyHave.save();
+				updated += 1;
+			}
+		}
+		console.log(
+			updated > 0
+				? `✓ Synced ${updated} previously-seeded event(s).`
+				: "Events for organizer already seeded — already in sync.",
+		);
+		process.exit(0);
+	}
 
 	const events = {};
 	for (const spec of eventSpecs) {
@@ -349,25 +437,20 @@ async function seed() {
 	}
 	console.log(`✓ ${Object.keys(events).length} events seeded`);
 
-	// Registrations + EventStat
-	// user@ems.com registers for the upcoming approved free, approved paid, and past events.
-	// They are marked PRESENT for the past event (so the feedback button unlocks).
 	await ensureRegistration({ event: events.approved_free, user });
 	await ensureRegistration({ event: events.approved_paid, user });
 	await ensureRegistration({ event: events.past, user, present: true });
 
-	// Extra attendees on the same events so organizer panel counts > 1.
 	await ensureRegistration({ event: events.approved_free, user: attendees[0] });
 	await ensureRegistration({ event: events.approved_free, user: attendees[1] });
 	await ensureRegistration({ event: events.approved_paid, user: attendees[0] });
 	await ensureRegistration({ event: events.past, user: attendees[0], present: true });
 	await ensureRegistration({ event: events.past, user: attendees[1], present: true });
 	await ensureRegistration({ event: events.past, user: attendees[2], present: false });
-	await ensureRegistration({ event: events.team, user: attendees[2] });
-	await ensureRegistration({ event: events.team, user: attendees[3] });
+	await ensureRegistration({ event: events.hackathon, user: attendees[2] });
+	await ensureRegistration({ event: events.hackathon, user: attendees[3] });
 	console.log("✓ Registrations + EventStat seeded");
 
-	// Notifications for user@ems.com
 	await NotificationModel.deleteMany({ userId: user._id });
 	await NotificationModel.insertMany([
 		{
@@ -409,7 +492,6 @@ async function seed() {
 	]);
 	console.log("✓ Notifications for user@ems.com");
 
-	// Notifications for organizer (event lifecycle)
 	await NotificationModel.deleteMany({ userId: organizer._id });
 	await NotificationModel.insertMany([
 		{
@@ -440,7 +522,6 @@ async function seed() {
 	]);
 	console.log("✓ Notifications for organizer");
 
-	// Feedback on the past event (so FeedbackSummary populates)
 	const feedbackPayload = (overrides = {}) => ({
 		eventId: events.past._id,
 		overallRating: 4.5,
@@ -466,7 +547,6 @@ async function seed() {
 	]);
 	console.log("✓ Event feedback");
 
-	// App-level feedback
 	await AppFeedbackModel.deleteMany({});
 	await AppFeedbackModel.insertMany([
 		{

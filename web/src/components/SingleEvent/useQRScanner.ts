@@ -10,8 +10,6 @@ export function useQRScanner(opts: { showScanner: boolean; eventId: string; onCl
 	const [lastScannedToken, setLastScannedToken] = useState<string | null>(null);
 	const scannerRef = useRef<any>(null);
 
-	// Refs so the long-lived scanner callback always sees current values without
-	// the effect re-firing (which would tear down and restart the camera).
 	const scanLoadingRef = useRef(false);
 	const eventIdRef = useRef(eventId);
 	const onCloseRef = useRef(onClose);

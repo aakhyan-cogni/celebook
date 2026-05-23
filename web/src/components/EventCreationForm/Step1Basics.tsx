@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import ImageUploadZone from "./ImageUploadZone";
 import type { EventFormData } from "./constants";
+import { EVENT_CATEGORIES } from "./constants";
 import FieldError from "../../lib/validation/FieldError";
 import type { FieldErrors } from "../../lib/validation/useFormErrors";
 
@@ -46,13 +47,9 @@ export default function Step1Basics({ visible, formData, onChange, imageProps, e
 						onChange={onChange}
 						aria-invalid={!!errors.category}
 					>
-						<option value="Conference">Conference</option>
-						<option value="Workshop">Workshop</option>
-						<option value="Social">Social</option>
-						<option value="Entertainment">Entertainment</option>
-						<option value="Health & Wellness">Health &amp; Wellness</option>
-						<option value="Education">Education</option>
-						<option value="Other">Other</option>
+						{EVENT_CATEGORIES.map((c) => (
+							<option key={c} value={c}>{c}</option>
+						))}
 					</select>
 					<FieldError message={errors.category} />
 				</div>

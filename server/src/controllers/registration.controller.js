@@ -36,7 +36,8 @@ export async function registerForEvent(req, res) {
 			error.code === "EVENT_NOT_FOUND" ||
 			error.code === "EVENT_NOT_APPROVED" ||
 			error.code === "EVENT_CANCELLED" ||
-			error.code === "TEAM_EVENT" ||
+			error.code === "EVENT_PAST" ||
+			error.code === "EVENT_STARTED" ||
 			error.code === "EVENT_FULL"
 		) {
 			return res.status(400).json({
@@ -111,7 +112,6 @@ export async function getEventRegistrations(req, res) {
 			return res.status(400).json({ message: "Event ID is required" });
 		}
 
-		// Check if user is organizer or admin
 		const event = await EventModel.findById(eventId);
 		if (!event) {
 			return res.status(404).json({ message: "Event not found" });
@@ -241,7 +241,7 @@ export async function getMyBookingsHistory(req, res) {
 		}
 
 		const bookings = await RegistrationModel.find({ userId: req.user.userId })
-			.populate({ path: "eventId", select: "title date price category" })
+			.populate({ path: "eventId", select: "title date endDate endedAt price category" })
 			.sort({ registeredAt: -1 })
 			.lean();
 

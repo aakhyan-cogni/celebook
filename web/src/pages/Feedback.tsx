@@ -7,6 +7,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import StarRating from "../components/StarRating";
 import { FEEDBACK_FIELD_LABELS, FEEDBACK_RATING_FIELDS, getMyFeedback, submitFeedback } from "../api/feedback.api";
 import type { FeedbackPayload, FeedbackRatingField } from "../api/feedback.api";
+import { isFinished } from "../lib/eventTime";
 
 const initialRatings: Record<FeedbackRatingField, number> = {
 	overallRating: 0,
@@ -98,7 +99,7 @@ export default function FeedbackPage() {
 		);
 	}
 
-	const isPastEvent = new Date(event.date).getTime() < Date.now();
+	const isPastEvent = isFinished(event);
 	const isRegistered = !!event.userRegistration;
 	const didAttend = event.userRegistration?.attendanceStatus === "PRESENT";
 	const feedbackOpen = !!event.hostFeedbackSentAt;
@@ -203,8 +204,7 @@ export default function FeedbackPage() {
 
 		setSubmitting(true);
 		try {
-			// overallRating is the mean of the other five ratings, rounded to the nearest 0.5
-			// so it satisfies the backend's 0.5-step validator.
+
 			const avg = userRatedFields.reduce((sum, f) => sum + ratings[f], 0) / userRatedFields.length;
 			const overallRating = Math.max(0.5, Math.round(avg * 2) / 2);
 

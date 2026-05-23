@@ -37,7 +37,7 @@ export function initSocket(httpServer) {
 	io.on("connection", (socket) => {
 		socket.join(userRoom(socket.userId));
 		socket.on("disconnect", () => {
-			// rooms are cleaned up automatically by socket.io
+
 		});
 	});
 

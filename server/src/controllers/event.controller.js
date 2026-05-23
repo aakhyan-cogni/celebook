@@ -117,6 +117,26 @@ export const publishEvent = async (req, res) => {
 	}
 };
 
+export const endEvent = async (req, res) => {
+	try {
+		const { id } = req.params;
+		const result = await EventService.endEvent(id, req.user.userId, req.user.role === "ADMIN");
+		if (result.error) {
+			const status =
+				result.error === "NOT_FOUND"
+					? 404
+					: result.error === "FORBIDDEN"
+						? 403
+						: 400;
+			return res.status(status).json({ message: result.error });
+		}
+		res.status(200).json(fromDoc(result.event));
+	} catch (error) {
+		console.error("[endEvent] Error ending event:", error);
+		res.status(500).json({ message: "Error ending event" });
+	}
+};
+
 export const cancelEvent = async (req, res) => {
 	try {
 		const { id } = req.params;
@@ -219,16 +239,13 @@ export const uploadEventImages = async (req, res) => {
 			return res.status(403).json({ message: "Only the organizer or admin can upload images" });
 		}
 
-		// Always fetch tier from DB — the JWT may not carry tier if it was
-		// issued before jwt.js was updated, or if the user upgraded their plan
-		// without re-logging in. DB is the single source of truth for tier.
 		const dbUser = await UserModel.findById(req.user.userId).select("tier").lean();
 		const userTier = dbUser?.tier ?? req.user.tier ?? "FREE";
 
 		const limit = TIER_IMAGE_LIMITS[userTier] ?? 1;
 		const currentCount = event.imgUrls?.length ?? 0;
 		if (currentCount + req.files.length > limit) {
-			// Clean up files multer already wrote before returning the error
+
 			req.files.forEach((f) => {
 				try {
 					fs.unlinkSync(f.path);

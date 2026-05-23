@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useAuthStore } from "../../store/useAuthStore";
 import { apiFetch } from "../../lib/api";
 import type { Booking } from "../../store";
+import { computeEventTimeState } from "../../lib/eventTime";
 
 function formatDateTime(value: string | undefined | null): string {
 	if (!value) return "—";
@@ -30,17 +31,13 @@ function formatPrice(price: number | undefined | null): string {
 	return price === 0 ? "FREE" : `₹${price}`;
 }
 
-type Timing = { label: "Past" | "Upcoming" | "—"; className: string };
+type Timing = { label: "Past" | "Upcoming" | "Live now" | "—"; className: string };
 
-function getTiming(value: string | undefined | null): Timing {
-	if (!value) return { label: "—", className: "bg-secondary-subtle text-secondary-emphasis" };
-	const d = new Date(value);
-	if (Number.isNaN(d.getTime())) {
-		return { label: "—", className: "bg-secondary-subtle text-secondary-emphasis" };
-	}
-	if (d.getTime() < Date.now()) {
-		return { label: "Past", className: "bg-secondary-subtle text-secondary-emphasis" };
-	}
+function getTiming(ev: any): Timing {
+	if (!ev?.date) return { label: "—", className: "bg-secondary-subtle text-secondary-emphasis" };
+	const state = computeEventTimeState(ev);
+	if (state === "ONGOING") return { label: "Live now", className: "bg-danger text-white" };
+	if (state === "FINISHED") return { label: "Past", className: "bg-secondary-subtle text-secondary-emphasis" };
 	return { label: "Upcoming", className: "bg-info-subtle text-info-emphasis" };
 }
 
@@ -145,7 +142,7 @@ export default function BookingHistory() {
 							const ev = booking.eventId as any;
 							const evId = ev?.id ?? ev?._id;
 							const bookingId = (booking as any)._id ?? (booking as any).id ?? `${evId}-${index}`;
-							const timing = getTiming(ev?.date);
+							const timing = getTiming(ev);
 							const handleNavigate = () => {
 								if (evId) navigate(`/events/${evId}`);
 							};

@@ -11,9 +11,6 @@ function HydrationSpinner() {
 	);
 }
 
-// Gates routes behind a logged-in user. While `isAuthenticated` is true but
-// `accessToken` is still null we're mid-hydration — show a spinner instead of
-// either rendering private UI prematurely or bouncing the user to /login.
 export default function ProtectedRoute() {
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 	const accessToken = useAuthStore((s) => s.accessToken);

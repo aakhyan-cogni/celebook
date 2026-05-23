@@ -24,31 +24,33 @@ export function useSaveEvent(opts: {
 		Authorization: `Bearer ${accessToken}`,
 	});
 
-	// Returns current date+time as "YYYY-MM-DDTHH:MM:00" in local time
-	const getNowDateTimeStr = () => {
-		const n = new Date();
-		const pad = (x: number) => String(x).padStart(2, "0");
-		return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}:00`;
+	const toIsoUtc = (dateStr: string, timeStr: string) => {
+		const safeTime = timeStr || "00:00";
+		const d = new Date(`${dateStr}T${safeTime}:00`);
+		return d.toISOString();
 	};
 
 	const buildPayload = () => {
-		const time = formData.time || "00:00";
-		const combinedDate = formData.date ? `${formData.date}T${time}:00` : "";
+		const combinedDate = formData.date ? toIsoUtc(formData.date, formData.time) : "";
+
+		let combinedEnd: string | null = null;
+		if (formData.endDate) {
+			combinedEnd = toIsoUtc(formData.endDate, formData.endTime || formData.time || "00:00");
+		} else if (formData.endTime && formData.date) {
+			combinedEnd = toIsoUtc(formData.date, formData.endTime);
+		}
 
 		return {
 			title: formData.title,
 			category: formData.category,
 			description: formData.description,
 			date: combinedDate,
+			endDate: combinedEnd,
 			location: formData.location,
 			price: isFree ? 0 : Number(formData.price),
 			capacity: Number(formData.capacity),
 			currency: formData.currency || "INR",
 			visibility: formData.visibility,
-			isTeamEvent: formData.isTeamEvent,
-			minTeamSize: formData.isTeamEvent && formData.minTeamSize ? Number(formData.minTeamSize) : null,
-			maxTeamSize: formData.isTeamEvent && formData.maxTeamSize ? Number(formData.maxTeamSize) : null,
-			teamCapacityMode: formData.isTeamEvent ? formData.teamCapacityMode : null,
 		};
 	};
 
@@ -93,9 +95,8 @@ export function useSaveEvent(opts: {
 		try {
 			const payload = {
 				...buildPayload(),
-				// If user hasn't set a date, use current date+time (not midnight)
-				// so the draft doesn't immediately appear as a "Past Event".
-				date: formData.date ? `${formData.date}T${formData.time || "00:00"}:00` : getNowDateTimeStr(),
+
+				date: formData.date ? toIsoUtc(formData.date, formData.time) : new Date().toISOString(),
 				location: formData.location || "TBD",
 				capacity: Number(formData.capacity) || 1,
 			};

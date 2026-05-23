@@ -23,9 +23,9 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange, e
 			exit={{ x: -20, opacity: 0 }}
 		>
 			<h4 className="fw-bold mb-4">Step 2: Logistics &amp; Features</h4>
-			<div className="row mb-3">
-				<div className="col-md-4">
-					<label className="form-label fw-semibold">Date</label>
+			<div className="row g-3 mb-3">
+				<div className="col-md-3">
+					<label className="form-label fw-semibold">Start Date</label>
 					<input
 						type="date"
 						name="date"
@@ -37,7 +37,7 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange, e
 					/>
 					<FieldError message={errors.date} />
 				</div>
-				<div className="col-md-4">
+				<div className="col-md-3">
 					<label className="form-label fw-semibold">Start Time</label>
 					<input
 						type="time"
@@ -49,7 +49,36 @@ export default function Step2Schedule({ visible, formData, todayStr, onChange, e
 					/>
 					<FieldError message={errors.time} />
 				</div>
-				<div className="col-md-4">
+				<div className="col-md-3">
+					<label className="form-label fw-semibold">
+						End Date <span className="text-body-secondary fw-normal small">(optional)</span>
+					</label>
+					<input
+						type="date"
+						name="endDate"
+						value={formData.endDate}
+						onChange={onChange}
+						min={formData.date || todayStr}
+						className={cls("endDate")}
+						aria-invalid={!!errors.endDate}
+					/>
+					<FieldError message={errors.endDate} />
+				</div>
+				<div className="col-md-3">
+					<label className="form-label fw-semibold">
+						End Time <span className="text-body-secondary fw-normal small">(optional)</span>
+					</label>
+					<input
+						type="time"
+						name="endTime"
+						value={formData.endTime}
+						onChange={onChange}
+						className={cls("endTime")}
+						aria-invalid={!!errors.endTime}
+					/>
+					<FieldError message={errors.endTime} />
+				</div>
+				<div className="col-12">
 					<label className="form-label fw-semibold">Location</label>
 					<input
 						type="text"

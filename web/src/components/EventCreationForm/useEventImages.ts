@@ -72,8 +72,7 @@ export function useEventImages(opts: {
 
 	const uploadImages = async (eventId: string): Promise<void> => {
 		if (imageFiles.length === 0) return;
-		// Ref-based guard — state updates are async and don't block a second
-		// invocation fired in the same tick (e.g., double-click on publish).
+
 		if (uploadingRef.current) return;
 		uploadingRef.current = true;
 		setUploading(true);

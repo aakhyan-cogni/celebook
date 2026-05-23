@@ -2,9 +2,10 @@ import { RegistrationModel, EventModel, EventStatModel } from "../models/index.j
 import { generateTicketToken, verifyTicketToken } from "../lib/jwt.js";
 import mongoose from "mongoose";
 import { createNotification } from "./notification.service.js";
+import { computeEventTimeState } from "../lib/eventTime.js";
 
 export async function registerForEvent(eventId, userId) {
-	// Check event exists
+
 	const event = await EventModel.findById(eventId);
 	if (!event) {
 		const error = new Error("Event not found");
@@ -12,35 +13,30 @@ export async function registerForEvent(eventId, userId) {
 		throw error;
 	}
 
-	// Check event is APPROVED
 	if (event.status !== "APPROVED") {
 		const error = new Error("Event is not approved for registration");
 		error.code = "EVENT_NOT_APPROVED";
 		throw error;
 	}
 
-	// Check event is not cancelled
 	if (event.isCancelled) {
 		const error = new Error("Event has been cancelled");
 		error.code = "EVENT_CANCELLED";
 		throw error;
 	}
 
-	// Check event hasn't already happened
-	if (new Date(event.date).getTime() < Date.now()) {
-		const error = new Error("Event has already taken place");
+	const timeState = computeEventTimeState(event);
+	if (timeState === "ONGOING") {
+		const error = new Error("Registration is closed — this event is already in progress");
+		error.code = "EVENT_STARTED";
+		throw error;
+	}
+	if (timeState === "FINISHED") {
+		const error = new Error("This event has already taken place");
 		error.code = "EVENT_PAST";
 		throw error;
 	}
 
-	// Check event is not team event
-	if (event.isTeamEvent) {
-		const error = new Error("Cannot register directly for team events");
-		error.code = "TEAM_EVENT";
-		throw error;
-	}
-
-	// Check capacity not full
 	const confirmedCount = await RegistrationModel.countDocuments({
 		eventId: new mongoose.Types.ObjectId(eventId),
 		status: "CONFIRMED",
@@ -53,8 +49,7 @@ export async function registerForEvent(eventId, userId) {
 	}
 
 	try {
-		// Reactivate an existing CANCELLED row if present (the unique (eventId, userId)
-		// index would otherwise reject a fresh create), else insert a new one.
+
 		const existing = await RegistrationModel.findOne({
 			eventId: new mongoose.Types.ObjectId(eventId),
 			userId: new mongoose.Types.ObjectId(userId),
@@ -78,14 +73,12 @@ export async function registerForEvent(eventId, userId) {
 			});
 		}
 
-		// Upsert EventStat — track attendee
 		await EventStatModel.findOneAndUpdate(
 			{ eventId: new mongoose.Types.ObjectId(eventId) },
 			{ $addToSet: { registeredAttendees: new mongoose.Types.ObjectId(userId) } },
 			{ upsert: true },
 		);
 
-		// Create + push notification to the user (DB + socket)
 		await createNotification({
 			userId,
 			type: "REGISTRATION_CONFIRMED",
@@ -96,7 +89,6 @@ export async function registerForEvent(eventId, userId) {
 			},
 		});
 
-		// Notify organizer on every 10% capacity milestone (10, 20, 30… of capacity)
 		const step = Math.floor(event.capacity / 10);
 		if (step >= 1) {
 			const bookedCount = await RegistrationModel.countDocuments({
@@ -117,13 +109,12 @@ export async function registerForEvent(eventId, userId) {
 			}
 		}
 
-		// Populate and return
 		const populatedRegistration = await registration.populate([{ path: "eventId" }, { path: "userId" }]);
 
 		return { registration: populatedRegistration, event };
 	} catch (error) {
 		if (error.code === "ALREADY_REGISTERED") throw error;
-		// Defensive: race could still produce a duplicate-key error
+
 		if (error.code === 11000) {
 			const duplicateError = new Error("ALREADY_REGISTERED");
 			duplicateError.code = "ALREADY_REGISTERED";
@@ -134,7 +125,7 @@ export async function registerForEvent(eventId, userId) {
 }
 
 export async function cancelRegistration(eventId, userId) {
-	// Find confirmed registration
+
 	const registration = await RegistrationModel.findOne({
 		eventId: new mongoose.Types.ObjectId(eventId),
 		userId: new mongoose.Types.ObjectId(userId),
@@ -147,7 +138,6 @@ export async function cancelRegistration(eventId, userId) {
 		throw error;
 	}
 
-	// Get event to check date
 	const event = await EventModel.findById(eventId);
 	if (!event) {
 		const error = new Error("Event not found");
@@ -155,21 +145,19 @@ export async function cancelRegistration(eventId, userId) {
 		throw error;
 	}
 
-	// Calculate hours until event
 	const hoursUntilEvent = (event.date.getTime() - Date.now()) / (1000 * 60 * 60);
 
-	// If < 24 hours, reject
 	if (hoursUntilEvent < 24) {
-		const error = new Error("TOO_LATE_TO_CANCEL");
+		const error = new Error(
+			"Cancellations close 24 hours before the event starts. You can no longer cancel this booking.",
+		);
 		error.code = "TOO_LATE_TO_CANCEL";
 		throw error;
 	}
 
-	// Set status to CANCELLED
 	registration.status = "CANCELLED";
 	await registration.save();
 
-	// Cancelled attendees don't count toward stats — pull them from the EventStat
 	await EventStatModel.updateOne(
 		{ eventId: new mongoose.Types.ObjectId(eventId) },
 		{ $pull: { registeredAttendees: new mongoose.Types.ObjectId(userId) } },
@@ -179,7 +167,7 @@ export async function cancelRegistration(eventId, userId) {
 }
 
 export async function getEventRegistrations(eventId) {
-	// All confirmed registrations with userId populated (name, email, avatar)
+
 	return RegistrationModel.find({
 		eventId: new mongoose.Types.ObjectId(eventId),
 		status: "CONFIRMED",
@@ -190,7 +178,7 @@ export async function getEventRegistrations(eventId) {
 }
 
 export async function getMyRegistrations(userId) {
-	// All registrations (all statuses) with eventId populated, sorted by registeredAt desc
+
 	return RegistrationModel.find({
 		userId: new mongoose.Types.ObjectId(userId),
 	})
@@ -201,7 +189,7 @@ export async function getMyRegistrations(userId) {
 }
 
 export async function checkRegistration(eventId, userId) {
-	// Returns registration doc if exists, or null
+
 	return RegistrationModel.findOne({
 		eventId: new mongoose.Types.ObjectId(eventId),
 		userId: new mongoose.Types.ObjectId(userId),

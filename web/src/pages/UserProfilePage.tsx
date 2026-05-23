@@ -5,7 +5,7 @@ import { apiFetch, getAvatarUrl } from "../lib/api";
 const UserProfilePage = () => {
 	const { id } = useParams<{ id: string }>();
 
-	const [userProfile, setUserProfile] = useState<any>(); // Replace 'any' with 'User'
+	const [userProfile, setUserProfile] = useState<any>(); 
 	const [loading, setLoading] = useState(true);
 
 	const getProfileURL = (avatar: string) => getAvatarUrl(avatar);

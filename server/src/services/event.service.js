@@ -26,10 +26,6 @@ const EVENT_UPDATABLE_FIELDS = [
 	"capacity",
 	"imgUrls",
 	"visibility",
-	"isTeamEvent",
-	"minTeamSize",
-	"maxTeamSize",
-	"teamCapacityMode",
 	"formSchemaId",
 ];
 
@@ -50,7 +46,7 @@ export const createEvent = async (organizerId, organizerEmail, data) => {
 export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, page = 1, limit = 20 }) => {
 	const filter = {
 		status: "APPROVED",
-		visibility: "PUBLIC", // UNLISTED events are hidden from explore — accessible by direct link only
+		visibility: "PUBLIC", 
 		isCancelled: false,
 	};
 
@@ -89,7 +85,7 @@ export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, pa
 					_dateVal: "$date",
 				},
 			},
-			// upcoming events first (soonest date first), then past events (most recent first)
+
 			{ $sort: { _isPast: 1, _dateVal: 1 } },
 			{ $skip: skip },
 			{ $limit: pageSize },
@@ -137,13 +133,11 @@ export const getEventById = async (eventId, requestingUser = null) => {
 		event.userRegistration = reg ?? null;
 	}
 
-	// Admins reviewing an event need organizer context to judge legitimacy.
-	if (isAdmin && event.organizerId) {
-		const organizer = await UserModel.findById(event.organizerId)
-			.select(
-				"name email avatar phoneNumber gender orgName designation companyWebsite bio country city state role tier createdAt",
-			)
-			.lean();
+	if (event.organizerId) {
+		const selectFields = isAdmin
+			? "name email avatar phoneNumber gender orgName designation companyWebsite bio country city state role tier createdAt"
+			: "name avatar orgName designation companyWebsite bio tier";
+		const organizer = await UserModel.findById(event.organizerId).select(selectFields).lean();
 		if (organizer) {
 			const { _id, ...rest } = organizer;
 			event.organizer = { id: _id?.toString(), ...rest };
@@ -194,7 +188,6 @@ export const publishEvent = async (eventId, organizerId, isAdmin = false) => {
 		return { error: "TIER_LIMIT_EXCEEDED" };
 	}
 
-	// PUBLIC/UNLISTED events both require admin review on every publish.
 	event.status = "PENDING";
 	event.rejectionReason = null;
 	await event.save();
@@ -247,8 +240,6 @@ export const deleteEvent = async (eventId, organizerId, isAdmin = false) => {
 
 	await EventModel.findByIdAndDelete(eventId);
 
-	// Cascade-clean orphans. The event row is already gone, so cleanup failures
-	// shouldn't reverse the delete — log and move on.
 	try {
 		const eventObjectId = new mongoose.Types.ObjectId(eventId);
 		await Promise.all([
@@ -261,6 +252,36 @@ export const deleteEvent = async (eventId, organizerId, isAdmin = false) => {
 	}
 
 	return { event };
+};
+
+export const endEvent = async (eventId, organizerId, isAdmin = false) => {
+	const event = await EventModel.findById(eventId);
+	if (!event) {
+		return { error: "NOT_FOUND" };
+	}
+
+	if (!isAdmin && event.organizerId?.toString() !== organizerId) {
+		return { error: "FORBIDDEN" };
+	}
+
+	if (event.status !== "APPROVED" || event.isCancelled) {
+		return { error: "NOT_ENDABLE" };
+	}
+
+	if (event.endedAt) {
+
+		return { event: event.toObject() };
+	}
+
+	const startMs = event.date ? new Date(event.date).getTime() : null;
+	if (startMs && Date.now() < startMs) {
+
+		return { error: "NOT_STARTED" };
+	}
+
+	event.endedAt = new Date();
+	await event.save();
+	return { event: event.toObject() };
 };
 
 export const cancelEvent = async (eventId, organizerId, reason, isAdmin = false) => {

@@ -92,7 +92,7 @@ export default function ImageUploadZone({
 
 			{allImages.length > 0 && (
 				<div className="mt-2">
-					{/* Main viewer */}
+					{}
 					<div
 						className="position-relative rounded-3 overflow-hidden"
 						style={{
@@ -123,7 +123,7 @@ export default function ImageUploadZone({
 							draggable={false}
 						/>
 
-						{/* Remove button */}
+						{}
 						<button
 							type="button"
 							className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 rounded-pill"
@@ -139,7 +139,7 @@ export default function ImageUploadZone({
 							✕ Remove
 						</button>
 
-						{/* Arrows */}
+						{}
 						{allImages.length > 1 && (
 							<>
 								<button
@@ -188,7 +188,7 @@ export default function ImageUploadZone({
 						)}
 					</div>
 
-					{/* Thumbnail strip */}
+					{}
 					{allImages.length > 1 && (
 						<div className="d-flex gap-2 mt-2 pb-1" style={{ overflowX: "auto", scrollbarWidth: "thin" }}>
 							{allImages.map((img, i) => (

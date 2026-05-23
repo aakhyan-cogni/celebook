@@ -34,7 +34,6 @@ app.use(
 app.use(express.json());
 app.use(express.static("public"));
 
-// Routes
 app.use("/api/events", eventRouter);
 app.use("/api/registrations", registrationRouter);
 app.use("/api/notifications", notificationRouter);
@@ -46,7 +45,6 @@ app.use("/api/feedback", appFeedbackRouter);
 app.use("/api/plans", planUpgradeRouter);
 app.use("/api/terms", termsRouter);
 
-// Global error handler
 app.use((err, req, res, next) => {
 	console.error("Global error handler:", err);
 	res.status(500).json({ message: "Internal server error" });
