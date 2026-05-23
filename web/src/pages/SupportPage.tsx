@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, PhoneCall, MessageSquare, Search, Send, X } from "lucide-react";
+import { Mail, PhoneCall, MessageSquare, Send, X } from "lucide-react";
 import FeedbackForm from "./FeedbackForm";
 
 const SupportPage = () => {
@@ -48,29 +48,9 @@ const SupportPage = () => {
 									>
 										How can we <span className="text-primary text-gradient">Help?</span>
 									</motion.h2>
-									<p className="text-muted">
-										Search our knowledge base or contact our team directly.
-									</p>
-
-									<div className="mt-4 position-relative mx-auto" style={{ maxWidth: "500px" }}>
-										<input
-											type="text"
-											className="form-control form-control-lg rounded-pill shadow-sm ps-4 pe-5"
-											placeholder="Search for 'Create Event' or 'Refunds'..."
-											style={{ paddingRight: "110px" }}
-										/>
-										<button
-											className="btn btn-primary position-absolute end-0 top-50 translate-middle-y me-2 rounded-pill px-3 btn-sm d-flex align-items-center gap-2"
-											style={{ height: "calc(100% - 12px)", zIndex: 5 }}
-										>
-											<Search size={16} />
-											<span>Search</span>
-										</button>
-									</div>
 								</div>
 
 								<div className="row g-4">
-									{/* Quick Contact Cards */}
 									<div className="col-md-4">
 										<div className="card border-0 shadow-sm p-4 text-center h-100 rounded-4 backdrop-blur">
 											<div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3 mx-auto">
