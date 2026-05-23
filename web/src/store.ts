@@ -11,7 +11,7 @@ interface State {
 	addEvent: (eventData: Omit<Event, "id" | "organizerEmail" | "createdAt">) => void;
 }
 
-export type EventStatus ="PENDING" | "REJECTED" | "APPROVED" | "DRAFT";
+export type EventStatus = "PENDING" | "REJECTED" | "APPROVED" | "DRAFT";
 
 export type RegistrationStatus = "CONFIRMED" | "CANCELLED";
 
@@ -32,8 +32,8 @@ export interface User {
 	role?: string;
 	companyWebsite?: string;
 	bio?: string;
-	designation?:string;
-	createdAt?:string;
+	designation?: string;
+	createdAt?: string;
 }
 
 export interface Event {

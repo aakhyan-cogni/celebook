@@ -10,7 +10,9 @@ interface DeleteEventModalProps {
 export default function DeleteEventModal({ target, deleting, onConfirm, onClose }: DeleteEventModalProps) {
 	return (
 		<motion.div
-			initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			exit={{ opacity: 0 }}
 			className="modal d-block"
 			style={{ background: "rgba(0,0,0,0.5)" }}
 			onClick={onClose}
@@ -23,8 +25,8 @@ export default function DeleteEventModal({ target, deleting, onConfirm, onClose 
 					</div>
 					<div className="modal-body">
 						<p className="text-body-secondary">
-							Are you sure you want to permanently delete{" "}
-							<strong>{target?.title}</strong>? This cannot be undone.
+							Are you sure you want to permanently delete <strong>{target?.title}</strong>? This cannot be
+							undone.
 						</p>
 					</div>
 					<div className="modal-footer border-0 pt-0">

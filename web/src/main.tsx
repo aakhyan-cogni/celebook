@@ -5,7 +5,7 @@ import "./style.scss";
 import { BrowserRouter, Route, Routes } from "react-router";
 import Login from "./pages/login";
 import GlobalEventPage from "./pages/Global_Event";
-import EventDetailPage from "./pages/Event"; 
+import EventDetailPage from "./pages/Event";
 import Navbar from "./components/Navbar";
 import "bootstrap";
 import Footer from "./components/Footer";
@@ -24,6 +24,7 @@ import Admin from "./pages/Admin.tsx";
 import UserProfilePage from "./pages/UserProfilePage.tsx";
 import FeedbackPage from "./pages/Feedback.tsx";
 import BookingHistoryPage from "./pages/BookingHistoryPage.tsx";
+import ProtectedRoute, { AdminRoute } from "./components/ProtectedRoute.tsx";
 
 createRoot(document.getElementById("root")!).render(<Root />);
 
@@ -52,28 +53,31 @@ function Root() {
 				<NotificationSocketProvider />
 				<ConsentModal />
 				<Navbar />
-				<Routes>
-					<Route path="/" element={<App />} />
-					<Route path="/login" element={<Login />} />
+				<div className="pt-2 flex-grow-1">
+					<Routes>
+						<Route path="/" element={<App />} />
+						<Route path="/login" element={<Login />} />
+						<Route path="/events" element={<GlobalEventPage />} />
+						<Route path="/events/:id" element={<EventDetailPage />} />
+						<Route path="/pricing" element={<Pricing />} />
+						<Route path="/support" element={<SupportPage />} />
+						<Route path="/terms" element={<Terms />} />
 
-					<Route path="/events" element={<GlobalEventPage />} />
-					
-					<Route path="/events/:id" element={<EventDetailPage />} />
-					<Route path="/events/:id/feedback" element={<FeedbackPage />} />
+						<Route element={<ProtectedRoute />}>
+							<Route path="/events/:id/feedback" element={<FeedbackPage />} />
+							<Route path="/dashboard" element={<Dashboard />} />
+							<Route path="/dashboard/bookings" element={<BookingHistoryPage />} />
+							<Route path="/history/myBookings" element={<BookingHistoryPage />} />
+							<Route path="/create" element={<EventCreationForm />} />
+							<Route path="/notifications" element={<NotificationPage />} />
+							<Route path="/user/profile/:id" element={<UserProfilePage />} />
+						</Route>
 
-					<Route path="/dashboard" element={<Dashboard />} />
-					<Route path="/dashboard/bookings" element={<BookingHistoryPage />} />
-					<Route path="/history/myBookings" element={<BookingHistoryPage />} />
-					<Route path="/create" element={<EventCreationForm />} />
-					<Route path="/pricing" element={<Pricing />} />
-					<Route path="/support" element={<SupportPage />} />
-					<Route path="/notifications" element={<NotificationPage />} />
-
-					<Route path="/admin" element={<Admin />} />
-					<Route path="/user/profile/:id" element={<UserProfilePage />} />
-					
-					<Route path="/terms" element={<Terms />} />
-				</Routes>
+						<Route element={<AdminRoute />}>
+							<Route path="/admin" element={<Admin />} />
+						</Route>
+					</Routes>
+				</div>
 				<Footer />
 				<Toaster position="bottom-center" />
 			</main>

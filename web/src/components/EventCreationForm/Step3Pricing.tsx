@@ -30,7 +30,7 @@ export default function Step3Pricing({
 			animate={{ x: 0, opacity: 1 }}
 			exit={{ x: -20, opacity: 0 }}
 		>
-			<h4 className="fw-bold mb-4">Step 3: Ticketing, Visibility &amp; Team Settings</h4>
+			<h4 className="fw-bold mb-4">Step 3: Ticketing &amp; Visibility Settings</h4>
 
 			<div className="mb-4">
 				<label className="form-label fw-semibold d-block">Is this a free event?</label>
@@ -41,9 +41,14 @@ export default function Step3Pricing({
 						name="free"
 						id="free"
 						checked={isFree}
-						onChange={() => { setIsFree(true); setFormData((p) => ({ ...p, price: 0 })); }}
+						onChange={() => {
+							setIsFree(true);
+							setFormData((p) => ({ ...p, price: 0 }));
+						}}
 					/>
-					<label className="btn btn-outline-primary py-2 fw-bold" htmlFor="free">Free Event</label>
+					<label className="btn btn-outline-primary py-2 fw-bold" htmlFor="free">
+						Free Event
+					</label>
 					<input
 						type="radio"
 						className="btn-check"
@@ -52,7 +57,9 @@ export default function Step3Pricing({
 						checked={!isFree}
 						onChange={() => setIsFree(false)}
 					/>
-					<label className="btn btn-outline-primary py-2 fw-bold" htmlFor="paid">Paid Event</label>
+					<label className="btn btn-outline-primary py-2 fw-bold" htmlFor="paid">
+						Paid Event
+					</label>
 				</div>
 			</div>
 
@@ -65,7 +72,9 @@ export default function Step3Pricing({
 							exit={{ height: 0, opacity: 0 }}
 							className="col-md-6 mb-3 overflow-hidden"
 						>
-							<label className="form-label fw-semibold" htmlFor="price">Ticket Price (INR)</label>
+							<label className="form-label fw-semibold" htmlFor="price">
+								Ticket Price (INR)
+							</label>
 							<div className={`input-group${errors.price ? " has-validation" : ""}`}>
 								<span className="input-group-text border-end-0">₹</span>
 								<input

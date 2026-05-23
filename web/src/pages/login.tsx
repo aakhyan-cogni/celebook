@@ -24,11 +24,11 @@ export default function Login() {
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
 	const schema = isLogin ? loginSchema : registerSchema;
-	const { errors, validate, clear, setErrors } = useFormErrors(schema as any);
+	const { errors, validate, clear, setErrors } = useFormErrors(schema);
 
 	useEffect(() => {
 		if (isAuthenticated) navigate("/dashboard");
-	});
+	}, [isAuthenticated, navigate]);
 
 	useEffect(() => {
 		setErrors({});
@@ -41,11 +41,11 @@ export default function Login() {
 		const payload = isLogin
 			? { email: raw.email ?? "", password: raw.password ?? "" }
 			: {
-				name: raw.name ?? "",
-				email: raw.email ?? "",
-				password: raw.password ?? "",
-				termsAccepted: formData.get("termsAccepted") === "on",
-			};
+					name: raw.name ?? "",
+					email: raw.email ?? "",
+					password: raw.password ?? "",
+					termsAccepted: formData.get("termsAccepted") === "on",
+				};
 
 		const result = validate(payload);
 		if (!result.ok) {
@@ -65,8 +65,8 @@ export default function Login() {
 				const me = await apiFetch("/auth/me", { method: "GET" });
 				if (me?.user) updateUser({ ...me.user });
 				setConsentRequired(me?.consent?.needsRenewal === true);
-			} catch {
-				// Non-critical — defense-in-depth via 403 handler still applies.
+			} catch (e) {
+				console.error("Failed to fetch user data after authentication", e);
 			}
 
 			toast.success(response.message || "Success!");

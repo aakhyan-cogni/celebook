@@ -3,7 +3,7 @@ export const fadeInUp = {
 	visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-export const TOTAL_STEPS = 3; 
+export const TOTAL_STEPS = 3;
 export const TIER_IMAGE_LIMITS: Record<string, number> = { FREE: 1, PRO: 5, ULTIMATE: 10 };
 export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 

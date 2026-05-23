@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { type User } from "../../store";
 import { motion } from "motion/react";
-import { apiFetch } from "../../lib/api";
+import { apiFetch, SERVER_ORIGIN } from "../../lib/api";
 import { useNavigate } from "react-router";
 
 const Users = () => {
@@ -12,7 +12,7 @@ const Users = () => {
 
 	const navigate = useNavigate();
 
-	const profileImg = `http://localhost:5000/uploads/avatars/`;
+	const profileImg = `${SERVER_ORIGIN}/uploads/avatars/`;
 
 	useEffect(() => {
 		const fetchData = async () => {

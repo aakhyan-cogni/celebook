@@ -9,7 +9,7 @@ export async function getPaginatedUsers(page, limit, role) {
 		.select("-password -refreshToken")
 		.skip((page - 1) * limit)
 		.limit(limit)
-		.sort({updatedAt:-1})
+		.sort({ updatedAt: -1 })
 		.lean();
 
 	const total = await UserModel.countDocuments(filter);
@@ -28,12 +28,12 @@ export async function updateUserRole(userId, role) {
 }
 
 export async function getPaginatedEvents(page, limit, status) {
-	const filter = status ? { status } : { status : {$ne:"DRAFT"}};
+	const filter = status ? { status } : { status: { $ne: "DRAFT" } };
 
 	const docs = await EventModel.find(filter)
 		.skip((page - 1) * limit)
 		.limit(limit)
-		.sort({updatedAt:-1})
+		.sort({ updatedAt: -1 })
 		.lean();
 
 	const total = await EventModel.countDocuments(filter);

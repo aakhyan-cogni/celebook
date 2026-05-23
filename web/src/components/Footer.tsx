@@ -81,10 +81,7 @@ export default function Footer() {
 						<h6 className="fw-bold text-uppercase small mb-3">Connect</h6>
 						<ul className="list-unstyled small mb-0">
 							<li className="mb-2">
-								<a
-									href="mailto:legal@celebookems.com"
-									className="text-muted text-decoration-none"
-								>
+								<a href="mailto:legal@celebookems.com" className="text-muted text-decoration-none">
 									Email us
 								</a>
 							</li>
@@ -106,9 +103,7 @@ export default function Footer() {
 
 				<div className="d-flex flex-column flex-md-row justify-content-between align-items-center small text-muted">
 					<div>&copy; {year} CeleBook EMS. All rights reserved.</div>
-					<div className="mt-2 mt-md-0">
-						Made with care in Cognizant
-					</div>
+					<div className="mt-2 mt-md-0">Made with care in Cognizant</div>
 				</div>
 			</div>
 		</footer>

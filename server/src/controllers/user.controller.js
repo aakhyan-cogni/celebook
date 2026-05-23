@@ -17,9 +17,8 @@ export async function getUserProfile(req, res) {
 	}
 }
 
-export const getUserProfileById = async(req,res) => {
+export const getUserProfileById = async (req, res) => {
 	try {
-
 		const user = await UserService.getUserById(req.params.id);
 		if (!user) {
 			return res.status(404).json({ message: "User not found" });
@@ -30,7 +29,7 @@ export const getUserProfileById = async(req,res) => {
 		console.error("[getUserProfileById] Error in User controller:", error);
 		res.status(500).json({ message: "Error fetching user profile" });
 	}
-}
+};
 
 export async function updateUser(req, res) {
 	try {

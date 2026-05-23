@@ -6,13 +6,7 @@ interface CancelReasonModalProps {
 	onConfirm: () => void;
 }
 
-export default function CancelReasonModal({
-	value,
-	acting,
-	onChange,
-	onClose,
-	onConfirm,
-}: CancelReasonModalProps) {
+export default function CancelReasonModal({ value, acting, onChange, onClose, onConfirm }: CancelReasonModalProps) {
 	return (
 		<div
 			className="modal d-block"
@@ -39,10 +33,7 @@ export default function CancelReasonModal({
 						/>
 					</div>
 					<div className="modal-footer border-0 pt-0">
-						<button
-							className="btn btn-outline-secondary rounded-pill px-4"
-							onClick={onClose}
-						>
+						<button className="btn btn-outline-secondary rounded-pill px-4" onClick={onClose}>
 							Cancel
 						</button>
 						<button
@@ -50,9 +41,7 @@ export default function CancelReasonModal({
 							onClick={onConfirm}
 							disabled={acting || !value.trim()}
 						>
-							{acting ? (
-								<span className="spinner-border spinner-border-sm me-2" role="status" />
-							) : null}
+							{acting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
 							Confirm Cancellation
 						</button>
 					</div>

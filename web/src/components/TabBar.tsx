@@ -46,9 +46,7 @@ export default function ProfileLayout() {
 	const viewBookings = () => setActive("bookings");
 
 	// Override the display label for the payment tab without touching tabs.ts
-	const tabs = TABS.map((tab) =>
-		tab.id === "payment" ? { ...tab, label: "Plan Details" } : tab
-	);
+	const tabs = TABS.map((tab) => (tab.id === "payment" ? { ...tab, label: "Plan Details" } : tab));
 
 	return (
 		<div className="container-fluid" style={{ overflow: "hidden", height: "100%", width: "100%" }}>
@@ -92,7 +90,9 @@ export default function ProfileLayout() {
 				<main className="col-12 col-md-9 col-lg-10 p-3">
 					<div className="card shadow-sm h-100">
 						<div className="card-body">
-							{active === "dashboard" && <Dashboard viewEventsFn={viewEvents} viewBookingsFn={viewBookings} />}
+							{active === "dashboard" && (
+								<Dashboard viewEventsFn={viewEvents} viewBookingsFn={viewBookings} />
+							)}
 							{active === "personal" && <PersonalContent />}
 							{active === "payment" && <PaymentContent />}
 							{active === "bookings" && <Bookings />}

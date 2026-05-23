@@ -101,7 +101,7 @@ export const upgradeUserTier = async (req, res) => {
 		const updatedUser = await UserModel.findByIdAndUpdate(
 			userId,
 			{ $set: { tier: targetDbTier } },
-			{ new: true }
+			{ new: true },
 		).select("-password -refreshToken");
 
 		if (!updatedUser) {

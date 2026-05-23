@@ -15,6 +15,7 @@ export function useEventImages(opts: {
 	const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 	const [imageError, setImageError] = useState("");
 	const [uploading, setUploading] = useState(false);
+	const uploadingRef = useRef(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const handleImageSelect = (files: FileList | null) => {
@@ -23,10 +24,16 @@ export function useEventImages(opts: {
 		const newFiles = Array.from(files);
 
 		const invalid = newFiles.filter((f) => !ACCEPTED_TYPES.includes(f.type));
-		if (invalid.length) { setImageError("Only JPEG, PNG, and WebP images are allowed."); return; }
+		if (invalid.length) {
+			setImageError("Only JPEG, PNG, and WebP images are allowed.");
+			return;
+		}
 
 		const tooBig = newFiles.filter((f) => f.size > 5 * 1024 * 1024);
-		if (tooBig.length) { setImageError("Each image must be under 5 MB."); return; }
+		if (tooBig.length) {
+			setImageError("Each image must be under 5 MB.");
+			return;
+		}
 
 		if (existingUrls.length + imageFiles.length + newFiles.length > imageLimit) {
 			setImageError(`Your ${userTier} plan allows at most ${imageLimit} image(s).`);
@@ -53,7 +60,10 @@ export function useEventImages(opts: {
 				credentials: "include",
 				body: JSON.stringify({ url }),
 			});
-			if (!res.ok) { toast.error("Could not remove image."); return; }
+			if (!res.ok) {
+				toast.error("Could not remove image.");
+				return;
+			}
 			setExistingUrls((prev) => prev.filter((u) => u !== url));
 		} catch {
 			toast.error("Could not remove image.");
@@ -62,6 +72,10 @@ export function useEventImages(opts: {
 
 	const uploadImages = async (eventId: string): Promise<void> => {
 		if (imageFiles.length === 0) return;
+		// Ref-based guard — state updates are async and don't block a second
+		// invocation fired in the same tick (e.g., double-click on publish).
+		if (uploadingRef.current) return;
+		uploadingRef.current = true;
 		setUploading(true);
 		try {
 			const fd = new FormData();
@@ -77,6 +91,7 @@ export function useEventImages(opts: {
 				throw new Error(err.message || "Image upload failed.");
 			}
 		} finally {
+			uploadingRef.current = false;
 			setUploading(false);
 		}
 	};

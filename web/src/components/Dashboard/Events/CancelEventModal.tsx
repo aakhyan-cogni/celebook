@@ -19,7 +19,9 @@ export default function CancelEventModal({
 }: CancelEventModalProps) {
 	return (
 		<motion.div
-			initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+			initial={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			exit={{ opacity: 0 }}
 			className="modal d-block"
 			style={{ background: "rgba(0,0,0,0.5)" }}
 			onClick={onClose}
@@ -32,13 +34,14 @@ export default function CancelEventModal({
 					</div>
 					<div className="modal-body">
 						<p className="text-body-secondary">
-							Are you sure you want to cancel <strong>{target?.title}</strong>?
-							Registered attendees will be notified.
+							Are you sure you want to cancel <strong>{target?.title}</strong>? Registered attendees will
+							be notified.
 						</p>
 						<div className="mb-2">
 							<label className="form-label fw-semibold small">Reason (optional)</label>
 							<textarea
-								className={`form-control rounded-3${reason.length > 500 ? " is-invalid" : ""}`} rows={3}
+								className={`form-control rounded-3${reason.length > 500 ? " is-invalid" : ""}`}
+								rows={3}
 								placeholder="e.g. Venue unavailable, rescheduled..."
 								value={reason}
 								onChange={(e) => onReasonChange(e.target.value)}
@@ -56,7 +59,9 @@ export default function CancelEventModal({
 							Keep Event
 						</button>
 						<button className="btn btn-danger rounded-pill px-4" onClick={onConfirm} disabled={cancelling}>
-							{cancelling ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
+							{cancelling ? (
+								<span className="spinner-border spinner-border-sm me-2" role="status" />
+							) : null}
 							Cancel Event
 						</button>
 					</div>

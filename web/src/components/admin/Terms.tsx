@@ -105,14 +105,11 @@ export default function Terms() {
 				<div>
 					<h4 className="fw-bold mb-1">Terms &amp; Conditions</h4>
 					<p className="text-muted small mb-0">
-						Currently live: <span className="badge bg-primary-subtle text-primary-emphasis">v{originalVersion}</span>
+						Currently live:{" "}
+						<span className="badge bg-primary-subtle text-primary-emphasis">v{originalVersion}</span>
 					</p>
 				</div>
-				<button
-					className="btn btn-primary"
-					disabled={saving}
-					onClick={openConfirm}
-				>
+				<button className="btn btn-primary" disabled={saving} onClick={openConfirm}>
 					Publish new version
 				</button>
 			</div>
@@ -126,7 +123,10 @@ export default function Terms() {
 					type="text"
 					className={`form-control${errors.version ? " is-invalid" : ""}`}
 					value={version}
-					onChange={(e) => { setVersion(e.target.value); clear("version"); }}
+					onChange={(e) => {
+						setVersion(e.target.value);
+						clear("version");
+					}}
 					placeholder="e.g. 1.1"
 					aria-invalid={!!errors.version}
 				/>
@@ -220,18 +220,10 @@ export default function Terms() {
 					Unlink
 				</button>
 				<div className="vr mx-2"></div>
-				<button
-					type="button"
-					className={TOOLBAR_BTN}
-					onClick={() => editor.chain().focus().undo().run()}
-				>
+				<button type="button" className={TOOLBAR_BTN} onClick={() => editor.chain().focus().undo().run()}>
 					↶ Undo
 				</button>
-				<button
-					type="button"
-					className={TOOLBAR_BTN}
-					onClick={() => editor.chain().focus().redo().run()}
-				>
+				<button type="button" className={TOOLBAR_BTN} onClick={() => editor.chain().focus().redo().run()}>
 					↷ Redo
 				</button>
 			</div>
@@ -249,12 +241,16 @@ export default function Terms() {
 						<strong>v{originalVersion}</strong>).
 					</p>
 					<p className="text-muted small mb-0">
-						Every user will be prompted to re-accept on their next mutating action. This cannot be
-						undone — you'll need to publish another version to roll back.
+						Every user will be prompted to re-accept on their next mutating action. This cannot be undone —
+						you'll need to publish another version to roll back.
 					</p>
 				</Modal.Body>
 				<Modal.Footer>
-					<button className="btn btn-outline-secondary" onClick={() => setShowConfirm(false)} disabled={saving}>
+					<button
+						className="btn btn-outline-secondary"
+						onClick={() => setShowConfirm(false)}
+						disabled={saving}
+					>
 						Cancel
 					</button>
 					<button className="btn btn-primary" onClick={onConfirmSave} disabled={saving}>

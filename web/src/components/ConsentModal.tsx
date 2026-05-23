@@ -84,9 +84,7 @@ export default function ConsentModal() {
 		}
 	}
 
-	const sanitizedContent = terms?.content
-		? DOMPurify.sanitize(terms.content, { USE_PROFILES: { html: true } })
-		: "";
+	const sanitizedContent = terms?.content ? DOMPurify.sanitize(terms.content, { USE_PROFILES: { html: true } }) : "";
 
 	return (
 		<div
@@ -106,7 +104,13 @@ export default function ConsentModal() {
 		>
 			<div
 				className="card shadow-lg border-0 rounded-4 bg-body"
-				style={{ width: "100%", maxWidth: "640px", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
+				style={{
+					width: "100%",
+					maxWidth: "640px",
+					maxHeight: "90vh",
+					display: "flex",
+					flexDirection: "column",
+				}}
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="card-header border-0 bg-primary text-white rounded-top-4 p-4">
@@ -144,10 +148,7 @@ export default function ConsentModal() {
 					)}
 
 					{!isLoading && !loadError && terms && (
-						<div
-							className="consent-content"
-							dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-						/>
+						<div className="consent-content" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
 					)}
 				</div>
 
@@ -164,7 +165,11 @@ export default function ConsentModal() {
 					>
 						{isAccepting ? (
 							<>
-								<span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+								<span
+									className="spinner-border spinner-border-sm me-2"
+									role="status"
+									aria-hidden="true"
+								/>
 								Saving...
 							</>
 						) : (

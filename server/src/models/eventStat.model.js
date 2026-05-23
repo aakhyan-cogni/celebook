@@ -12,4 +12,4 @@ const eventStatSchema = new mongoose.Schema(
 export const EventStatModel = mongoose.model("EventStat", eventStatSchema);
 export const EVENT_STAT_COLLECTION = "EventStat";
 
-// removed avgFeedback as it is calculated on demand in single event page 
+// removed avgFeedback as it is calculated on demand in single event page

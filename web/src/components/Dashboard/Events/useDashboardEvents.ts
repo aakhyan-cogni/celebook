@@ -12,7 +12,7 @@ export function useDashboardEvents() {
 
 	const authHeaders = () => ({
 		"Content-Type": "application/json",
-		Authorization:  `Bearer ${accessToken}`,
+		Authorization: `Bearer ${accessToken}`,
 	});
 
 	const fetchMyEvents = async () => {
@@ -47,7 +47,9 @@ export function useDashboardEvents() {
 	const publish = async (eventId: string) => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
-				method: "POST", headers: authHeaders(), credentials: "include",
+				method: "POST",
+				headers: authHeaders(),
+				credentials: "include",
 			});
 			const data = await res.json();
 			if (!res.ok) {
@@ -72,7 +74,9 @@ export function useDashboardEvents() {
 	const remove = async (target: any) => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${target.id}`, {
-				method: "DELETE", headers: authHeaders(), credentials: "include",
+				method: "DELETE",
+				headers: authHeaders(),
+				credentials: "include",
 			});
 			const data = await res.json();
 			if (!res.ok) {
@@ -113,7 +117,9 @@ export function useDashboardEvents() {
 	const duplicate = async (eventId: string) => {
 		try {
 			const res = await fetch(`${BASE_URL}/events/${eventId}/duplicate`, {
-				method: "POST", headers: authHeaders(), credentials: "include",
+				method: "POST",
+				headers: authHeaders(),
+				credentials: "include",
 			});
 			if (!res.ok) throw new Error();
 			toast.success("Event duplicated as a new draft.");

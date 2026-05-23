@@ -6,7 +6,14 @@ export function PricingCard(props: PricingCardProps) {
 			<div className="card-body d-flex flex-column">
 				<div className="d-flex justify-content-center align-items-center pb-2">
 					<h3 className="card-title text-center">{title}</h3>
-					{popular && <span className="position-absolute end-0 me-4 rounded-pill bg-primary px-2" style={{ fontSize: "14px", color: "white" }}>Popular</span>}
+					{popular && (
+						<span
+							className="position-absolute end-0 me-4 rounded-pill bg-primary px-2"
+							style={{ fontSize: "14px", color: "white" }}
+						>
+							Popular
+						</span>
+					)}
 				</div>
 				<h2 className="text-center mb-3">
 					{price}

@@ -42,7 +42,7 @@ export async function triggerHostFeedback(eventId, requestingUserId, isAdmin = f
 	const now = new Date();
 	event.hostFeedbackSentAt = now;
 	await event.save();
-// notify feedback only to present attendees, CHANGED
+	// notify feedback only to present attendees, CHANGED
 	const stat = await EventStatModel.findOne({
 		eventId: new mongoose.Types.ObjectId(eventId),
 	}).select("presentAttendees");

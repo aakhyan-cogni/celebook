@@ -5,12 +5,7 @@ import toast from "react-hot-toast";
 import { BASE_URL } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 import StarRating from "../components/StarRating";
-import {
-	FEEDBACK_FIELD_LABELS,
-	FEEDBACK_RATING_FIELDS,
-	getMyFeedback,
-	submitFeedback,
-} from "../api/feedback.api";
+import { FEEDBACK_FIELD_LABELS, FEEDBACK_RATING_FIELDS, getMyFeedback, submitFeedback } from "../api/feedback.api";
 import type { FeedbackPayload, FeedbackRatingField } from "../api/feedback.api";
 
 const initialRatings: Record<FeedbackRatingField, number> = {
@@ -35,6 +30,7 @@ export default function FeedbackPage() {
 	const [areasOfImprovement, setAreasOfImprovement] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+	const [mineCheckFailed, setMineCheckFailed] = useState(false);
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
 	useEffect(() => {
@@ -64,9 +60,12 @@ export default function FeedbackPage() {
 				const data = await res.json();
 				setEvent(data);
 
-				const mine = await getMyFeedback(id).catch(() => null);
-				if (mine?.data) {
-					setAlreadySubmitted(true);
+				try {
+					const mine = await getMyFeedback(id);
+					if (mine?.data) setAlreadySubmitted(true);
+				} catch (mineErr) {
+					console.error("Failed to check existing feedback:", mineErr);
+					setMineCheckFailed(true);
 				}
 			} catch {
 				setEventError("ERROR");
@@ -81,11 +80,7 @@ export default function FeedbackPage() {
 	if (loadingEvent) {
 		return (
 			<div className="container py-5 text-center">
-				<div
-					className="spinner-border text-primary"
-					role="status"
-					style={{ width: "3rem", height: "3rem" }}
-				/>
+				<div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }} />
 				<p className="mt-3 text-body-secondary">Loading feedback form...</p>
 			</div>
 		);
@@ -112,9 +107,7 @@ export default function FeedbackPage() {
 		return (
 			<div className="container py-5 text-center">
 				<h3 className="fw-bold mb-2">Feedback isn't open yet</h3>
-				<p className="text-body-secondary">
-					You can leave feedback once the event has finished.
-				</p>
+				<p className="text-body-secondary">You can leave feedback once the event has finished.</p>
 				<button className="btn btn-primary rounded-pill px-4" onClick={() => navigate(`/events/${id}`)}>
 					Back to event
 				</button>
@@ -173,6 +166,21 @@ export default function FeedbackPage() {
 		);
 	}
 
+	if (mineCheckFailed) {
+		return (
+			<div className="container py-5 text-center">
+				<h3 className="fw-bold mb-2">Couldn't check your submission status</h3>
+				<p className="text-body-secondary">
+					We weren't able to verify whether you've already left feedback. Please refresh — submitting again is
+					blocked server-side, so no double-entry risk.
+				</p>
+				<button className="btn btn-primary rounded-pill px-4" onClick={() => window.location.reload()}>
+					Refresh
+				</button>
+			</div>
+		);
+	}
+
 	const userRatedFields = FEEDBACK_RATING_FIELDS.filter((f) => f !== "overallRating");
 
 	const onSubmit = async (e: React.FormEvent) => {
@@ -197,8 +205,7 @@ export default function FeedbackPage() {
 		try {
 			// overallRating is the mean of the other five ratings, rounded to the nearest 0.5
 			// so it satisfies the backend's 0.5-step validator.
-			const avg =
-				userRatedFields.reduce((sum, f) => sum + ratings[f], 0) / userRatedFields.length;
+			const avg = userRatedFields.reduce((sum, f) => sum + ratings[f], 0) / userRatedFields.length;
 			const overallRating = Math.max(0.5, Math.round(avg * 2) / 2);
 
 			const payload: FeedbackPayload = {
@@ -234,7 +241,9 @@ export default function FeedbackPage() {
 					className="btn btn-link text-decoration-none text-primary fw-bold p-0 d-flex align-items-center"
 					style={{ fontSize: "0.85rem" }}
 				>
-					<span className="me-2" style={{ fontSize: "1.5rem" }}>←</span>
+					<span className="me-2" style={{ fontSize: "1.5rem" }}>
+						←
+					</span>
 					Back to event
 				</button>
 			</div>
@@ -254,10 +263,7 @@ export default function FeedbackPage() {
 
 						<form onSubmit={onSubmit}>
 							{userRatedFields.map((field) => (
-								<div
-									key={field}
-									className="py-3 border-bottom"
-								>
+								<div key={field} className="py-3 border-bottom">
 									<div className="d-flex justify-content-between align-items-center">
 										<div>
 											<div className="fw-semibold text-body">{FEEDBACK_FIELD_LABELS[field]}</div>
@@ -269,13 +275,19 @@ export default function FeedbackPage() {
 											value={ratings[field]}
 											onChange={(v) => {
 												setRatings((prev) => ({ ...prev, [field]: v }));
-												if (formErrors[field]) setFormErrors((p) => { const { [field]: _, ...rest } = p; return rest; });
+												if (formErrors[field])
+													setFormErrors((p) => {
+														const { [field]: _, ...rest } = p;
+														return rest;
+													});
 											}}
 											size={28}
 										/>
 									</div>
 									{formErrors[field] && (
-										<div className="text-danger small mt-1" role="alert">{formErrors[field]}</div>
+										<div className="text-danger small mt-1" role="alert">
+											{formErrors[field]}
+										</div>
 									)}
 								</div>
 							))}
@@ -286,26 +298,41 @@ export default function FeedbackPage() {
 									<button
 										type="button"
 										className={`btn rounded-pill px-4 fw-bold ${wouldAttendAgain === true ? "btn-success" : "btn-outline-success"}`}
-										onClick={() => { setWouldAttendAgain(true); setFormErrors((p) => { const { wouldAttendAgain: _, ...rest } = p; return rest; }); }}
+										onClick={() => {
+											setWouldAttendAgain(true);
+											setFormErrors((p) => {
+												const { wouldAttendAgain: _, ...rest } = p;
+												return rest;
+											});
+										}}
 									>
 										Yes
 									</button>
 									<button
 										type="button"
 										className={`btn rounded-pill px-4 fw-bold ${wouldAttendAgain === false ? "btn-danger" : "btn-outline-danger"}`}
-										onClick={() => { setWouldAttendAgain(false); setFormErrors((p) => { const { wouldAttendAgain: _, ...rest } = p; return rest; }); }}
+										onClick={() => {
+											setWouldAttendAgain(false);
+											setFormErrors((p) => {
+												const { wouldAttendAgain: _, ...rest } = p;
+												return rest;
+											});
+										}}
 									>
 										No
 									</button>
 								</div>
 								{formErrors.wouldAttendAgain && (
-									<div className="text-danger small mt-2" role="alert">{formErrors.wouldAttendAgain}</div>
+									<div className="text-danger small mt-2" role="alert">
+										{formErrors.wouldAttendAgain}
+									</div>
 								)}
 							</div>
 
 							<div className="py-3">
 								<label htmlFor="areasOfImprovement" className="fw-semibold text-body mb-2 d-block">
-									Areas of Improvement <span className="text-body-secondary fw-normal small">(optional)</span>
+									Areas of Improvement{" "}
+									<span className="text-body-secondary fw-normal small">(optional)</span>
 								</label>
 								<textarea
 									id="areasOfImprovement"
@@ -314,7 +341,14 @@ export default function FeedbackPage() {
 									maxLength={1000}
 									placeholder="What could have been better?"
 									value={areasOfImprovement}
-									onChange={(e) => { setAreasOfImprovement(e.target.value); if (formErrors.areasOfImprovement) setFormErrors((p) => { const { areasOfImprovement: _, ...rest } = p; return rest; }); }}
+									onChange={(e) => {
+										setAreasOfImprovement(e.target.value);
+										if (formErrors.areasOfImprovement)
+											setFormErrors((p) => {
+												const { areasOfImprovement: _, ...rest } = p;
+												return rest;
+											});
+									}}
 								/>
 								{formErrors.areasOfImprovement && (
 									<div className="invalid-feedback d-block">{formErrors.areasOfImprovement}</div>

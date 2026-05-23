@@ -25,25 +25,37 @@ export default function EventActionButtons({
 				<>
 					<button
 						className="btn btn-sm btn-outline-primary rounded-pill"
-						onClick={(e) => { stop(e); onEdit(event); }}
+						onClick={(e) => {
+							stop(e);
+							onEdit(event);
+						}}
 					>
 						Edit
 					</button>
 					<button
 						className="btn btn-sm btn-success rounded-pill"
-						onClick={(e) => { stop(e); onPublish(event.id); }}
+						onClick={(e) => {
+							stop(e);
+							onPublish(event.id);
+						}}
 					>
 						Publish
 					</button>
 					<button
 						className="btn btn-sm btn-outline-secondary rounded-pill"
-						onClick={(e) => { stop(e); onDuplicate(event.id); }}
+						onClick={(e) => {
+							stop(e);
+							onDuplicate(event.id);
+						}}
 					>
 						Duplicate
 					</button>
 					<button
 						className="btn btn-sm btn-outline-danger rounded-pill"
-						onClick={(e) => { stop(e); onAskDelete(event); }}
+						onClick={(e) => {
+							stop(e);
+							onAskDelete(event);
+						}}
 					>
 						Delete
 					</button>
@@ -57,7 +69,10 @@ export default function EventActionButtons({
 					</span>
 					<button
 						className="btn btn-sm btn-outline-danger rounded-pill"
-						onClick={(e) => { stop(e); onAskCancel(event); }}
+						onClick={(e) => {
+							stop(e);
+							onAskCancel(event);
+						}}
 					>
 						Cancel Event
 					</button>
@@ -68,13 +83,19 @@ export default function EventActionButtons({
 				<>
 					<button
 						className="btn btn-sm btn-outline-secondary rounded-pill"
-						onClick={(e) => { stop(e); onDuplicate(event.id); }}
+						onClick={(e) => {
+							stop(e);
+							onDuplicate(event.id);
+						}}
 					>
 						Duplicate
 					</button>
 					<button
 						className="btn btn-sm btn-outline-danger rounded-pill"
-						onClick={(e) => { stop(e); onAskCancel(event); }}
+						onClick={(e) => {
+							stop(e);
+							onAskCancel(event);
+						}}
 					>
 						Cancel Event
 					</button>
@@ -85,13 +106,19 @@ export default function EventActionButtons({
 				<>
 					<button
 						className="btn btn-sm btn-primary rounded-pill"
-						onClick={(e) => { stop(e); onEdit(event); }}
+						onClick={(e) => {
+							stop(e);
+							onEdit(event);
+						}}
 					>
 						Edit & Resubmit
 					</button>
 					<button
 						className="btn btn-sm btn-outline-danger rounded-pill"
-						onClick={(e) => { stop(e); onAskDelete(event); }}
+						onClick={(e) => {
+							stop(e);
+							onAskDelete(event);
+						}}
 					>
 						Delete
 					</button>

@@ -188,7 +188,9 @@ export async function checkIn(req, res) {
 		const isAdmin = req.user.role === "ADMIN";
 
 		if (!isOrganizer && !isAdmin) {
-			return res.status(403).json({ success: false, message: "Forbidden: only organizer or admin can check in attendees" });
+			return res
+				.status(403)
+				.json({ success: false, message: "Forbidden: only organizer or admin can check in attendees" });
 		}
 
 		const result = await RegistrationService.checkInAttendee(token, eventId, confirm);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScanLine } from "lucide-react";
+import { RefreshCw, ScanLine } from "lucide-react";
 import PresentAttendeesModal from "./PresentAttendeesModal";
 
 interface OrganizerStatsPanelProps {
@@ -7,6 +7,7 @@ interface OrganizerStatsPanelProps {
 	eventStat: any;
 	scanLoading: boolean;
 	onScan: () => void;
+	onRefresh?: () => void;
 }
 
 export default function OrganizerStatsPanel({
@@ -14,9 +15,11 @@ export default function OrganizerStatsPanel({
 	eventStat,
 	scanLoading,
 	onScan,
+	onRefresh,
 }: OrganizerStatsPanelProps) {
 	const [showPresentList, setShowPresentList] = useState(false);
 	const presentCount = eventStat?.presentAttendees?.length ?? 0;
+	const registeredCount = eventStat?.registrationCount ?? event.registrationCount ?? 0;
 	return (
 		<div className="card border-0 bg-body-tertiary rounded-4 overflow-hidden mt-4">
 			<div
@@ -31,6 +34,18 @@ export default function OrganizerStatsPanel({
 						Only visible to you
 					</div>
 				</div>
+				{onRefresh && (
+					<button
+						type="button"
+						onClick={onRefresh}
+						className="btn btn-sm btn-light rounded-circle d-flex align-items-center justify-content-center"
+						style={{ width: 32, height: 32 }}
+						title="Refresh counts"
+						aria-label="Refresh counts"
+					>
+						<RefreshCw size={14} />
+					</button>
+				)}
 			</div>
 
 			<div className="p-4">
@@ -38,20 +53,20 @@ export default function OrganizerStatsPanel({
 					<div className="d-flex justify-content-between align-items-center mb-2">
 						<span className="small text-body-secondary fw-semibold">Capacity</span>
 						<span className="small fw-bold text-body">
-							{event.registrationCount ?? 0} / {event.capacity} registered
+							{registeredCount} / {event.capacity} registered
 						</span>
 					</div>
 					<div className="progress rounded-pill bg-body" style={{ height: 8 }}>
 						<div
 							className="progress-bar rounded-pill bg-primary"
-							style={{ width: `${Math.min(((event.registrationCount ?? 0) / event.capacity) * 100, 100)}%` }}
+							style={{ width: `${Math.min((registeredCount / event.capacity) * 100, 100)}%` }}
 						/>
 					</div>
 				</div>
 
 				<div className="row g-3 mb-4">
 					<div className="col-4 text-center">
-						<div className="fw-bold fs-5 text-primary">{event.registrationCount ?? 0}</div>
+						<div className="fw-bold fs-5 text-primary">{registeredCount}</div>
 						<div className="small text-body-secondary">Registered</div>
 					</div>
 					<div className="col-4 text-center border-start border-end border-secondary border-opacity-25">
@@ -82,9 +97,11 @@ export default function OrganizerStatsPanel({
 						onClick={onScan}
 						disabled={scanLoading}
 					>
-						{scanLoading
-							? <span className="spinner-border spinner-border-sm" role="status" />
-							: <ScanLine size={15} />}
+						{scanLoading ? (
+							<span className="spinner-border spinner-border-sm" role="status" />
+						) : (
+							<ScanLine size={15} />
+						)}
 						Scan QR
 					</button>
 				</div>

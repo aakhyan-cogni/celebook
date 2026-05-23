@@ -1,15 +1,21 @@
 import { logout as logoutReq } from "../api/auth.api";
 import { useAuthStore } from "../store/useAuthStore";
 
-const BASE_URL = "http://localhost:5000/api";
-export { BASE_URL };
+const SERVER_ORIGIN = (import.meta as any).env?.VITE_SERVER_URL ?? "http://localhost:5000";
+const BASE_URL = (import.meta as any).env?.VITE_API_URL ?? `${SERVER_ORIGIN}/api`;
 
-const SERVER_ORIGIN = "http://localhost:5000";
+export { BASE_URL, SERVER_ORIGIN };
 
 export function getImageUrl(path: string | null | undefined): string {
 	if (!path) return "";
 	if (path.startsWith("http://") || path.startsWith("https://")) return path;
 	return `${SERVER_ORIGIN}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+export function getAvatarUrl(avatar: string | null | undefined): string {
+	if (!avatar) return "";
+	if (avatar.startsWith("http://") || avatar.startsWith("https://")) return avatar;
+	return `${SERVER_ORIGIN}/uploads/avatars/${avatar}`;
 }
 
 export const EVENT_FALLBACK_IMG =
@@ -48,15 +54,9 @@ export async function apiFetch(
 	if (response.status === 403) {
 		const errorData = await response.json().catch(() => ({}));
 		if (errorData.code === "CONSENT_REQUIRED" && endpoint !== "/consent/accept") {
-			// Don't throw — that would let the caller toast a confusing "Consent required"
-			// message even though the modal is opening. Instead, return a Promise that
-			// resolves once the user accepts and the queued retry completes. From the
-			// caller's perspective, the original action just took a long time.
 			setConsentRequired(true);
 			return new Promise((resolve, reject) => {
-				setPendingRequest(() =>
-					apiFetch(endpoint, options, queryParams).then(resolve, reject),
-				);
+				setPendingRequest(() => apiFetch(endpoint, options, queryParams).then(resolve, reject));
 			});
 		}
 		throw new Error(errorData.message || "Access forbidden");

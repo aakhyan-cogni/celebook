@@ -60,12 +60,21 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const [showScanner, setShowScanner] = useState(false);
 	const [marking, setMarking] = useState(false);
 
-	const [hostFeedbackSentAt, setHostFeedbackSentAt] = useState<string | null>(
-		event.hostFeedbackSentAt ?? null,
-	);
+	const [hostFeedbackSentAt, setHostFeedbackSentAt] = useState<string | null>(event.hostFeedbackSentAt ?? null);
 	const [sendingFeedbackTrigger, setSendingFeedbackTrigger] = useState(false);
 	const [myFeedbackSubmitted, setMyFeedbackSubmitted] = useState(false);
 	const [feedbackSummaryRefresh, setFeedbackSummaryRefresh] = useState(0);
+
+	const successCloseTimer = useRef<number | null>(null);
+	useEffect(
+		() => () => {
+			if (successCloseTimer.current) {
+				clearTimeout(successCloseTimer.current);
+				successCloseTimer.current = null;
+			}
+		},
+		[],
+	);
 
 	const isDraftEvent = event.status === "DRAFT";
 	const isPastEvent = !isDraftEvent && new Date(event.date).getTime() < Date.now();
@@ -73,7 +82,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const isAdmin = isAuthenticated && user?.role === "ADMIN";
 	const eid = eventId || event._id || event.id;
 
-	const [eventStat, setEventStat] = useEventStats(eid, isOrganizer || isAdmin);
+	const [eventStat, , refetchStats] = useEventStats(eid, isOrganizer || isAdmin);
 	const { scanResult, scanLoading, lastScannedToken, clearScan } = useQRScanner({
 		showScanner,
 		eventId: eid,
@@ -92,10 +101,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			await checkInAttendee(eid, lastScannedToken, true);
 			toast.success("Marked as present!");
 			clearScan();
-			setEventStat((prev: any) => prev ? {
-				...prev,
-				presentAttendees: [...(prev.presentAttendees ?? []), "1"],
-			} : prev);
+			refetchStats();
 		} catch (err: any) {
 			toast.error(err.message || "Failed to mark present");
 		} finally {
@@ -151,7 +157,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 			setIsRegistered(true);
 			setShowConfirm(false);
 
-			setTimeout(() => {
+			if (successCloseTimer.current) clearTimeout(successCloseTimer.current);
+			successCloseTimer.current = window.setTimeout(() => {
+				successCloseTimer.current = null;
 				onClose?.();
 			}, 2000);
 		} catch (err) {
@@ -175,7 +183,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				if (cancelled) return;
 				if (res?.data) setMyFeedbackSubmitted(true);
 			})
-			.catch(() => {});
+			.catch((err) => {
+				if (!cancelled) console.error("getMyFeedback check failed:", err);
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -364,14 +374,16 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 	const sliderDragRef = useRef<number | null>(null);
 	const sliderPrev = () => setSliderIdx((i) => Math.max(0, i - 1));
 	const sliderNext = () => setSliderIdx((i) => Math.min(sliderImages.length - 1, i + 1));
-	const onSliderDown = (x: number) => { sliderDragRef.current = x; };
-	const onSliderUp   = (x: number) => {
+	const onSliderDown = (x: number) => {
+		sliderDragRef.current = x;
+	};
+	const onSliderUp = (x: number) => {
 		if (sliderDragRef.current === null) return;
 		const d = sliderDragRef.current - x;
-		if (d > 40) sliderNext(); else if (d < -40) sliderPrev();
+		if (d > 40) sliderNext();
+		else if (d < -40) sliderPrev();
 		sliderDragRef.current = null;
 	};
-
 
 	return (
 		<div className="row g-4 align-items-start">
@@ -389,19 +401,27 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 					}}
 					onMouseDown={(e: React.MouseEvent) => onSliderDown(e.clientX)}
 					onMouseUp={(e: React.MouseEvent) => onSliderUp(e.clientX)}
-					onMouseLeave={(_e: React.MouseEvent) => { sliderDragRef.current = null; }}
+					onMouseLeave={(_e: React.MouseEvent) => {
+						sliderDragRef.current = null;
+					}}
 					onTouchStart={(e: React.TouchEvent) => onSliderDown(e.touches[0].clientX)}
 					onTouchEnd={(e: React.TouchEvent) => onSliderUp(e.changedTouches[0].clientX)}
 				>
-					<div style={{
-						display: "flex",
-						height: "100%",
-						width: `${sliderImages.length * 100}%`,
-						transform: `translateX(-${(sliderIdx * 100) / sliderImages.length}%)`,
-						transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
-					}}>
+					<div
+						style={{
+							display: "flex",
+							height: "100%",
+							width: `${sliderImages.length * 100}%`,
+							transform: `translateX(-${(sliderIdx * 100) / sliderImages.length}%)`,
+							transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
+						}}
+					>
 						{sliderImages.map((src, i) => (
-							<img key={i} src={src} alt={`${event.title}-${i}`} draggable={false}
+							<img
+								key={i}
+								src={src}
+								alt={`${event.title}-${i}`}
+								draggable={false}
 								style={{
 									width: `${100 / sliderImages.length}%`,
 									height: "100%",
@@ -415,31 +435,66 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 					</div>
 					{hasMultipleImages && (
 						<>
-							<button type="button"
+							<button
+								type="button"
 								className="btn btn-dark btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 rounded-circle p-0"
-								style={{ width: 32, height: 32, fontSize: 16, opacity: sliderIdx === 0 ? 0.3 : 0.8, zIndex: 4 }}
-								onClick={(e) => { e.stopPropagation(); sliderPrev(); }}
+								style={{
+									width: 32,
+									height: 32,
+									fontSize: 16,
+									opacity: sliderIdx === 0 ? 0.3 : 0.8,
+									zIndex: 4,
+								}}
+								onClick={(e) => {
+									e.stopPropagation();
+									sliderPrev();
+								}}
 								disabled={sliderIdx === 0}
-							>‹</button>
-							<button type="button"
+							>
+								‹
+							</button>
+							<button
+								type="button"
 								className="btn btn-dark btn-sm position-absolute top-50 end-0 translate-middle-y me-2 rounded-circle p-0"
-								style={{ width: 32, height: 32, fontSize: 16, opacity: sliderIdx === sliderImages.length - 1 ? 0.3 : 0.8, zIndex: 4 }}
-								onClick={(e) => { e.stopPropagation(); sliderNext(); }}
+								style={{
+									width: 32,
+									height: 32,
+									fontSize: 16,
+									opacity: sliderIdx === sliderImages.length - 1 ? 0.3 : 0.8,
+									zIndex: 4,
+								}}
+								onClick={(e) => {
+									e.stopPropagation();
+									sliderNext();
+								}}
 								disabled={sliderIdx === sliderImages.length - 1}
-							>›</button>
-							<div className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1" style={{ zIndex: 4 }}>
+							>
+								›
+							</button>
+							<div
+								className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1"
+								style={{ zIndex: 4 }}
+							>
 								{sliderImages.map((_, i) => (
-									<span key={i} onClick={() => setSliderIdx(i)}
+									<span
+										key={i}
+										onClick={() => setSliderIdx(i)}
 										style={{
-											width: i === sliderIdx ? 18 : 7, height: 7, borderRadius: 4,
+											width: i === sliderIdx ? 18 : 7,
+											height: 7,
+											borderRadius: 4,
 											background: i === sliderIdx ? "#fff" : "rgba(255,255,255,0.5)",
-											transition: "all 0.25s", cursor: "pointer", display: "inline-block",
+											transition: "all 0.25s",
+											cursor: "pointer",
+											display: "inline-block",
 										}}
 									/>
 								))}
 							</div>
-							<span className="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill"
-								style={{ fontSize: 11, zIndex: 4 }}>
+							<span
+								className="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill"
+								style={{ fontSize: 11, zIndex: 4 }}
+							>
 								{sliderIdx + 1} / {sliderImages.length}
 							</span>
 						</>
@@ -448,16 +503,25 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				{hasMultipleImages && (
 					<div className="d-flex gap-2 mt-2 pb-1" style={{ overflowX: "auto", scrollbarWidth: "thin" }}>
 						{sliderImages.map((src, i) => (
-							<div key={i} onClick={() => setSliderIdx(i)}
+							<div
+								key={i}
+								onClick={() => setSliderIdx(i)}
 								className="flex-shrink-0 rounded-3 overflow-hidden"
 								style={{
-									width: 56, height: 56, cursor: "pointer",
-									outline: i === sliderIdx ? "2.5px solid var(--bs-primary)" : "2px solid transparent",
+									width: 56,
+									height: 56,
+									cursor: "pointer",
+									outline:
+										i === sliderIdx ? "2.5px solid var(--bs-primary)" : "2px solid transparent",
 									transition: "outline 0.15s",
 								}}
 							>
-								<img src={src} alt={`thumb-${i}`} draggable={false}
-									style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+								<img
+									src={src}
+									alt={`thumb-${i}`}
+									draggable={false}
+									style={{ width: "100%", height: "100%", objectFit: "cover" }}
+								/>
 							</div>
 						))}
 					</div>
@@ -549,29 +613,25 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							isRegistered &&
 							didAttend &&
 							isPastEvent &&
-							!event.isCancelled && (
-								myFeedbackSubmitted ? (
-									<button
-										className="btn btn-success px-4 fw-bold rounded-pill"
-										disabled
-									>
-										✓ Feedback Submitted
-									</button>
-								) : (
-									<button
-										className="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"
-										onClick={() => navigate(`/events/${event._id || event.id}/feedback`)}
-										disabled={!hostFeedbackSentAt}
-										title={
-											hostFeedbackSentAt
-												? undefined
-												: "The host hasn't opened feedback for this event yet"
-										}
-									>
-										📋 Give Feedback
-									</button>
-								)
-							)}
+							!event.isCancelled &&
+							(myFeedbackSubmitted ? (
+								<button className="btn btn-success px-4 fw-bold rounded-pill" disabled>
+									✓ Feedback Submitted
+								</button>
+							) : (
+								<button
+									className="btn btn-primary px-4 fw-bold rounded-pill shadow-sm"
+									onClick={() => navigate(`/events/${event._id || event.id}/feedback`)}
+									disabled={!hostFeedbackSentAt}
+									title={
+										hostFeedbackSentAt
+											? undefined
+											: "The host hasn't opened feedback for this event yet"
+									}
+								>
+									📋 Give Feedback
+								</button>
+							))}
 
 						{isAuthenticated && !isOrganizer && !isAdmin && isRegistered && (
 							<button
@@ -585,7 +645,6 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 
 						{(isOrganizer || isAdmin) && (
 							<>
-								
 								{isOrganizer && ["DRAFT", "REJECTED"].includes(eventStatus) && (
 									<button
 										className="btn btn-outline-primary rounded-pill px-4 fw-bold"
@@ -608,7 +667,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									["APPROVED", "PENDING"].includes(eventStatus) &&
 									!event.isCancelled &&
 									!isPastEvent &&
-									(event.price === 0 || !eventStat || eventStat.registeredAttendees?.length === 0) && (
+									(event.price === 0 ||
+										!eventStat ||
+										eventStat.registeredAttendees?.length === 0) && (
 										<button
 											className="btn btn-outline-danger rounded-pill px-4 fw-bold"
 											onClick={handleCancel}
@@ -621,7 +682,9 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 									["APPROVED", "PENDING"].includes(eventStatus) &&
 									!event.isCancelled &&
 									!isPastEvent &&
-									(event.price === 0 || !eventStat || eventStat.registeredAttendees?.length === 0) && (
+									(event.price === 0 ||
+										!eventStat ||
+										eventStat.registeredAttendees?.length === 0) && (
 										<button
 											className="btn btn-outline-danger rounded-pill px-4 fw-bold"
 											onClick={handleCancel}
@@ -684,6 +747,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 							eventStat={eventStat}
 							scanLoading={scanLoading}
 							onScan={() => setShowScanner(true)}
+							onRefresh={refetchStats}
 						/>
 					)}
 
@@ -708,9 +772,7 @@ export default function SingleEvent({ event, onClose, eventId }: SingleEventProp
 				)}
 			</AnimatePresence>
 
-			<AnimatePresence>
-				{showScanner && <ScannerOverlay onClose={() => setShowScanner(false)} />}
-			</AnimatePresence>
+			<AnimatePresence>{showScanner && <ScannerOverlay onClose={() => setShowScanner(false)} />}</AnimatePresence>
 
 			{scanResult && (
 				<ParticipantCard

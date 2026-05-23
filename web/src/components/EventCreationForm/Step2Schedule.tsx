@@ -12,7 +12,8 @@ interface Step2Props {
 }
 
 export default function Step2Schedule({ visible, formData, todayStr, onChange, errors = {} }: Step2Props) {
-	const cls = (name: string) => `form-control form-control-lg rounded-3 shadow-sm${errors[name] ? " is-invalid" : ""}`;
+	const cls = (name: string) =>
+		`form-control form-control-lg rounded-3 shadow-sm${errors[name] ? " is-invalid" : ""}`;
 	return (
 		<motion.div
 			key="step2"

@@ -34,8 +34,12 @@ const Row = ({ icon, label, value }: { icon: string; label: string; value?: Reac
 	if (value === undefined || value === null || value === "") return null;
 	return (
 		<div className="d-flex align-items-start gap-2 small mb-2">
-			<span className="text-primary" style={{ width: 18 }}>{icon}</span>
-			<span className="text-body-secondary" style={{ minWidth: 90 }}>{label}</span>
+			<span className="text-primary" style={{ width: 18 }}>
+				{icon}
+			</span>
+			<span className="text-body-secondary" style={{ minWidth: 90 }}>
+				{label}
+			</span>
 			<span className="fw-semibold text-body text-break">{value}</span>
 		</div>
 	);
@@ -89,7 +93,10 @@ export default function OrganizerDetailsPanel({ organizer, eventStatus }: Props)
 							<div className="small text-body-secondary">{organizer.designation}</div>
 						)}
 						{organizer.role && (
-							<span className="badge bg-primary-subtle text-primary rounded-pill px-2 mt-1" style={{ fontSize: "0.65rem" }}>
+							<span
+								className="badge bg-primary-subtle text-primary rounded-pill px-2 mt-1"
+								style={{ fontSize: "0.65rem" }}
+							>
 								{organizer.role}
 							</span>
 						)}

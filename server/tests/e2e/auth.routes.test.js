@@ -191,9 +191,7 @@ describe("E2E: /api/auth routes", () => {
 		});
 
 		it("403 when refresh JWT is invalid", async () => {
-			const res = await request(app)
-				.post("/api/auth/refresh")
-				.set("Cookie", ["refreshToken=garbage.jwt.value"]);
+			const res = await request(app).post("/api/auth/refresh").set("Cookie", ["refreshToken=garbage.jwt.value"]);
 			expect(res.status).to.equal(403);
 			expect(res.body.message).to.equal("Session Expired");
 		});
@@ -245,9 +243,7 @@ describe("E2E: /api/auth routes", () => {
 
 		it("200 even when refresh token is invalid (errors swallowed)", async () => {
 			const debugStub = sinon.stub(console, "debug");
-			const res = await request(app)
-				.post("/api/auth/logout")
-				.set("Cookie", ["refreshToken=not.a.valid.jwt"]);
+			const res = await request(app).post("/api/auth/logout").set("Cookie", ["refreshToken=not.a.valid.jwt"]);
 
 			expect(res.status).to.equal(200);
 			expect(res.body.message).to.equal("Logged out successfully");

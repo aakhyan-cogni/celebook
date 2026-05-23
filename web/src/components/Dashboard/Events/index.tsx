@@ -127,9 +127,7 @@ export default function Events() {
 									/>
 									{event.status === "REJECTED" && event.rejectionReason && (
 										<div className="mt-1 px-2">
-											<small className="text-danger">
-												Rejected: {event.rejectionReason}
-											</small>
+											<small className="text-danger">Rejected: {event.rejectionReason}</small>
 										</div>
 									)}
 									<div className="px-2 pb-2">
@@ -139,7 +137,10 @@ export default function Events() {
 											onPublish={publish}
 											onDuplicate={duplicate}
 											onAskDelete={setDeleteTarget}
-											onAskCancel={(ev) => { setCancelTarget(ev); setCancelReason(""); }}
+											onAskCancel={(ev) => {
+												setCancelTarget(ev);
+												setCancelReason("");
+											}}
 										/>
 									</div>
 								</div>

@@ -7,6 +7,7 @@ import { AVATARS } from "../../../config/constants";
 import { basicProfileSchema } from "../../../lib/validation/schemas";
 import { useFormErrors } from "../../../lib/validation/useFormErrors";
 import FieldError from "../../../lib/validation/FieldError";
+import { getAvatarUrl, SERVER_ORIGIN } from "../../../lib/api";
 
 interface OrganizationalInfoProps {
 	registerSave: (callback: () => void) => void;
@@ -19,11 +20,11 @@ const BasicProfileInfo: React.FC<OrganizationalInfoProps> = ({ registerSave }) =
 	const user = useAuthStore((s) => s.user)!;
 	const syncUser = useAuthStore((s) => s.syncUser);
 	if (!user) return null;
-	const profileImg = `http://localhost:5000/uploads/avatars/${user.avatar}`;
+	const profileImg = getAvatarUrl(user.avatar);
 
 	const images = AVATARS.reduce(
 		(acc, curr) => {
-			acc[curr] = `http://localhost:5000/uploads/avatars/${curr}`;
+			acc[curr] = `${SERVER_ORIGIN}/uploads/avatars/${curr}`;
 			return acc;
 		},
 		{} as Record<string, string>,

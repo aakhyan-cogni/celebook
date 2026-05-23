@@ -9,7 +9,7 @@ const TransactionHistory = () => {
 				<hr className="my-2 border-info border-2 opacity-95" />
 			</div>
 
-			<div className="mt-2" style={{ height: "28rem"  }}>
+			<div className="mt-2" style={{ height: "28rem" }}>
 				<div className="w-100 h-100 overflow-auto">
 					<table className={`w-100 table table-striped table-hover text-center`}>
 						<thead className="table-info">

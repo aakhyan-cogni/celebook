@@ -82,24 +82,23 @@ export const getAllEvents = async ({ q, category, location, dateFrom, dateTo, pa
 
 	const [events, total] = await Promise.all([
 		EventModel.aggregate([
-		{ $match: filter },
-		{
-			$addFields: {
-				_isPast: { $lt: ["$date", new Date()] },
-				_dateVal: "$date",
+			{ $match: filter },
+			{
+				$addFields: {
+					_isPast: { $lt: ["$date", new Date()] },
+					_dateVal: "$date",
+				},
 			},
-		},
-		// upcoming events first (soonest date first), then past events (most recent first)
-		{ $sort: { _isPast: 1, _dateVal: 1 } },
-		{ $skip: skip },
-		{ $limit: pageSize },
-		{ $unset: ["_isPast", "_dateVal"] },
-	]),
+			// upcoming events first (soonest date first), then past events (most recent first)
+			{ $sort: { _isPast: 1, _dateVal: 1 } },
+			{ $skip: skip },
+			{ $limit: pageSize },
+			{ $unset: ["_isPast", "_dateVal"] },
+		]),
 		EventModel.countDocuments(filter),
 	]);
 
 	const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
 
 	return {
 		events,

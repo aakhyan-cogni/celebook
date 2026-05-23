@@ -8,14 +8,14 @@ import type { Booking } from "../../store";
 type StatusFilter = "ALL" | "CONFIRMED" | "CANCELLED";
 
 export default function Bookings() {
-	const navigate        = useNavigate();
-	const accessToken     = useAuthStore((s) => s.accessToken);
+	const navigate = useNavigate();
+	const accessToken = useAuthStore((s) => s.accessToken);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
 	const [bookings, setBookings] = useState<Booking[]>([]);
-	const [loading,  setLoading]  = useState(true);
-	const [search,   setSearch]   = useState("");
-	const [status,   setStatus]   = useState<StatusFilter>("ALL");
+	const [loading, setLoading] = useState(true);
+	const [search, setSearch] = useState("");
+	const [status, setStatus] = useState<StatusFilter>("ALL");
 
 	useEffect(() => {
 		if (isAuthenticated && !accessToken) {
@@ -40,7 +40,9 @@ export default function Bookings() {
 			}
 		};
 		load();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [accessToken, isAuthenticated]);
 
 	const displayBookings = useMemo(() => {
@@ -103,10 +105,7 @@ export default function Bookings() {
 							return (
 								<div key={bookingId} className="col-md-6 col-lg-4">
 									<div className="position-relative">
-										<div
-											className="position-absolute top-0 end-0 m-3"
-											style={{ zIndex: 10 }}
-										>
+										<div className="position-absolute top-0 end-0 m-3" style={{ zIndex: 10 }}>
 											<span
 												className={`badge px-3 py-2 shadow-sm ${
 													booking.status === "CANCELLED" ? "bg-danger" : "bg-success"

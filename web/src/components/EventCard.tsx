@@ -27,13 +27,21 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 	const [activeIdx, setActiveIdx] = useState(0);
 	const dragStartX = useRef<number | null>(null);
 
-	const prevImg = (e: React.MouseEvent) => { e.stopPropagation(); setActiveIdx((i) => Math.max(0, i - 1)); };
-	const nextImg = (e: React.MouseEvent) => { e.stopPropagation(); setActiveIdx((i) => Math.min(images.length - 1, i + 1)); };
-	const onPtrDown = (clientX: number) => { dragStartX.current = clientX; };
-	const onPtrUp   = (clientX: number) => {
+	const prevImg = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		setActiveIdx((i) => Math.max(0, i - 1));
+	};
+	const nextImg = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		setActiveIdx((i) => Math.min(images.length - 1, i + 1));
+	};
+	const onPtrDown = (clientX: number) => {
+		dragStartX.current = clientX;
+	};
+	const onPtrUp = (clientX: number) => {
 		if (dragStartX.current === null) return;
 		const delta = dragStartX.current - clientX;
-		if (delta > 40)  setActiveIdx((i) => Math.min(images.length - 1, i + 1));
+		if (delta > 40) setActiveIdx((i) => Math.min(images.length - 1, i + 1));
 		if (delta < -40) setActiveIdx((i) => Math.max(0, i - 1));
 		dragStartX.current = null;
 	};
@@ -112,10 +120,12 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 				className="position-relative overflow-hidden"
 				style={{ aspectRatio: "16/9", width: "100%", background: "var(--bs-secondary-bg)", userSelect: "none" }}
 				onMouseDown={(e) => onPtrDown(e.clientX)}
-				onMouseUp={(e)   => onPtrUp(e.clientX)}
-				onMouseLeave={()  => { dragStartX.current = null; }}
+				onMouseUp={(e) => onPtrUp(e.clientX)}
+				onMouseLeave={() => {
+					dragStartX.current = null;
+				}}
 				onTouchStart={(e) => onPtrDown(e.touches[0].clientX)}
-				onTouchEnd={(e)   => onPtrUp(e.changedTouches[0].clientX)}
+				onTouchEnd={(e) => onPtrUp(e.changedTouches[0].clientX)}
 			>
 				{/* Slide strip */}
 				<div
@@ -148,25 +158,57 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 				{/* Prev / Next arrows */}
 				{hasMultiple && (
 					<>
-						<button type="button" onClick={prevImg}
+						<button
+							type="button"
+							onClick={prevImg}
 							className="btn btn-dark btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 rounded-circle p-0"
-							style={{ width: 28, height: 28, fontSize: 14, opacity: activeIdx === 0 ? 0.3 : 0.8, zIndex: 4 }}
+							style={{
+								width: 28,
+								height: 28,
+								fontSize: 14,
+								opacity: activeIdx === 0 ? 0.3 : 0.8,
+								zIndex: 4,
+							}}
 							disabled={activeIdx === 0}
-						>‹</button>
-						<button type="button" onClick={nextImg}
+						>
+							‹
+						</button>
+						<button
+							type="button"
+							onClick={nextImg}
 							className="btn btn-dark btn-sm position-absolute top-50 end-0 translate-middle-y me-2 rounded-circle p-0"
-							style={{ width: 28, height: 28, fontSize: 14, opacity: activeIdx === images.length - 1 ? 0.3 : 0.8, zIndex: 4 }}
+							style={{
+								width: 28,
+								height: 28,
+								fontSize: 14,
+								opacity: activeIdx === images.length - 1 ? 0.3 : 0.8,
+								zIndex: 4,
+							}}
 							disabled={activeIdx === images.length - 1}
-						>›</button>
+						>
+							›
+						</button>
 						{/* Dot indicators */}
-						<div className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1" style={{ zIndex: 4 }}
-							onClick={(e) => e.stopPropagation()}>
+						<div
+							className="position-absolute bottom-0 start-50 translate-middle-x mb-2 d-flex gap-1"
+							style={{ zIndex: 4 }}
+							onClick={(e) => e.stopPropagation()}
+						>
 							{images.map((_, i) => (
-								<span key={i} onClick={(e) => { e.stopPropagation(); setActiveIdx(i); }}
+								<span
+									key={i}
+									onClick={(e) => {
+										e.stopPropagation();
+										setActiveIdx(i);
+									}}
 									style={{
-										width: i === activeIdx ? 16 : 6, height: 6, borderRadius: 3,
+										width: i === activeIdx ? 16 : 6,
+										height: 6,
+										borderRadius: 3,
 										background: i === activeIdx ? "#fff" : "rgba(255,255,255,0.5)",
-										transition: "all 0.25s", cursor: "pointer", display: "inline-block",
+										transition: "all 0.25s",
+										cursor: "pointer",
+										display: "inline-block",
 									}}
 								/>
 							))}
@@ -174,7 +216,9 @@ export function EventCard({ event, onClick, eventStatus }: EventCardProps) {
 					</>
 				)}
 
-				<div className="position-absolute bottom-0 start-0 m-3" style={{ zIndex: 3 }}>{getStatusBadge()}</div>
+				<div className="position-absolute bottom-0 start-0 m-3" style={{ zIndex: 3 }}>
+					{getStatusBadge()}
+				</div>
 				<div className="position-absolute top-0 end-0 m-3" style={{ zIndex: 3 }}>
 					<span className="badge bg-dark bg-opacity-75 text-white border border-white border-opacity-10 shadow-sm">
 						{event.category}

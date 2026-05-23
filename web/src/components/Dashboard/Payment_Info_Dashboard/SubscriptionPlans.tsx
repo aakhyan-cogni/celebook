@@ -12,11 +12,11 @@ interface PlanMetadata {
 }
 
 export default function SubscriptionPlans() {
-	const [plans, setPlans]             = useState<Record<string, PlanMetadata>>({});
+	const [plans, setPlans] = useState<Record<string, PlanMetadata>>({});
 	const [currentTier, setCurrentTier] = useState<string>("FREE");
 	const [currentTierTitle, setCurrentTierTitle] = useState<string>("Basic");
-	const [loading, setLoading]         = useState<boolean>(true);
-	const [error, setError]             = useState<string | null>(null);
+	const [loading, setLoading] = useState<boolean>(true);
+	const [error, setError] = useState<string | null>(null);
 	const updateUser = useAuthStore((s) => s.updateUser);
 
 	const fetchPlanDetails = async () => {
@@ -26,7 +26,7 @@ export default function SubscriptionPlans() {
 			const res = await apiFetch("/plans", { method: "GET" });
 			if (res.success) {
 				setPlans(res.plans);
-				setCurrentTier(res.currentTier);           
+				setCurrentTier(res.currentTier);
 				setCurrentTierTitle(res.currentTierTitle);
 				updateUser({ tier: res.currentTier as "FREE" | "PRO" | "ULTIMATE" });
 			} else {
@@ -39,7 +39,9 @@ export default function SubscriptionPlans() {
 		}
 	};
 
-	useEffect(() => { fetchPlanDetails(); }, []);
+	useEffect(() => {
+		fetchPlanDetails();
+	}, []);
 
 	const handleUpgradeSuccess = (newTier: string) => {
 		setCurrentTier(newTier);

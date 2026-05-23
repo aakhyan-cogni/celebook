@@ -21,19 +21,19 @@ export function useEventFormData(opts: {
 		setExistingEvent(ev);
 		const existingTime = ev.date ? new Date(ev.date).toTimeString().slice(0, 5) : "";
 		setFormData({
-			title:            ev.title           ?? "",
-			category:         ev.category        ?? "Workshop",
-			description:      ev.description     ?? "",
-			date:             ev.date ? ev.date.slice(0, 10) : "",
-			time:             existingTime,
-			location:         ev.location        ?? "",
-			price:            ev.price           ?? 0,
-			capacity:         ev.capacity        ?? 0,
-			currency:         ev.currency        ?? "INR",
-			visibility:       ev.visibility      ?? "PUBLIC",
-			isTeamEvent:      ev.isTeamEvent     ?? false,
-			minTeamSize:      ev.minTeamSize     ?? "",
-			maxTeamSize:      ev.maxTeamSize     ?? "",
+			title: ev.title ?? "",
+			category: ev.category ?? "Workshop",
+			description: ev.description ?? "",
+			date: ev.date ? ev.date.slice(0, 10) : "",
+			time: existingTime,
+			location: ev.location ?? "",
+			price: ev.price ?? 0,
+			capacity: ev.capacity ?? 0,
+			currency: ev.currency ?? "INR",
+			visibility: ev.visibility ?? "PUBLIC",
+			isTeamEvent: ev.isTeamEvent ?? false,
+			minTeamSize: ev.minTeamSize ?? "",
+			maxTeamSize: ev.maxTeamSize ?? "",
 			teamCapacityMode: ev.teamCapacityMode ?? "PER_MEMBER",
 		});
 		setIsFree(ev.price === 0);

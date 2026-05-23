@@ -21,7 +21,7 @@ export function useSaveEvent(opts: {
 
 	const authHeaders = () => ({
 		"Content-Type": "application/json",
-		Authorization:  `Bearer ${accessToken}`,
+		Authorization: `Bearer ${accessToken}`,
 	});
 
 	// Returns current date+time as "YYYY-MM-DDTHH:MM:00" in local time
@@ -36,18 +36,18 @@ export function useSaveEvent(opts: {
 		const combinedDate = formData.date ? `${formData.date}T${time}:00` : "";
 
 		return {
-			title:            formData.title,
-			category:         formData.category,
-			description:      formData.description,
-			date:             combinedDate,
-			location:         formData.location,
-			price:            isFree ? 0 : Number(formData.price),
-			capacity:         Number(formData.capacity),
-			currency:         formData.currency || "INR",
-			visibility:       formData.visibility,
-			isTeamEvent:      formData.isTeamEvent,
-			minTeamSize:      formData.isTeamEvent && formData.minTeamSize ? Number(formData.minTeamSize) : null,
-			maxTeamSize:      formData.isTeamEvent && formData.maxTeamSize ? Number(formData.maxTeamSize) : null,
+			title: formData.title,
+			category: formData.category,
+			description: formData.description,
+			date: combinedDate,
+			location: formData.location,
+			price: isFree ? 0 : Number(formData.price),
+			capacity: Number(formData.capacity),
+			currency: formData.currency || "INR",
+			visibility: formData.visibility,
+			isTeamEvent: formData.isTeamEvent,
+			minTeamSize: formData.isTeamEvent && formData.minTeamSize ? Number(formData.minTeamSize) : null,
+			maxTeamSize: formData.isTeamEvent && formData.maxTeamSize ? Number(formData.maxTeamSize) : null,
 			teamCapacityMode: formData.isTeamEvent ? formData.teamCapacityMode : null,
 		};
 	};
@@ -55,7 +55,9 @@ export function useSaveEvent(opts: {
 	const resolveEventId = async (payload: object): Promise<string> => {
 		if (editId && existingEvent) {
 			const res = await fetch(`${BASE_URL}/events/${editId}`, {
-				method: "PATCH", headers: authHeaders(), credentials: "include",
+				method: "PATCH",
+				headers: authHeaders(),
+				credentials: "include",
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) throw new Error((await res.json()).message);
@@ -64,7 +66,9 @@ export function useSaveEvent(opts: {
 
 		if (createdEventIdRef.current) {
 			const res = await fetch(`${BASE_URL}/events/${createdEventIdRef.current}`, {
-				method: "PATCH", headers: authHeaders(), credentials: "include",
+				method: "PATCH",
+				headers: authHeaders(),
+				credentials: "include",
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) throw new Error((await res.json()).message);
@@ -72,7 +76,9 @@ export function useSaveEvent(opts: {
 		}
 
 		const res = await fetch(`${BASE_URL}/events`, {
-			method: "POST", headers: authHeaders(), credentials: "include",
+			method: "POST",
+			headers: authHeaders(),
+			credentials: "include",
 			body: JSON.stringify(payload),
 		});
 		if (!res.ok) throw new Error((await res.json()).message);
@@ -89,9 +95,7 @@ export function useSaveEvent(opts: {
 				...buildPayload(),
 				// If user hasn't set a date, use current date+time (not midnight)
 				// so the draft doesn't immediately appear as a "Past Event".
-				date:     formData.date
-					? `${formData.date}T${formData.time || "00:00"}:00`
-					: getNowDateTimeStr(),
+				date: formData.date ? `${formData.date}T${formData.time || "00:00"}:00` : getNowDateTimeStr(),
 				location: formData.location || "TBD",
 				capacity: Number(formData.capacity) || 1,
 			};
@@ -116,7 +120,8 @@ export function useSaveEvent(opts: {
 			const isNewEvent = !editId && !existingEvent && !createdEventIdRef.current;
 			if (isNewEvent) {
 				const eligRes = await fetch(`${BASE_URL}/events/can-publish`, {
-					headers: authHeaders(), credentials: "include",
+					headers: authHeaders(),
+					credentials: "include",
 				});
 				if (eligRes.ok) {
 					const { allowed } = await eligRes.json();
@@ -131,7 +136,9 @@ export function useSaveEvent(opts: {
 			await uploadImages(eventId);
 
 			const pubRes = await fetch(`${BASE_URL}/events/${eventId}/publish`, {
-				method: "POST", headers: authHeaders(), credentials: "include",
+				method: "POST",
+				headers: authHeaders(),
+				credentials: "include",
 			});
 			if (!pubRes.ok) {
 				const err = await pubRes.json();
@@ -145,7 +152,10 @@ export function useSaveEvent(opts: {
 
 			const published = await pubRes.json();
 			if (published.status === "PENDING") {
-				toast.success("Your event has been submitted for admin review. You'll be notified once it's approved.", { duration: 7000 });
+				toast.success(
+					"Your event has been submitted for admin review. You'll be notified once it's approved.",
+					{ duration: 7000 },
+				);
 				navigate("/dashboard");
 			} else if (published.status === "APPROVED") {
 				toast.success("Your event is live!!", { duration: 4000 });

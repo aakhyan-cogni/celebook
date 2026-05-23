@@ -92,13 +92,18 @@ export default function ParticipantCard({ result, onMarkPresent, onClose, markin
 
 						{formEntries.length > 0 && (
 							<div className="mb-3">
-								<div className="text-muted small fw-semibold mb-2 text-uppercase" style={{ letterSpacing: "0.05em" }}>
+								<div
+									className="text-muted small fw-semibold mb-2 text-uppercase"
+									style={{ letterSpacing: "0.05em" }}
+								>
 									Registration Details
 								</div>
 								<div className="d-flex flex-column gap-1">
 									{formEntries.map(([key, value]) => (
 										<div key={key} className="d-flex gap-2 small">
-											<span className="text-secondary text-capitalize">{key.replace(/_/g, " ")}:</span>
+											<span className="text-secondary text-capitalize">
+												{key.replace(/_/g, " ")}:
+											</span>
 											<span className="fw-medium">{String(value)}</span>
 										</div>
 									))}

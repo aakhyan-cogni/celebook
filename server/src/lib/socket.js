@@ -24,8 +24,7 @@ export function initSocket(httpServer) {
 	io.use((socket, next) => {
 		try {
 			const token =
-				socket.handshake.auth?.token ||
-				socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, "");
+				socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, "");
 			if (!token) return next(new Error("Unauthorized"));
 			const decoded = verifyAccessToken(token);
 			socket.userId = decoded.userId;

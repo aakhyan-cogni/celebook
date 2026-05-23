@@ -48,7 +48,10 @@ export default function PresentAttendeesModal({ eventId, onClose }: PresentAtten
 			style={{ background: "rgba(0,0,0,0.5)", position: "fixed", inset: 0, zIndex: 1055 }}
 			onClick={onClose}
 		>
-			<div className="modal-dialog modal-dialog-centered modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
+			<div
+				className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+				onClick={(e) => e.stopPropagation()}
+			>
 				<div className="modal-content rounded-4 border-0 shadow-lg">
 					<div className="modal-header border-0 pb-0">
 						<div>
@@ -65,9 +68,7 @@ export default function PresentAttendeesModal({ eventId, onClose }: PresentAtten
 								<span className="spinner-border" role="status" />
 							</div>
 						)}
-						{!loading && error && (
-							<div className="alert alert-danger rounded-3 small mb-0">{error}</div>
-						)}
+						{!loading && error && <div className="alert alert-danger rounded-3 small mb-0">{error}</div>}
 						{!loading && !error && attendees.length === 0 && (
 							<div className="text-center text-body-secondary py-4 small">
 								No attendees have been checked in yet.
@@ -94,7 +95,9 @@ export default function PresentAttendeesModal({ eventId, onClose }: PresentAtten
 											/>
 											<div className="flex-grow-1 min-w-0">
 												<div className="fw-semibold text-truncate">{reg.userId.name}</div>
-												<div className="small text-body-secondary text-truncate">{reg.userId.email}</div>
+												<div className="small text-body-secondary text-truncate">
+													{reg.userId.email}
+												</div>
 											</div>
 											<div className="text-end flex-shrink-0">
 												<span className="badge rounded-pill text-bg-success-subtle text-success border border-success-subtle">

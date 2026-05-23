@@ -45,5 +45,4 @@ const SavedPaymentMethods = () => {
 	);
 };
 
-
 export default SavedPaymentMethods;

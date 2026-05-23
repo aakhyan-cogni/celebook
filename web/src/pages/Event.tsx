@@ -6,14 +6,14 @@ import { BASE_URL } from "../lib/api";
 import { useAuthStore } from "../store/useAuthStore";
 
 export default function EventDetailPage() {
-	const { id }            = useParams<{ id: string }>();
-	const navigate          = useNavigate();
-	const location          = useLocation();
-	const accessToken       = useAuthStore((s) => s.accessToken);
-	const isAuthenticated   = useAuthStore((s) => s.isAuthenticated);
+	const { id } = useParams<{ id: string }>();
+	const navigate = useNavigate();
+	const location = useLocation();
+	const accessToken = useAuthStore((s) => s.accessToken);
+	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-	const [event,     setEvent]     = useState<any>(null);
-	const [loading,   setLoading]   = useState(true);
+	const [event, setEvent] = useState<any>(null);
+	const [loading, setLoading] = useState(true);
 	const [errorType, setErrorType] = useState<string | null>(null);
 
 	useEffect(() => {
@@ -51,10 +51,22 @@ export default function EventDetailPage() {
 					credentials: "include",
 				});
 
-				if (res.status === 404) { setErrorType("NOT_FOUND");   return; }
-				if (res.status === 401) { setErrorType("UNAUTHORIZED"); return; }
-				if (res.status === 403) { setErrorType("FORBIDDEN");    return; }
-				if (!res.ok)            { setErrorType("ERROR");        return; }
+				if (res.status === 404) {
+					setErrorType("NOT_FOUND");
+					return;
+				}
+				if (res.status === 401) {
+					setErrorType("UNAUTHORIZED");
+					return;
+				}
+				if (res.status === 403) {
+					setErrorType("FORBIDDEN");
+					return;
+				}
+				if (!res.ok) {
+					setErrorType("ERROR");
+					return;
+				}
 
 				const data = await res.json();
 				setEvent(data);
@@ -66,17 +78,12 @@ export default function EventDetailPage() {
 		};
 
 		fetchEvent();
-
 	}, [id, accessToken, isAuthenticated]);
 
 	if (loading) {
 		return (
 			<div className="container py-5 text-center">
-				<div
-					className="spinner-border text-primary"
-					role="status"
-					style={{ width: "3rem", height: "3rem" }}
-				>
+				<div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}>
 					<span className="visually-hidden">Loading...</span>
 				</div>
 				<p className="mt-3 text-body-secondary">Loading event details...</p>
@@ -88,7 +95,8 @@ export default function EventDetailPage() {
 		NOT_FOUND: {
 			icon: "🔍",
 			title: "Event Not Found",
-			message: "We couldn't find the event you're looking for. It may have been deleted, or the link might be incorrect.",
+			message:
+				"We couldn't find the event you're looking for. It may have been deleted, or the link might be incorrect.",
 		},
 		UNAUTHORIZED: {
 			icon: "🔒",
@@ -153,7 +161,7 @@ export default function EventDetailPage() {
 			</motion.div>
 		);
 	}
-	
+
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 0 }}
@@ -171,7 +179,9 @@ export default function EventDetailPage() {
 						onMouseEnter={(e) => (e.currentTarget.style.transform = "translateX(-4px)")}
 						onMouseLeave={(e) => (e.currentTarget.style.transform = "translateX(0)")}
 					>
-						<span className="me-2" style={{ fontSize: "1.5rem" }}>←</span>
+						<span className="me-2" style={{ fontSize: "1.5rem" }}>
+							←
+						</span>
 						Back
 					</button>
 				</div>

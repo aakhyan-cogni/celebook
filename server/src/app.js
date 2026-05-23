@@ -13,7 +13,7 @@ import {
 	planUpgradeRouter,
 	termsRouter,
 } from "./routes/index.js";
-  
+
 const app = express();
 
 app.use(cookieParser());

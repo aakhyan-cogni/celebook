@@ -45,10 +45,17 @@ export default function Step4Review({ visible, formData, isFreeTier, onChange }:
 						onChange={onChange}
 					/>
 					<label className="form-check-label fw-bold" htmlFor="isTeamEvent">
-						Team Event{" "}<span className="badge bg-primary-subtle text-primary ms-1">PRO</span>
+						Team Event <span className="badge bg-primary-subtle text-primary ms-1">PRO</span>
 					</label>
 					<p className="small text-muted mb-0">Allow group registrations with team size limits.</p>
-					{isFreeTier && <div className="form-text text-warning mt-1">🔒 Team events require PRO. <a href="/pricing" className="text-warning fw-bold">Upgrade</a></div>}
+					{isFreeTier && (
+						<div className="form-text text-warning mt-1">
+							🔒 Team events require PRO.{" "}
+							<a href="/pricing" className="text-warning fw-bold">
+								Upgrade
+							</a>
+						</div>
+					)}
 				</div>
 				<AnimatePresence>
 					{formData.isTeamEvent && !isFreeTier && (

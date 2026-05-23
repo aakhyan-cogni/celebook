@@ -13,13 +13,13 @@ interface DashboardProps {
 const OVERVIEW_LIMIT = 5;
 
 export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardProps) {
-	const navigate        = useNavigate();
-	const accessToken     = useAuthStore((s) => s.accessToken);
+	const navigate = useNavigate();
+	const accessToken = useAuthStore((s) => s.accessToken);
 	const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-	const [myEvents,   setMyEvents]   = useState<any[]>([]);
+	const [myEvents, setMyEvents] = useState<any[]>([]);
 	const [myBookings, setMyBookings] = useState<any[]>([]);
-	const [loading,    setLoading]    = useState(true);
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		// Wait for hydration: on page refresh accessToken is briefly null while
@@ -50,7 +50,9 @@ export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardPro
 			}
 		};
 		load();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [accessToken, isAuthenticated]);
 
 	if (loading) {
@@ -68,22 +70,24 @@ export default function Dashboard({ viewEventsFn, viewBookingsFn }: DashboardPro
 			<section className="mb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
 					<h3 className="fw-bold mb-0">Your Events</h3>
-					<div className="d-flex align-items-center gap-2">
-						<motion.button
-							whileTap={{ scale: 0.95 }}
-							className="btn btn-primary rounded-pill px-4 fw-bold"
-							onClick={() => navigate("/create")}
-						>
-							+ Create event
-						</motion.button>
-						<motion.button
-							whileTap={{ scale: 0.95 }}
-							onClick={viewEventsFn}
-							className="btn border px-3 py-1 rounded-3 shadow-sm fw-bold"
-						>
-							View More
-						</motion.button>
-					</div>
+					{myEvents.length > 0 && (
+						<div className="d-flex align-items-center gap-2">
+							<motion.button
+								whileTap={{ scale: 0.95 }}
+								className="btn btn-primary rounded-pill px-4 fw-bold"
+								onClick={() => navigate("/create")}
+							>
+								+ Create event
+							</motion.button>
+							<motion.button
+								whileTap={{ scale: 0.95 }}
+								onClick={viewEventsFn}
+								className="btn border px-3 py-1 rounded-3 shadow-sm fw-bold"
+							>
+								View More
+							</motion.button>
+						</div>
+					)}
 				</div>
 
 				{myEvents.length > 0 ? (

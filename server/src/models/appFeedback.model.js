@@ -8,20 +8,20 @@ const appFeedbackSchema = new mongoose.Schema(
 			ref: USER_COLLECTION,
 			default: null,
 		},
-		rating: { 
-			type: Number, 
-			required: true, 
-			min: 1, 
-			max: 5 
-		},
-		message: { 
-			type: String, 
+		rating: {
+			type: Number,
 			required: true,
-			trim: true 
+			min: 1,
+			max: 5,
+		},
+		message: {
+			type: String,
+			required: true,
+			trim: true,
 		},
 	},
-	{ 
-		timestamps: true 
+	{
+		timestamps: true,
 	},
 );
 

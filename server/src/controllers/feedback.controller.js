@@ -24,11 +24,7 @@ const errorStatus = (code) => {
 export async function triggerHostFeedback(req, res) {
 	try {
 		const { id } = req.params;
-		const result = await FeedbackService.triggerHostFeedback(
-			id,
-			req.user.userId,
-			req.user.role === "ADMIN",
-		);
+		const result = await FeedbackService.triggerHostFeedback(id, req.user.userId, req.user.role === "ADMIN");
 		res.status(200).json({
 			success: true,
 			alreadySent: result.alreadySent,

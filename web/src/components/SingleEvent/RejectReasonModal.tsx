@@ -49,7 +49,10 @@ export default function RejectReasonModal({
 							rows={3}
 							placeholder="e.g. Missing venue details, inappropriate content..."
 							value={value}
-							onChange={(e) => { onChange(e.target.value); if (touched) clear("reason"); }}
+							onChange={(e) => {
+								onChange(e.target.value);
+								if (touched) clear("reason");
+							}}
 							autoFocus
 							maxLength={500}
 							aria-invalid={touched && !!errors.reason}
@@ -58,10 +61,7 @@ export default function RejectReasonModal({
 						<div className="text-end small text-body-secondary mt-1">{value.length}/500</div>
 					</div>
 					<div className="modal-footer border-0 pt-0">
-						<button
-							className="btn btn-outline-secondary rounded-pill px-4"
-							onClick={onClose}
-						>
+						<button className="btn btn-outline-secondary rounded-pill px-4" onClick={onClose}>
 							Cancel
 						</button>
 						<button

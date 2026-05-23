@@ -7,12 +7,7 @@ interface ConfirmRegisterModalProps {
 	onClose: () => void;
 }
 
-export default function ConfirmRegisterModal({
-	event,
-	loading,
-	onConfirm,
-	onClose,
-}: ConfirmRegisterModalProps) {
+export default function ConfirmRegisterModal({ event, loading, onConfirm, onClose }: ConfirmRegisterModalProps) {
 	return (
 		<motion.div
 			initial={{ opacity: 0 }}
@@ -34,9 +29,7 @@ export default function ConfirmRegisterModal({
 					<p className="text-body-secondary small mb-0">
 						You're booking a ticket for <strong>{event.title}</strong>
 					</p>
-					<p className="fw-bold mt-2 mb-0">
-						{event.price === 0 ? "FREE" : `₹${event.price}`}
-					</p>
+					<p className="fw-bold mt-2 mb-0">{event.price === 0 ? "FREE" : `₹${event.price}`}</p>
 				</div>
 				<div className="d-flex gap-2 justify-content-center">
 					<button

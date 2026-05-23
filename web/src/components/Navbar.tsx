@@ -21,13 +21,14 @@ export default function Navbar() {
 	});
 
 	return (
-		<nav className="navbar navbar-expand-lg border-bottom sticky-top bg-body-tertiary flex-nowrap">
+		<nav className="navbar navbar-expand-lg border-bottom sticky-top bg-body-tertiary">
 			<div className="container gap-md-2">
-				<Link className="navbar-brand fw-bold text-primary m-0 mx-md-5" to="/">
+				<Link className="navbar-brand fw-bold text-primary m-0" to="/">
 					<img
 						src={isDark ? EMS_LOGO_DARK : EMS_LOGO_LIGHT}
 						alt="CeleBook Logo"
-						style={{ width: "50px", height: "50px" }}
+						className="d-inline-block"
+						style={{ height: "40px", width: "auto" }}
 					/>
 				</Link>
 
@@ -70,73 +71,78 @@ export default function Navbar() {
 							</NavLink>
 						</li>
 					</ul>
-				</div>
-			</div>
-			<div className="d-flex align-items-center gap-3 me-5">
-				<ThemeSwitch isDark={isDark} setIsDark={setIsDark} />
-				{isAuthenticated ? (
-					<div className="d-flex align-items-center gap-2">
-						<Link to="/notifications" className="position-relative text-body" aria-label="Notifications">
-							<Bell size={24} />
-							{unreadCount > 0 && (
-								<span
-									className="position-absolute translate-middle badge rounded-pill bg-danger"
-									style={{
-										top: 2,
-										left: "100%",
-										fontSize: "0.65rem",
-										padding: "0.2em 0.45em",
-										lineHeight: 1,
-									}}
+
+					<div className="d-flex align-items-center gap-3 mt-3 mt-lg-0 flex-wrap justify-content-center">
+						<ThemeSwitch isDark={isDark} setIsDark={setIsDark} />
+						{isAuthenticated ? (
+							<div className="d-flex align-items-center gap-2">
+								<Link
+									to="/notifications"
+									className="position-relative text-body"
+									aria-label="Notifications"
 								>
-									{unreadCount > 99 ? "99+" : unreadCount}
-									<span className="visually-hidden">unread notifications</span>
-								</span>
-							)}
-						</Link>
-						<div style={{ width: "2rem", cursor: "pointer" }}>
-							<OverlayTrigger
-								trigger="click"
-								placement="bottom"
-								rootClose
-								overlay={
-									<Popover id="user-popover" className="shadow border-0">
-										<Popover.Header as="h3" className="text-white border-0 bg-info">
-											Hi, {user!.name.split(" ")[0]}!
-										</Popover.Header>
-										<Popover.Body className="p-0">
-											<div className="list-group list-group-flush">
-												<Link
-													to="/dashboard"
-													className="list-group-item list-group-item-action border-0"
-												>
-													My Dashboard
-												</Link>
-												<button
-													onClick={() => {
-														logout().then(localLogout);
-														navigate("/");
-													}}
-													className="list-group-item list-group-item-action text-danger border-0"
-												>
-													Logout
-												</button>
-											</div>
-										</Popover.Body>
-									</Popover>
-								}
-							>
-								<div>
-									<Avatar user={user!} />
+									<Bell size={24} />
+									{unreadCount > 0 && (
+										<span
+											className="position-absolute translate-middle badge rounded-pill bg-danger"
+											style={{
+												top: 2,
+												left: "100%",
+												fontSize: "0.65rem",
+												padding: "0.2em 0.45em",
+												lineHeight: 1,
+											}}
+										>
+											{unreadCount > 99 ? "99+" : unreadCount}
+											<span className="visually-hidden">unread notifications</span>
+										</span>
+									)}
+								</Link>
+								<div style={{ width: "2rem", cursor: "pointer" }}>
+									<OverlayTrigger
+										trigger="click"
+										placement="bottom"
+										rootClose
+										overlay={
+											<Popover id="user-popover" className="shadow border-0">
+												<Popover.Header as="h3" className="text-white border-0 bg-info">
+													Hi, {user!.name.split(" ")[0]}!
+												</Popover.Header>
+												<Popover.Body className="p-0">
+													<div className="list-group list-group-flush">
+														<Link
+															to="/dashboard"
+															className="list-group-item list-group-item-action border-0"
+														>
+															My Dashboard
+														</Link>
+														<button
+															onClick={() => {
+																logout().then(localLogout);
+																navigate("/");
+															}}
+															className="list-group-item list-group-item-action text-danger border-0"
+														>
+															Logout
+														</button>
+													</div>
+												</Popover.Body>
+											</Popover>
+										}
+									>
+										<div>
+											<Avatar user={user!} />
+										</div>
+									</OverlayTrigger>
 								</div>
-							</OverlayTrigger>
-						</div>
+							</div>
+						) : (
+							<Link to="/login" className="btn btn-primary rounded-pill px-4 shadow-sm">
+								Login
+							</Link>
+						)}
 					</div>
-				) : (
-					<Link to="/login" className="btn btn-primary rounded-pill px-4 w-100 w-lg-auto shadow-sm">
-						Login
-					</Link>
-				)}
+				</div>
 			</div>
 		</nav>
 	);

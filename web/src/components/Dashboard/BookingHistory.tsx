@@ -18,11 +18,11 @@ function formatDateTime(value: string | undefined | null): string {
 }
 
 function formatDate(value: string | undefined | null): string {
-    const d = value ? new Date(value) : null;
-    
-    return (d && !isNaN(d.getTime())) 
-        ? d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" }) 
-        : "—";
+	const d = value ? new Date(value) : null;
+
+	return d && !isNaN(d.getTime())
+		? d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" })
+		: "—";
 }
 
 function formatPrice(price: number | undefined | null): string {
@@ -111,10 +111,7 @@ export default function BookingHistory() {
 				<h3 className="fw-bold mb-3">Booking History</h3>
 				<div className="text-center p-5 rounded-4 border border-dashed">
 					<p className="text-muted mb-2">You haven't booked any events yet.</p>
-					<button
-						className="btn btn-primary rounded-pill px-4 my-2"
-						onClick={() => navigate("/events")}
-					>
+					<button className="btn btn-primary rounded-pill px-4 my-2" onClick={() => navigate("/events")}>
 						Discover events
 					</button>
 				</div>
@@ -131,7 +128,9 @@ export default function BookingHistory() {
 				<table className="table table-hover align-middle">
 					<thead className="table-light">
 						<tr>
-							<th scope="col" style={{ width: "60px" }}>#</th>
+							<th scope="col" style={{ width: "60px" }}>
+								#
+							</th>
 							<th scope="col">Event Name</th>
 							<th scope="col">Category</th>
 							<th scope="col">Date &amp; Time</th>
@@ -145,8 +144,7 @@ export default function BookingHistory() {
 						{bookings.map((booking, index) => {
 							const ev = booking.eventId as any;
 							const evId = ev?.id ?? ev?._id;
-							const bookingId =
-								(booking as any)._id ?? (booking as any).id ?? `${evId}-${index}`;
+							const bookingId = (booking as any)._id ?? (booking as any).id ?? `${evId}-${index}`;
 							const timing = getTiming(ev?.date);
 							const handleNavigate = () => {
 								if (evId) navigate(`/events/${evId}`);
@@ -171,9 +169,7 @@ export default function BookingHistory() {
 									</td>
 									<td>{formatDateTime(ev?.date)}</td>
 									<td>
-										<span className={`badge ${timing.className}`}>
-											{timing.label}
-										</span>
+										<span className={`badge ${timing.className}`}>{timing.label}</span>
 									</td>
 									<td>{formatPrice(ev?.price)}</td>
 									<td>{formatDate(booking.registeredAt)}</td>
@@ -198,8 +194,7 @@ export default function BookingHistory() {
 				{bookings.map((booking, index) => {
 					const ev = booking.eventId as any;
 					const evId = ev?.id ?? ev?._id;
-					const bookingId =
-						(booking as any)._id ?? (booking as any).id ?? `${evId}-${index}`;
+					const bookingId = (booking as any)._id ?? (booking as any).id ?? `${evId}-${index}`;
 					const timing = getTiming(ev?.date);
 					const handleNavigate = () => {
 						if (evId) navigate(`/events/${evId}`);
@@ -244,9 +239,7 @@ export default function BookingHistory() {
 
 									<dt className="col-5 text-muted fw-normal">When</dt>
 									<dd className="col-7 mb-1">
-										<span className={`badge ${timing.className}`}>
-											{timing.label}
-										</span>
+										<span className={`badge ${timing.className}`}>{timing.label}</span>
 									</dd>
 
 									<dt className="col-5 text-muted fw-normal">Price</dt>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { type Event, type User } from "../../store";
 import { EventCard } from "../EventCard";
 import { motion } from "motion/react";
-import { apiFetch } from "../../lib/api";
+import { apiFetch, SERVER_ORIGIN } from "../../lib/api";
 
 interface OverviewProp {
 	viewEventsFn: () => void;
@@ -17,7 +17,7 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 	const [userOverview, setUsers] = useState<User[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	const profileImg = `http://localhost:5000/uploads/avatars/`;
+	const profileImg = `${SERVER_ORIGIN}/uploads/avatars/`;
 
 	const handleEventClick = (event: Event) => {
 		navigate(`/events/${event.id}`);
@@ -73,7 +73,7 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 					<div className="row g-4">
 						{eventsOverview.map((event) => (
 							<div key={event.id} className="col-md-6 col-lg-4">
-								<EventCard event={event} onClick={handleEventClick} eventStatus={true}/>
+								<EventCard event={event} onClick={handleEventClick} eventStatus={true} />
 							</div>
 						))}
 					</div>
@@ -102,9 +102,14 @@ const Overview: React.FC<OverviewProp> = ({ viewEventsFn, viewUsersFn }) => {
 				{userOverview.length > 0 ? (
 					<div className="row g-4">
 						{userOverview.map((user) => (
-							<div key={user.id} className="col-md-6 col-lg-4" style={{cursor:"pointer"}} onClick={()=>{
-								navigate(`/user/profile/${user.id}`)
-							}}>
+							<div
+								key={user.id}
+								className="col-md-6 col-lg-4"
+								style={{ cursor: "pointer" }}
+								onClick={() => {
+									navigate(`/user/profile/${user.id}`);
+								}}
+							>
 								<div className="card shadow-sm rounded-4 p-3">
 									<div className="d-flex align-items-center gap-3">
 										<img

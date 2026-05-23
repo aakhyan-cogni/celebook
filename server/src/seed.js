@@ -6,14 +6,8 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 config({ path: resolve(__dirname, "../.env") });
 
 const { connectDB } = await import("./lib/mongoose.js");
-const {
-	UserModel,
-	EventModel,
-	RegistrationModel,
-	EventStatModel,
-	NotificationModel,
-	FeedbackModel,
-} = await import("./models/index.js");
+const { UserModel, EventModel, RegistrationModel, EventStatModel, NotificationModel, FeedbackModel } =
+	await import("./models/index.js");
 const { AppFeedbackModel } = await import("./models/appFeedback.model.js");
 const { getOrCreateTermsConfig } = await import("./services/consent.service.js");
 const { default: bcrypt } = await import("bcryptjs");
@@ -233,7 +227,8 @@ async function seed() {
 		{
 			key: "pending",
 			title: "AI for Builders — Bengaluru Meetup",
-			description: "Half-day workshop covering practical LLM tooling for product engineers. Talks, demos, and networking.",
+			description:
+				"Half-day workshop covering practical LLM tooling for product engineers. Talks, demos, and networking.",
 			category: "Technology",
 			tags: ["ai", "workshop", "developers"],
 			date: daysFromNow(10),
@@ -246,7 +241,8 @@ async function seed() {
 		{
 			key: "approved_free",
 			title: "Weekend Trail Run — Sahyadri",
-			description: "Group trail run through the Sahyadri ranges. Open to all fitness levels. Snacks and transport provided.",
+			description:
+				"Group trail run through the Sahyadri ranges. Open to all fitness levels. Snacks and transport provided.",
 			category: "Sports",
 			tags: ["running", "outdoors", "weekend"],
 			date: daysFromNow(7),
@@ -326,7 +322,8 @@ async function seed() {
 			capacity: 500,
 			status: "REJECTED",
 			visibility: "PUBLIC",
-			rejectionReason: "Content violates community guidelines — speculative financial product promotion is not allowed.",
+			rejectionReason:
+				"Content violates community guidelines — speculative financial product promotion is not allowed.",
 		},
 		{
 			key: "cancelled",

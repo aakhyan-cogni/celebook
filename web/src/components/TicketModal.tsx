@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { X, MapPin, Calendar, Tag } from "lucide-react";
 import { fetchTicketToken } from "../api/registration.api";
 import { useAuthStore } from "../store/useAuthStore";
+import { Avatar } from "./Avatar";
 import type { Booking } from "../store";
 
 interface TicketModalProps {
@@ -33,7 +34,9 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 			}
 		}
 		load();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [registrationId]);
 
 	const eventDate = ev?.date ? new Date(ev.date) : null;
@@ -105,11 +108,8 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 					</div>
 
 					<div className="px-4 py-3 border-bottom d-flex align-items-center gap-3">
-						<div
-							className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
-							style={{ width: 40, height: 40, background: "#6366f1", fontSize: 16 }}
-						>
-							{user?.name?.charAt(0).toUpperCase() ?? "?"}
+						<div className="flex-shrink-0" style={{ width: 40, height: 40 }}>
+							{user && <Avatar user={user} />}
 						</div>
 						<div>
 							<div className="fw-semibold">{user?.name ?? "Attendee"}</div>
@@ -127,9 +127,7 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 							</div>
 						)}
 
-						{!loading && error && (
-							<div className="alert alert-danger mb-0 text-center small">{error}</div>
-						)}
+						{!loading && error && <div className="alert alert-danger mb-0 text-center small">{error}</div>}
 
 						{!loading && token && (
 							<div className="p-3 rounded-3 border" style={{ background: "#fff" }}>
@@ -140,7 +138,9 @@ export default function TicketModal({ booking, onClose }: TicketModalProps) {
 						<p className="text-secondary text-center small mb-0">
 							Show this QR code to the event organizer for check-in.
 							<br />
-							<span className="text-muted" style={{ fontSize: "0.75rem" }}>Valid for 24 hours.</span>
+							<span className="text-muted" style={{ fontSize: "0.75rem" }}>
+								Valid for 24 hours.
+							</span>
 						</p>
 					</div>
 				</motion.div>

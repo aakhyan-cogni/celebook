@@ -24,37 +24,44 @@ const EventCreationForm = () => {
 	const editId = searchParams.get("edit");
 	const autoPublish = searchParams.get("publish") === "1";
 
-	const {
-		formData, setFormData,
-		isFree, setIsFree,
-		existingEvent,
-		existingUrls, setExistingUrls,
-		step, setStep,
-	} = useEventFormData({ editId, autoPublish, location, accessToken });
+	const { formData, setFormData, isFree, setIsFree, existingEvent, existingUrls, setExistingUrls, step, setStep } =
+		useEventFormData({ editId, autoPublish, location, accessToken });
 
 	const images = useEventImages({
-		imageLimit, userTier, accessToken, existingUrls, setExistingUrls,
+		imageLimit,
+		userTier,
+		accessToken,
+		existingUrls,
+		setExistingUrls,
 	});
 
 	const { submitting, handleSaveDraft, handlePublish, todayStr } = useSaveEvent({
-		formData, isFree, editId, existingEvent, accessToken,
-		uploadImages: images.uploadImages, navigate,
+		formData,
+		isFree,
+		editId,
+		existingEvent,
+		accessToken,
+		uploadImages: images.uploadImages,
+		navigate,
 	});
 
 	const step1Errors = useFormErrors(eventStep1Schema);
 	const step2Errors = useFormErrors(eventStep2Schema);
 	const step3Errors = useFormErrors(eventStep3Schema);
 
-	const stepPayloads = useMemo(() => ({
-		1: {
-			title: formData.title,
-			category: formData.category,
-			description: formData.description,
-			imagesCount: images.totalImageCount,
-		},
-		2: { date: formData.date, time: formData.time, location: formData.location },
-		3: { price: isFree ? 0 : formData.price, capacity: formData.capacity },
-	}), [formData, isFree, images.totalImageCount]);
+	const stepPayloads = useMemo(
+		() => ({
+			1: {
+				title: formData.title,
+				category: formData.category,
+				description: formData.description,
+				imagesCount: images.totalImageCount,
+			},
+			2: { date: formData.date, time: formData.time, location: formData.location },
+			3: { price: isFree ? 0 : formData.price, capacity: formData.capacity },
+		}),
+		[formData, isFree, images.totalImageCount],
+	);
 
 	const validateStep = (s: number): { ok: boolean; errors: FieldErrors } => {
 		if (s === 1) {
@@ -113,9 +120,21 @@ const EventCreationForm = () => {
 		const r1 = step1Errors.validate(stepPayloads[1]);
 		const r2 = step2Errors.validate(stepPayloads[2]);
 		const r3 = validateStep(3);
-		if (!r1.ok) { setStep(1); toast.error("Please fix Step 1 errors"); return; }
-		if (!r2.ok) { setStep(2); toast.error("Please fix Step 2 errors"); return; }
-		if (!r3.ok) { setStep(3); toast.error("Please fix Step 3 errors"); return; }
+		if (!r1.ok) {
+			setStep(1);
+			toast.error("Please fix Step 1 errors");
+			return;
+		}
+		if (!r2.ok) {
+			setStep(2);
+			toast.error("Please fix Step 2 errors");
+			return;
+		}
+		if (!r3.ok) {
+			setStep(3);
+			toast.error("Please fix Step 3 errors");
+			return;
+		}
 		handlePublish(e);
 	};
 
@@ -152,8 +171,7 @@ const EventCreationForm = () => {
 				<div className="col-lg-8">
 					<div className="text-center mb-5">
 						<h2 className="fw-bold display-5">
-							{editId ? "Edit" : "Create New"}{" "}
-							<span className="text-primary text-gradient">Event</span>
+							{editId ? "Edit" : "Create New"} <span className="text-primary text-gradient">Event</span>
 						</h2>
 						<p className="text-muted">Fill in the details to launch your experience.</p>
 
@@ -173,17 +191,40 @@ const EventCreationForm = () => {
 									{s}
 								</div>
 							))}
-							<div className="progress position-absolute top-50 start-0 translate-middle-y w-100" style={{ height: "2px", zIndex: 1 }}>
-								<div className="progress-bar bg-primary transition-all" style={{ width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%` }}></div>
+							<div
+								className="progress position-absolute top-50 start-0 translate-middle-y w-100"
+								style={{ height: "2px", zIndex: 1 }}
+							>
+								<div
+									className="progress-bar bg-primary transition-all"
+									style={{ width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
+								></div>
 							</div>
 						</div>
 					</div>
 
-					<motion.div initial="hidden" animate="visible" variants={fadeInUp} className="card border-0 shadow-lg p-4 p-md-5 backdrop-blur rounded-4">
+					<motion.div
+						initial="hidden"
+						animate="visible"
+						variants={fadeInUp}
+						className="card border-0 shadow-lg p-4 p-md-5 backdrop-blur rounded-4"
+					>
 						<form onSubmit={onPublishGuarded} noValidate>
 							<AnimatePresence>
-								<Step1Basics visible={step === 1} formData={formData} onChange={handleChange} imageProps={imageProps} errors={step1Errors.errors} />
-								<Step2Schedule visible={step === 2} formData={formData} todayStr={todayStr} onChange={handleChange} errors={step2Errors.errors} />
+								<Step1Basics
+									visible={step === 1}
+									formData={formData}
+									onChange={handleChange}
+									imageProps={imageProps}
+									errors={step1Errors.errors}
+								/>
+								<Step2Schedule
+									visible={step === 2}
+									formData={formData}
+									todayStr={todayStr}
+									onChange={handleChange}
+									errors={step2Errors.errors}
+								/>
 								<Step3Pricing
 									visible={step === 3}
 									formData={formData}
@@ -196,24 +237,52 @@ const EventCreationForm = () => {
 							</AnimatePresence>
 
 							<div className="d-flex justify-content-between mt-5 pt-3 border-top">
-								<button type="button" className={`btn btn-link text-decoration-none fw-bold ${step === 1 ? "invisible" : "text-muted"}`} onClick={prevStep}>
+								<button
+									type="button"
+									className={`btn btn-link text-decoration-none fw-bold ${step === 1 ? "invisible" : "text-muted"}`}
+									onClick={prevStep}
+								>
 									← Back
 								</button>
 								<div className="d-flex gap-2">
-									<button type="button" className="btn btn-outline-secondary rounded-pill px-4 fw-bold" onClick={onSaveDraftGuarded} disabled={submitting || images.uploading}>
-										{submitting ? <span className="spinner-border spinner-border-sm me-2" role="status" /> : null}
+									<button
+										type="button"
+										className="btn btn-outline-secondary rounded-pill px-4 fw-bold"
+										onClick={onSaveDraftGuarded}
+										disabled={submitting || images.uploading}
+									>
+										{submitting ? (
+											<span className="spinner-border spinner-border-sm me-2" role="status" />
+										) : null}
 										Save Draft
 									</button>
 									{step < TOTAL_STEPS ? (
-										<motion.button whileTap={{ scale: 0.95 }} type="button" className="btn btn-primary px-5 rounded-pill shadow fw-bold" onClick={nextStep}>
+										<motion.button
+											whileTap={{ scale: 0.95 }}
+											type="button"
+											className="btn btn-primary px-5 rounded-pill shadow fw-bold"
+											onClick={nextStep}
+										>
 											Continue
 										</motion.button>
 									) : (
-										<motion.button whileTap={{ scale: 0.95 }} type="submit" className="btn btn-success px-5 rounded-pill shadow fw-bold" disabled={submitting || images.uploading}>
-											{submitting || images.uploading
-												? <><span className="spinner-border spinner-border-sm me-2" role="status" />{images.uploading ? "Uploading..." : "Publishing..."}</>
-												: "Publish Event"
-											}
+										<motion.button
+											whileTap={{ scale: 0.95 }}
+											type="submit"
+											className="btn btn-success px-5 rounded-pill shadow fw-bold"
+											disabled={submitting || images.uploading}
+										>
+											{submitting || images.uploading ? (
+												<>
+													<span
+														className="spinner-border spinner-border-sm me-2"
+														role="status"
+													/>
+													{images.uploading ? "Uploading..." : "Publishing..."}
+												</>
+											) : (
+												"Publish Event"
+											)}
 										</motion.button>
 									)}
 								</div>

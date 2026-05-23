@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+import { apiFetch, getAvatarUrl } from "../lib/api";
 
 const UserProfilePage = () => {
 	const { id } = useParams<{ id: string }>();
@@ -7,14 +8,14 @@ const UserProfilePage = () => {
 	const [userProfile, setUserProfile] = useState<any>(); // Replace 'any' with 'User'
 	const [loading, setLoading] = useState(true);
 
-	const getProfileURL = (avatar: string) => `http://localhost:5000/uploads/avatars/${avatar}`;
+	const getProfileURL = (avatar: string) => getAvatarUrl(avatar);
 
 	useEffect(() => {
 		async function fetchData() {
+			if (!id) return;
 			setLoading(true);
 			try {
-				const res = await fetch(`http://localhost:5000/api/user/profile/${id}`);
-				const user = await res.json();
+				const user = await apiFetch(`/user/profile/${id}` as any, { method: "GET" });
 				setUserProfile(user);
 			} catch (error) {
 				console.error("Failed to fetch user profile", error);
@@ -38,10 +39,10 @@ const UserProfilePage = () => {
 	const firstName = userProfile?.name?.split(" ")[0] || "";
 	const lastName = userProfile?.name?.split(" ").slice(1).join(" ") || "";
 
-	const joinDate = (dateString:string) => {
+	const joinDate = (dateString: string) => {
 		if (!dateString) return "Recently";
 
-		console.log(dateString)
+		console.log(dateString);
 		const joinedDate = new Date(dateString);
 		const today = new Date();
 
@@ -60,7 +61,6 @@ const UserProfilePage = () => {
 
 		return "Recently";
 	};
-
 
 	return (
 		<div className="container-fluid  bg-body-tertiary py-5">

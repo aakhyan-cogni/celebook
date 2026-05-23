@@ -1,15 +1,28 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { apiFetch } from "../../lib/api";
 
 export function useEventStats(eventId: string, enabled: boolean) {
 	const [eventStat, setEventStat] = useState<any>(null);
 
-	useEffect(() => {
-		if (!enabled) return;
+	const refetch = useCallback(() => {
+		if (!enabled || !eventId) return;
 		apiFetch(`/events/${eventId}/stats` as any)
 			.then((data) => setEventStat(data))
 			.catch(() => {});
 	}, [enabled, eventId]);
 
-	return [eventStat, setEventStat] as const;
+	useEffect(() => {
+		refetch();
+	}, [refetch]);
+
+	useEffect(() => {
+		if (!enabled) return;
+		const onVisible = () => {
+			if (document.visibilityState === "visible") refetch();
+		};
+		document.addEventListener("visibilitychange", onVisible);
+		return () => document.removeEventListener("visibilitychange", onVisible);
+	}, [enabled, refetch]);
+
+	return [eventStat, setEventStat, refetch] as const;
 }

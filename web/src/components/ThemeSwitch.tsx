@@ -31,5 +31,5 @@ export default function ThemeSwitch({ isDark, setIsDark }: ThemeSwitchProps) {
 
 interface ThemeSwitchProps {
 	isDark: boolean;
-	setIsDark: React.Dispatch<React.SetStateAction<boolean>>
+	setIsDark: React.Dispatch<React.SetStateAction<boolean>>;
 }

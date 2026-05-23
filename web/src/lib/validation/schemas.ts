@@ -79,18 +79,9 @@ export const basicProfileSchema = z.object({
 		.min(1, "First name is required")
 		.max(50, "First name is too long")
 		.regex(nameRegex, "Use letters only"),
-	lastName: z
-		.string()
-		.trim()
-		.max(50, "Last name is too long")
-		.regex(nameRegex, "Use letters only")
-		.or(z.literal("")),
+	lastName: z.string().trim().max(50, "Last name is too long").regex(nameRegex, "Use letters only").or(z.literal("")),
 	email: emailSchema,
-	phone: z
-		.string()
-		.trim()
-		.regex(phoneRegex, "Enter a valid phone number")
-		.or(z.literal("")),
+	phone: z.string().trim().regex(phoneRegex, "Enter a valid phone number").or(z.literal("")),
 	dob: z
 		.string()
 		.refine((v) => !v || new Date(v).getTime() < Date.now(), "Date of birth must be in the past")
@@ -102,21 +93,13 @@ export const addressSchema = z.object({
 	country: z.string().trim().max(60).optional().or(z.literal("")),
 	state: z.string().trim().max(60).optional().or(z.literal("")),
 	city: z.string().trim().max(60).optional().or(z.literal("")),
-	zipcode: z
-		.string()
-		.trim()
-		.regex(zipRegex, "Enter a valid zipcode")
-		.or(z.literal("")),
+	zipcode: z.string().trim().regex(zipRegex, "Enter a valid zipcode").or(z.literal("")),
 });
 
 export const orgInfoSchema = z.object({
 	organizationName: z.string().trim().max(100, "Too long").optional().or(z.literal("")),
 	designation: z.string().trim().max(100, "Too long").optional().or(z.literal("")),
-	companyWebsite: z
-		.string()
-		.trim()
-		.regex(urlRegex, "Enter a valid URL (https://...)")
-		.or(z.literal("")),
+	companyWebsite: z.string().trim().regex(urlRegex, "Enter a valid URL (https://...)").or(z.literal("")),
 	bio: z.string().trim().max(1000, "Bio must be 1000 characters or less").optional().or(z.literal("")),
 });
 

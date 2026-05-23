@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-	FEEDBACK_FIELD_LABELS,
-	FEEDBACK_RATING_FIELDS,
-	getFeedbackSummary,
-} from "../../api/feedback.api";
+import { FEEDBACK_FIELD_LABELS, FEEDBACK_RATING_FIELDS, getFeedbackSummary } from "../../api/feedback.api";
 import type { FeedbackSummary as FeedbackSummaryData } from "../../api/feedback.api";
 
 interface FeedbackSummaryProps {
@@ -37,9 +33,7 @@ export default function FeedbackSummary({ eventId, refreshKey = 0 }: FeedbackSum
 	const count = summary.averages.feedbackCount;
 	const otherFields = FEEDBACK_RATING_FIELDS.filter((f) => f !== "overallRating");
 	const overallAvg =
-		count > 0
-			? otherFields.reduce((sum, f) => sum + summary.averages[f], 0) / otherFields.length
-			: 0;
+		count > 0 ? otherFields.reduce((sum, f) => sum + summary.averages[f], 0) / otherFields.length : 0;
 
 	const renderBar = (label: string, value: number, highlight = false) => {
 		const widthPct = Math.max(0, Math.min(100, (value / 5) * 100));
@@ -78,11 +72,9 @@ export default function FeedbackSummary({ eventId, refreshKey = 0 }: FeedbackSum
 
 					<hr className="my-3 opacity-25" />
 
-					{otherFields.map((field) =>
-						<div key={field}>
-							{renderBar(FEEDBACK_FIELD_LABELS[field], summary.averages[field])}
-						</div>,
-					)}
+					{otherFields.map((field) => (
+						<div key={field}>{renderBar(FEEDBACK_FIELD_LABELS[field], summary.averages[field])}</div>
+					))}
 
 					{summary.comments.length > 0 && (
 						<div className="mt-4">

@@ -56,10 +56,7 @@ export const updateEvent = async (req, res) => {
 		const { id } = req.params;
 		const result = await EventService.updateEvent(id, req.user.userId, req.body, req.user.role === "ADMIN");
 		if (result.error) {
-			const status =
-				result.error === "NOT_FOUND" ? 404
-					: result.error === "FORBIDDEN" ? 403
-						: 400;
+			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(200).json(fromDoc(result.event));
@@ -74,7 +71,14 @@ export const deleteEvent = async (req, res) => {
 		const { id } = req.params;
 		const result = await EventService.deleteEvent(id, req.user.userId, req.user.role === "ADMIN");
 		if (result.error) {
-			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : result.error === "HAS_REGISTRATIONS" ? 409 : 400;
+			const status =
+				result.error === "NOT_FOUND"
+					? 404
+					: result.error === "FORBIDDEN"
+						? 403
+						: result.error === "HAS_REGISTRATIONS"
+							? 409
+							: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(200).json({ message: "Event deleted successfully" });
@@ -89,7 +93,16 @@ export const publishEvent = async (req, res) => {
 		const { id } = req.params;
 		const result = await EventService.publishEvent(id, req.user.userId, req.user.role === "ADMIN");
 		if (result.error) {
-			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : result.error === "NOT_PUBLISHABLE" ? 400 : result.error === "TIER_LIMIT_EXCEEDED" ? 403 : 400;
+			const status =
+				result.error === "NOT_FOUND"
+					? 404
+					: result.error === "FORBIDDEN"
+						? 403
+						: result.error === "NOT_PUBLISHABLE"
+							? 400
+							: result.error === "TIER_LIMIT_EXCEEDED"
+								? 403
+								: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		if (result.event.status === "PENDING") {
@@ -111,10 +124,13 @@ export const cancelEvent = async (req, res) => {
 		const result = await EventService.cancelEvent(id, req.user.userId, reason, req.user.role === "ADMIN");
 		if (result.error) {
 			const status =
-				result.error === "NOT_FOUND"              ? 404
-				: result.error === "FORBIDDEN"             ? 403
-				: result.error === "HAS_PAID_REGISTRATIONS" ? 409
-				: 400;
+				result.error === "NOT_FOUND"
+					? 404
+					: result.error === "FORBIDDEN"
+						? 403
+						: result.error === "HAS_PAID_REGISTRATIONS"
+							? 409
+							: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(200).json(fromDoc(result.event));
@@ -130,10 +146,13 @@ export const duplicateEvent = async (req, res) => {
 		const result = await EventService.duplicateEvent(id, req.user.userId, req.user.role === "ADMIN");
 		if (result.error) {
 			const status =
-				result.error === "NOT_FOUND"              ? 404
-				: result.error === "FORBIDDEN"             ? 403
-				: result.error === "HAS_PAID_REGISTRATIONS" ? 409
-				: 400;
+				result.error === "NOT_FOUND"
+					? 404
+					: result.error === "FORBIDDEN"
+						? 403
+						: result.error === "HAS_PAID_REGISTRATIONS"
+							? 409
+							: 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(201).json(fromDoc(result.event));
@@ -146,7 +165,7 @@ export const duplicateEvent = async (req, res) => {
 export const getMyEvents = async (req, res) => {
 	try {
 		const events = await EventService.getMyEvents(req.user.userId);
-		
+
 		const normalised = events.map((e) => ({
 			id: e._id?.toString(),
 			...e,
@@ -159,7 +178,6 @@ export const getMyEvents = async (req, res) => {
 		res.status(500).json({ message: "Error fetching my events" });
 	}
 };
-
 
 export const getEventStats = async (req, res) => {
 	try {
@@ -211,7 +229,11 @@ export const uploadEventImages = async (req, res) => {
 		const currentCount = event.imgUrls?.length ?? 0;
 		if (currentCount + req.files.length > limit) {
 			// Clean up files multer already wrote before returning the error
-			req.files.forEach((f) => { try { fs.unlinkSync(f.path); } catch (_) {} });
+			req.files.forEach((f) => {
+				try {
+					fs.unlinkSync(f.path);
+				} catch (_) {}
+			});
 			return res.status(403).json({
 				message: `Your ${userTier} plan allows at most ${limit} image(s). You already have ${currentCount}.`,
 			});
@@ -248,9 +270,7 @@ export const deleteEventImage = async (req, res) => {
 		try {
 			const filePath = path.join("public", url);
 			if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-		} catch (_) {
-
-		}
+		} catch (_) {}
 
 		res.status(200).json({ imgUrls: event.imgUrls });
 	} catch (error) {

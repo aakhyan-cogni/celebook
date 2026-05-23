@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getSubscriptionPlans, upgradeUserTier } from "../controllers/plan.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js"; 
+import { authenticate } from "../middleware/auth.middleware.js";
 
 export const planUpgradeRouter = Router();
 
@@ -9,4 +9,3 @@ planUpgradeRouter.get("/", authenticate, getSubscriptionPlans);
 
 // POST /api/plans/upgrade - Processes tier changes
 planUpgradeRouter.post("/upgrade", authenticate, upgradeUserTier);
-
