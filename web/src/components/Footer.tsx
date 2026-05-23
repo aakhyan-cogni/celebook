@@ -69,11 +69,6 @@ export default function Footer() {
 									Terms &amp; Conditions
 								</Link>
 							</li>
-							<li className="mb-2">
-								<Link to="/terms" className="text-muted text-decoration-none">
-									Privacy Policy
-								</Link>
-							</li>
 						</ul>
 					</div>
 

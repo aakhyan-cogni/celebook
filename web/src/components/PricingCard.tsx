@@ -1,5 +1,10 @@
+import { useNavigate } from "react-router";
+import { useAuthStore } from "../store/useAuthStore";
+
 export function PricingCard(props: PricingCardProps) {
 	let { description, features, price, title, active, popular } = props;
+	const navigate = useNavigate();
+	const isLoggedIn = useAuthStore((state) => state.isAuthenticated);
 
 	return (
 		<div className={`card h-100 my-2 py-2 shadow-sm ${active ? "border-primary border-2" : ""}`}>
@@ -29,7 +34,14 @@ export function PricingCard(props: PricingCardProps) {
 					))}
 				</ul>
 
-				<button className={`btn w-100 ${active ? "btn-primary" : "btn-outline-primary"}`}>Get Started</button>
+				<button
+					className={`btn w-100 ${active ? "btn-primary" : "btn-outline-primary"}`}
+					onClick={() => {
+						navigate(isLoggedIn ? `/dashboard?tab=payment` : `/login`);
+					}}
+				>
+					Get Started
+				</button>
 			</div>
 		</div>
 	);
