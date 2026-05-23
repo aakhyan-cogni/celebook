@@ -53,7 +53,7 @@ function Root() {
 				<NotificationSocketProvider />
 				<ConsentModal />
 				<Navbar />
-				<div className="pt-2 flex-grow-1">
+				<div className="flex-grow-1">
 					<Routes>
 						<Route path="/" element={<App />} />
 						<Route path="/login" element={<Login />} />
