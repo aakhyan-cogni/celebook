@@ -122,12 +122,7 @@ export const endEvent = async (req, res) => {
 		const { id } = req.params;
 		const result = await EventService.endEvent(id, req.user.userId, req.user.role === "ADMIN");
 		if (result.error) {
-			const status =
-				result.error === "NOT_FOUND"
-					? 404
-					: result.error === "FORBIDDEN"
-						? 403
-						: 400;
+			const status = result.error === "NOT_FOUND" ? 404 : result.error === "FORBIDDEN" ? 403 : 400;
 			return res.status(status).json({ message: result.error });
 		}
 		res.status(200).json(fromDoc(result.event));
@@ -211,9 +206,11 @@ export const getEventStats = async (req, res) => {
 			return res.status(403).json({ message: "Forbidden" });
 		}
 
-		const stat = await EventStatModel.findOne({ eventId: event._id });
-		const registrationCount = await RegistrationModel.countDocuments({ eventId: event._id });
-		const base = stat ? stat.toObject() : {};
+		const [stat, registrationCount] = await Promise.all([
+			EventStatModel.findOne({ eventId: event._id }).select("-registeredAttendees").lean(),
+			RegistrationModel.countDocuments({ eventId: event._id, status: "CONFIRMED" }),
+		]);
+		const base = stat || {};
 		res.status(200).json({ ...base, registrationCount });
 	} catch (error) {
 		console.error("[getEventStats] Error:", error);
@@ -245,7 +242,6 @@ export const uploadEventImages = async (req, res) => {
 		const limit = TIER_IMAGE_LIMITS[userTier] ?? 1;
 		const currentCount = event.imgUrls?.length ?? 0;
 		if (currentCount + req.files.length > limit) {
-
 			req.files.forEach((f) => {
 				try {
 					fs.unlinkSync(f.path);
