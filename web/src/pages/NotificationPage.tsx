@@ -48,6 +48,8 @@ const NotificationPage: React.FC = () => {
 	}, [display]);
 
 	const handleMarkAsRead = async (id: string) => {
+		const target = notifications.find((n) => n.id === id);
+		if (!target || target.read) return;
 		await markAsRead(id);
 		toast.success("Marked as read");
 	};
