@@ -124,4 +124,5 @@ type API_PATH =
 	| `/events/${string}/feedback/mine`
 	| `/plans`
 	| `/plans/upgrade`
-	| `/feedback`;
+	| `/feedback`
+	| `/events/${string}/stats`;

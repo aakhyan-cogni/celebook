@@ -6,7 +6,7 @@ export function useEventStats(eventId: string, enabled: boolean) {
 
 	const refetch = useCallback(() => {
 		if (!enabled || !eventId) return;
-		apiFetch(`/events/${eventId}/stats` as any)
+		apiFetch(`/events/${eventId}/stats`)
 			.then((data) => setEventStat(data))
 			.catch(() => {});
 	}, [enabled, eventId]);
