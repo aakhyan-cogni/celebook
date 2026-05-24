@@ -54,13 +54,35 @@ export const eventStep2Schema = z
 		time: z.string().min(1, "Pick a start time"),
 		location: z.string().trim().min(3, "Enter a location"),
 	})
-	.refine(
-		(v) => {
-			const dt = new Date(`${v.date}T${v.time}`);
-			return !isNaN(dt.getTime()) && dt.getTime() > Date.now();
-		},
-		{ message: "Event must be in the future", path: ["date"] },
-	);
+	.superRefine((v, ctx) => {
+		const inputDate = new Date(v.date);
+		const today = new Date();
+
+		today.setHours(0, 0, 0, 0);
+		inputDate.setHours(0, 0, 0, 0);
+
+		if (inputDate < today) {
+			ctx.addIssue({
+				code: "custom",
+				message: "Date cannot be in the past",
+				path: ["date"],
+			});
+			return;
+		}
+
+		if (inputDate.getTime() === today.getTime()) {
+			const currentDateTime = new Date();
+			const inputDateTime = new Date(`${v.date}T${v.time}`);
+
+			if (isNaN(inputDateTime.getTime()) || inputDateTime <= currentDateTime) {
+				ctx.addIssue({
+					code: "custom",
+					message: "Time has already passed today",
+					path: ["time"],
+				});
+			}
+		}
+	});
 
 export const eventStep3Schema = z.object({
 	price: z.coerce.number().min(0, "Price cannot be negative").max(1_000_000, "Price is too high"),
