@@ -48,6 +48,8 @@ const NotificationPage: React.FC = () => {
 	}, [display]);
 
 	const handleMarkAsRead = async (id: string) => {
+		const target = notifications.find((n) => n.id === id);
+		if (!target || target.read) return;
 		await markAsRead(id);
 		toast.success("Marked as read");
 	};
@@ -156,6 +158,7 @@ const NotificationPage: React.FC = () => {
 										key={note.id}
 										details={{
 											id: note.id,
+											eventId: note.data?.eventId as string | undefined,
 											type: note.type,
 											text: `${note.title} — ${note.message}`,
 											time: new Date(note.createdAt).getTime(),
